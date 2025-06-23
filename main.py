@@ -2,7 +2,7 @@ import os
 import arcade
 from arcade.types import Color
 
-WINDOW_TITLE = "Platformer"
+WINDOW_TITLE = "Zombie Survival"
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 
