@@ -5,11 +5,11 @@
     },
     "activeFile": "resources/maps/map1.tmx",
     "expandedProjectPaths": [
-        ".",
+        "resources",
+        "resources/tileset",
         "resources/tiles",
         "resources/maps",
-        "resources/tileset",
-        "resources"
+        "."
     ],
     "fileStates": {
         "resources/map1.tmx": {
@@ -36,10 +36,10 @@
         },
         "resources/maps/map1.tmx": {
             "scale": 0.33,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 621.2121212121212,
-                "y": 492.4242424242425
+                "x": 730.3030303030304,
+                "y": 1265.1515151515152
             }
         },
         "resources/tiles/game.tsx": {
