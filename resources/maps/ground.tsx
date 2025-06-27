@@ -40,4 +40,9 @@
  <tile id="12">
   <image source="../tiles/Ground_tiles/ground_tiles_0012_Layer-38.png" width="89" height="89"/>
  </tile>
+ <wangsets>
+  <wangset name="Unnamed Set" type="corner" tile="-1">
+   <wangcolor name="" color="#ff0000" tile="-1" probability="1"/>
+  </wangset>
+ </wangsets>
 </tileset>

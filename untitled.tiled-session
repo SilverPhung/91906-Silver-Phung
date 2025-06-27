@@ -6,10 +6,10 @@
     "activeFile": "resources/maps/map1.tmx",
     "expandedProjectPaths": [
         "resources",
-        "resources/tileset",
-        "resources/tiles",
         "resources/maps",
-        "."
+        ".",
+        "resources/tileset",
+        "resources/tiles"
     ],
     "fileStates": {
         "resources/map1.tmx": {
@@ -19,6 +19,10 @@
                 "x": 193,
                 "y": -175.5
             }
+        },
+        "resources/maps/Building.tsx": {
+            "scaleInDock": 0.125,
+            "scaleInEditor": 1
         },
         "resources/maps/environment.tsx": {
             "scaleInDock": 1,
@@ -35,11 +39,11 @@
             "scaleInEditor": 1
         },
         "resources/maps/map1.tmx": {
-            "scale": 0.33,
-            "selectedLayer": 2,
+            "scale": 0.25,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 730.3030303030304,
-                "y": 1265.1515151515152
+                "x": 600,
+                "y": 602
             }
         },
         "resources/tiles/game.tsx": {
@@ -60,7 +64,7 @@
             }
         }
     },
-    "last.imagePath": "C:/dev/91906-Silver-Phung/resources/tiles/Grass_leafs",
+    "last.imagePath": "C:/dev/91906-Silver-Phung/resources/tiles/Asphalt_tiles",
     "map.fixedSize": false,
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 89,
@@ -77,6 +81,7 @@
         "resources/maps/grass.tsx",
         "resources/maps/environment.tsx",
         "resources/maps/map1.tmx",
+        "resources/maps/Building.tsx",
         "resources/tiles/grass.tsx",
         "resources/tiles/game.tsx",
         "resources/tileset/map1.tmx",

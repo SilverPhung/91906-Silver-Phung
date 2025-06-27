@@ -40,4 +40,23 @@
  <tile id="12">
   <image source="../tiles/Grass_tiles/grass_tiles_0012_Layer-43.png" width="89" height="89"/>
  </tile>
+ <wangsets>
+  <wangset name="Unnamed Set" type="mixed" tile="-1">
+   <wangcolor name="" color="#ff0000" tile="-1" probability="1"/>
+   <wangcolor name="" color="#00ff00" tile="-1" probability="1"/>
+   <wangtile tileid="0" wangid="2,2,2,2,2,2,2,2"/>
+   <wangtile tileid="1" wangid="2,2,2,1,1,1,2,2"/>
+   <wangtile tileid="2" wangid="2,1,1,1,2,2,2,2"/>
+   <wangtile tileid="3" wangid="1,1,2,2,2,2,2,1"/>
+   <wangtile tileid="4" wangid="2,2,2,1,2,2,2,2"/>
+   <wangtile tileid="5" wangid="2,2,2,2,2,1,2,2"/>
+   <wangtile tileid="6" wangid="2,2,2,2,2,1,1,1"/>
+   <wangtile tileid="7" wangid="2,1,2,2,2,2,2,2"/>
+   <wangtile tileid="8" wangid="2,2,2,2,2,2,2,1"/>
+   <wangtile tileid="9" wangid="2,2,2,1,1,1,1,1"/>
+   <wangtile tileid="10" wangid="2,1,1,1,1,1,2,2"/>
+   <wangtile tileid="11" wangid="1,1,1,1,2,2,2,1"/>
+   <wangtile tileid="12" wangid="1,1,2,2,2,1,1,1"/>
+  </wangset>
+ </wangsets>
 </tileset>
