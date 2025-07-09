@@ -5,11 +5,11 @@
     },
     "activeFile": "resources/maps/map1.tmx",
     "expandedProjectPaths": [
-        "resources",
-        "resources/maps",
-        ".",
         "resources/tileset",
-        "resources/tiles"
+        "resources/tiles",
+        ".",
+        "resources",
+        "resources/maps"
     ],
     "fileStates": {
         "resources/map1.tmx": {
@@ -42,8 +42,8 @@
             "scale": 0.25,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 600,
-                "y": 602
+                "x": -254,
+                "y": 2186
             }
         },
         "resources/tiles/game.tsx": {
