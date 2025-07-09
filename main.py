@@ -1,6 +1,6 @@
 import arcade
 import random
-from pyglet.math import Vec2
+from pyglet.math import Vec2, clamp
 
 # Window settings
 WINDOW_TITLE = "Starting Template"
@@ -30,17 +30,51 @@ RIGHT_KEY = arcade.key.RIGHT
 UP_KEY = arcade.key.UP
 DOWN_KEY = arcade.key.DOWN
 
-def to_vector(point: tuple[float, float] | arcade.types.Point2) -> Vec2:
+def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
     return Vec2(point[0], point[1])
 
+class Debug:
+    debug_dict = {}
 
+    @staticmethod
+    def update(key: str, text: str):
+        Debug.debug_dict[key] = text
+    
+    @staticmethod
+    def render(x: float, y: float):
+        
+        for key, text in Debug.debug_dict.items():
+            arcade.draw_text(
+                f"{key}: {text}",
+                x,
+                y,
+                arcade.csscolor.WHITE,
+                18,
+            )
+            y += 20
 
 class Entity(arcade.Sprite):
-    def __init__(self, image_path, scale=1.0):
+    def __init__(self, image_path, scale=1.0, friction=0.1):
         super().__init__(image_path, scale=scale)
-        self.position = (0, 0)
-        self.velocity = (0, 0)
+        self.position: Vec2 = Vec2(0, 0)
+        self.velocity: Vec2 = Vec2(0, 0)
+        self.friction = friction
 
+    def move(self, direction: Vec2):
+        if direction.length() > 0:
+            self.velocity = direction * PLAYER_MOVEMENT_SPEED
+
+        self.update()
+
+    def update(self):
+        
+        # friction
+        self.velocity = to_vector(self.velocity) * 0.9
+
+        # Clamp the velocity to the max speed
+        velocity_length = self.velocity.length()
+
+        self.velocity = self.velocity.normalize() * clamp(velocity_length, 0, PLAYER_MOVEMENT_SPEED)
 
 class GameView(arcade.View):
     """
@@ -65,6 +99,7 @@ class GameView(arcade.View):
         self.player = Entity(
             ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png",
             scale=CHARACTER_SCALING,
+            friction=0.1,
         )
 
         self.physics_engine = arcade.PhysicsEngineSimple(
@@ -79,9 +114,6 @@ class GameView(arcade.View):
             UP_KEY: False,
             DOWN_KEY: False,
         }
-
-        # List of debug text objects
-        self.debug_dict = {}
 
 
         self.reset()
@@ -112,7 +144,7 @@ class GameView(arcade.View):
     def reset(self):
         self.scene = self.create_scene()
 
-        self.player.position = (50, 350)
+        self.player.position = Vec2(50, 350)
         self.scene.add_sprite("Player", self.player) 
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player,
@@ -128,36 +160,31 @@ class GameView(arcade.View):
             self.scene.draw()
 
         with self.camera_gui.activate():
-            debug_text = arcade.Text(
-                "",
-                x=10,
-                y=10,
-                color=arcade.csscolor.WHITE,
-                font_size=18,
-            )
-            for key, text in self.debug_dict.items():
-                debug_text.text += f"{key}: {text}\n"
-            debug_text.draw()
+            Debug.render(10, 10)
 
     def update_player_speed(self):
         # Calculate speed based on the keys pressed
-        self.player.change_x = 0
+        
 
+        movement_direction_x = 0
+        movement_direction_y = 0
+        has_movement = False
         if self.key_down[LEFT_KEY] and not self.key_down[RIGHT_KEY]:
-            self.player.change_x = -PLAYER_MOVEMENT_SPEED
+            has_movement = True
+            movement_direction_x = -1
         elif self.key_down[RIGHT_KEY] and not self.key_down[LEFT_KEY]:
-            self.player.change_x = PLAYER_MOVEMENT_SPEED
-
-        self.player.change_y = 0
+            has_movement = True
+            movement_direction_x = 1
 
         if self.key_down[UP_KEY] and not self.key_down[DOWN_KEY]:
-            self.player.change_y = PLAYER_MOVEMENT_SPEED
+            has_movement = True
+            movement_direction_y = 1
         elif self.key_down[DOWN_KEY] and not self.key_down[UP_KEY]:
-            self.player.change_y = -PLAYER_MOVEMENT_SPEED
+            has_movement = True
+            movement_direction_y = -1
 
-        # Normalize the speed
-        self.player.velocity = to_vector(self.player.velocity).normalize() * PLAYER_MOVEMENT_SPEED
-        self.add_debug_text("Velocity", f"{self.player.velocity.x}, {self.player.velocity.y}")
+        self.player.move(Vec2(movement_direction_x, movement_direction_y))
+        Debug.update("Velocity", f"{self.player.velocity.x}, {self.player.velocity.y}")
 
     def on_key_press(self, key, modifiers):
         self.key_down[key] = True
@@ -190,8 +217,7 @@ class GameView(arcade.View):
         # The position argument keeps `0, 0` in the bottom left corner.
         self.camera.match_window(position=True)
 
-    def add_debug_text(self, key: str, text: str):
-        self.debug_dict[key] = text
+    
 
 
 def main():
