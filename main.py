@@ -1,11 +1,13 @@
 import arcade
 import random
 from pyglet.math import Vec2, clamp
+import time
 
 # Window settings
 WINDOW_TITLE = "Starting Template"
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
+WINDOW_RATE = 1 / 144  # 144hz
 
 # Constants
 CHARACTER_SCALING = 1
@@ -15,10 +17,13 @@ SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = SPRITE_PIXEL_SIZE * TILE_SCALING
 
 # Player Movement
-PLAYER_MOVEMENT_SPEED = 10
+PLAYER_MOVEMENT_SPEED = 1000
+PLAYER_FRICTION = 0.99999
 
 # Camera constants
-FOLLOW_DECAY_CONST = 0.3  # get within 1% of the target position within 2 seconds
+FOLLOW_DECAY_CONST = (
+    0.3  # get within 1% of the target position within 2 seconds
+)
 
 VIEWPORT_MARGIN = 250
 HORIZONTAL_BOUNDARY = WINDOW_WIDTH / 2.0 - VIEWPORT_MARGIN
@@ -30,8 +35,10 @@ RIGHT_KEY = arcade.key.RIGHT
 UP_KEY = arcade.key.UP
 DOWN_KEY = arcade.key.DOWN
 
+
 def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
     return Vec2(point[0], point[1])
+
 
 class Debug:
     debug_dict = {}
@@ -39,10 +46,10 @@ class Debug:
     @staticmethod
     def update(key: str, text: str):
         Debug.debug_dict[key] = text
-    
+
     @staticmethod
     def render(x: float, y: float):
-        
+
         for key, text in Debug.debug_dict.items():
             arcade.draw_text(
                 f"{key}: {text}",
@@ -53,28 +60,41 @@ class Debug:
             )
             y += 20
 
+
 class Entity(arcade.Sprite):
-    def __init__(self, image_path, scale=1.0, friction=0.1):
+    def __init__(
+        self, image_path, scale=CHARACTER_SCALING, friction=PLAYER_FRICTION, speed=PLAYER_MOVEMENT_SPEED
+    ):
         super().__init__(image_path, scale=scale)
+
+        self.speed = speed
+
         self.position: Vec2 = Vec2(0, 0)
         self.velocity: Vec2 = Vec2(0, 0)
-        self.friction = friction
+        self.friction = clamp(friction, 0, 1)
+        self.delta_time = WINDOW_RATE
 
     def move(self, direction: Vec2):
         if direction.length() > 0:
-            self.velocity = direction * PLAYER_MOVEMENT_SPEED
+            self.velocity = direction * self.speed * self.delta_time
 
         self.update()
 
     def update(self):
-        
+
         # friction
-        self.velocity = to_vector(self.velocity) * 0.9
+        self.velocity = to_vector(self.velocity) * (1 - self.friction) ** (
+            self.delta_time
+        )
 
         # Clamp the velocity to the max speed
         velocity_length = self.velocity.length()
 
-        self.velocity = self.velocity.normalize() * clamp(velocity_length, 0, PLAYER_MOVEMENT_SPEED)
+        self.velocity = self.velocity.normalize() * clamp(
+            velocity_length, 0, self.speed
+        )
+        # time.sleep(0.01)
+
 
 class GameView(arcade.View):
     """
@@ -89,7 +109,7 @@ class GameView(arcade.View):
         # Camera for scrolling
         self.camera = arcade.Camera2D()
         self.camera_bounds = self.window.rect
-        
+
         # A non-scrolling camera that can be used to draw GUI elements
         self.camera_gui = arcade.Camera2D()
 
@@ -98,8 +118,7 @@ class GameView(arcade.View):
         # Set up the player info
         self.player = Entity(
             ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png",
-            scale=CHARACTER_SCALING,
-            friction=0.1,
+            speed=PLAYER_MOVEMENT_SPEED,
         )
 
         self.physics_engine = arcade.PhysicsEngineSimple(
@@ -115,12 +134,10 @@ class GameView(arcade.View):
             DOWN_KEY: False,
         }
 
-
         self.reset()
 
-        
     def create_scene(self) -> arcade.Scene:
-        """ Set up the game and initialize the variables. """
+        """Set up the game and initialize the variables."""
         scene = arcade.Scene()
         spacing = 200
         for column in range(10):
@@ -140,19 +157,18 @@ class GameView(arcade.View):
 
         return scene
 
-
     def reset(self):
         self.scene = self.create_scene()
 
         self.player.position = Vec2(50, 350)
-        self.scene.add_sprite("Player", self.player) 
+        self.scene.add_sprite("Player", self.player)
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player,
             self.scene.get_sprite_list("Platforms"),
         )
 
     def on_draw(self):
-        """ Render the screen. """
+        """Render the screen."""
 
         self.clear()
 
@@ -164,7 +180,6 @@ class GameView(arcade.View):
 
     def update_player_speed(self):
         # Calculate speed based on the keys pressed
-        
 
         movement_direction_x = 0
         movement_direction_y = 0
@@ -184,50 +199,58 @@ class GameView(arcade.View):
             movement_direction_y = -1
 
         self.player.move(Vec2(movement_direction_x, movement_direction_y))
-        Debug.update("Velocity", f"{self.player.velocity.x}, {self.player.velocity.y}")
+        Debug.update(
+            "Velocity", f"{self.player.velocity.x}, {self.player.velocity.y}"
+        )
 
     def on_key_press(self, key, modifiers):
         self.key_down[key] = True
 
     def on_key_release(self, key, modifiers):
         self.key_down[key] = False
-    def center_camera_to_player(self):
+
+    def center_camera_to_player(self, delta_time):
         # Move the camera to center on the player
         self.camera.position = arcade.math.smerp_2d(
             self.camera.position,
             self.player.position,
-            self.window.delta_time,
+            delta_time,
             FOLLOW_DECAY_CONST,
         )
 
         # Constrain the camera's position to the camera bounds.
         self.camera.view_data.position = arcade.camera.grips.constrain_xy(
             self.camera.view_data, self.camera_bounds
-        )    
-        
+        )
+
     def on_update(self, delta_time):
+        self.center_camera_to_player(delta_time)
+        self.player.delta_time = delta_time
         self.update_player_speed()
         self.physics_engine.update()
-        self.center_camera_to_player()  
+
     def on_resize(self, width: int, height: int):
-        """ Resize window """
+        """Resize window"""
         super().on_resize(width, height)
         # Update the cameras to match the new window size
         self.camera.match_window()
         # The position argument keeps `0, 0` in the bottom left corner.
         self.camera.match_window(position=True)
 
-    
-
 
 def main():
-    """ Main function """
-    window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE)
+    """Main function"""
+    window = arcade.Window(
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_TITLE,
+        update_rate=WINDOW_RATE,
+        draw_rate=WINDOW_RATE,
+    )
     game = GameView()
 
     window.show_view(game)
     arcade.run()
-
 
 
 if __name__ == "__main__":
