@@ -2,6 +2,9 @@ import arcade
 import random
 from pyglet.math import Vec2, clamp
 import time
+from arcade.experimental.crt_filter import CRTFilter
+import os
+import asyncio
 
 # Window settings
 WINDOW_TITLE = "Starting Template"
@@ -35,6 +38,8 @@ RIGHT_KEY = arcade.key.RIGHT
 UP_KEY = arcade.key.UP
 DOWN_KEY = arcade.key.DOWN
 
+PLAYER_ASSETS_DIR = "resources/Players"
+
 
 def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
     return Vec2(point[0], point[1])
@@ -60,10 +65,23 @@ class Debug:
             )
             y += 20
 
+PLAYER_ANIMATION_STRUCTURE = {
+    "Bat": 12,
+    "Death": 6,
+    "FlameThrower": 9,
+    "Gun_Shot": 5,
+    "Knife": 8,
+    "Riffle": 9,
+    "Walk_bat": 6,
+    "Walk_FireThrhrower": 6,
+    "Walk_gun": 6,
+    "Walk_knife": 6,
+    "Walk_riffle": 6
+}
 
 class Entity(arcade.Sprite):
     def __init__(
-        self, image_path, scale=CHARACTER_SCALING, friction=PLAYER_FRICTION, speed=PLAYER_MOVEMENT_SPEED
+        self, image_path, scale=CHARACTER_SCALING, friction=PLAYER_FRICTION, speed=PLAYER_MOVEMENT_SPEED, player_preset="Girl"
     ):
         super().__init__(image_path, scale=scale)
 
@@ -73,6 +91,51 @@ class Entity(arcade.Sprite):
         self.velocity: Vec2 = Vec2(0, 0)
         self.friction = clamp(friction, 0, 1)
         self.delta_time = WINDOW_RATE
+
+        self.player_preset = player_preset
+        self.animation = {}
+        
+        # Load animations
+        asyncio.run(self.load_animation())
+
+    # Example image name: Walk_gun_003.png
+    async def load_animation(self):
+        animation_dict = {}
+        total_frames = 0
+        
+        # Loop through each animation type in the structure
+        for animation_type, frame_count in PLAYER_ANIMATION_STRUCTURE.items():
+            animation_frames = []
+            
+            # Get the directory path for this animation type
+            animation_dir = os.path.join(PLAYER_ASSETS_DIR, self.player_preset, animation_type)
+            
+            # Check if the directory exists
+            if os.path.exists(animation_dir):
+                # Get all PNG files in the directory
+                file_list = [f for f in os.listdir(animation_dir) if f.endswith(".png")]
+                
+                # Sort files alphabetically to ensure correct animation sequence
+                file_list.sort()
+                
+                # Load each frame into the animation list
+                for file_name in file_list:
+                    # Create the full path to the image
+                    image_path = os.path.join(animation_dir, file_name)
+                    # Load the texture
+                    texture = arcade.load_texture(image_path)
+                    # Add the texture to the animation frames
+                    animation_frames.append(texture)
+                
+                # Add the animation frames to the dictionary
+                animation_dict[animation_type] = animation_frames
+                total_frames += len(animation_frames)
+        
+        self.animation = animation_dict
+        # Add summary debug info
+        Debug.update(f"{self.player_preset} Animations", f"{len(animation_dict)} types, {total_frames} frames")
+
+        # print(self.animation)
 
     def move(self, direction: Vec2):
         if direction.length() > 0:
@@ -136,6 +199,15 @@ class GameView(arcade.View):
 
         self.reset()
 
+        # Create the crt filter
+        self.crt_filter = CRTFilter(WINDOW_WIDTH, WINDOW_HEIGHT,
+                                    resolution_down_scale=3.0,
+                                    hard_scan=-6.0,
+                                    hard_pix=-4.0,
+                                    display_warp=Vec2(1.0 / 16.0, 1.0 / 16.0),
+                                    mask_dark=0.5,
+                                    mask_light=1.5)
+
     def create_scene(self) -> arcade.Scene:
         """Set up the game and initialize the variables."""
         scene = arcade.Scene()
@@ -170,13 +242,20 @@ class GameView(arcade.View):
     def on_draw(self):
         """Render the screen."""
 
-        self.clear()
+        self.crt_filter.use()
+        self.crt_filter.clear()
 
         with self.camera.activate():
             self.scene.draw()
 
+        self.window.use()
+        self.clear()
+        self.crt_filter.draw()
+
         with self.camera_gui.activate():
             Debug.render(10, 10)
+
+        
 
     def update_player_speed(self):
         # Calculate speed based on the keys pressed
