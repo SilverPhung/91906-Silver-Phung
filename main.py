@@ -5,6 +5,8 @@ import time
 from arcade.experimental.crt_filter import CRTFilter
 import os
 import asyncio
+from enum import Enum
+import math
 
 # Window settings
 WINDOW_TITLE = "Starting Template"
@@ -39,6 +41,16 @@ UP_KEY = arcade.key.UP
 DOWN_KEY = arcade.key.DOWN
 
 PLAYER_ASSETS_DIR = "resources/Players"
+
+# Animation constants
+RIGHT_FACING = 0
+LEFT_FACING = 1
+DEAD_ZONE = 0.1  # Minimum velocity to consider as moving
+
+class PlayerState(Enum):
+    IDLE = "idle"
+    WALKING = "walking"
+    SHOOTING = "shooting"
 
 
 def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
@@ -94,6 +106,19 @@ class Entity(arcade.Sprite):
 
         self.player_preset = player_preset
         self.animation = {}
+
+        self.current_animation = None
+        self.current_animation_frame = 0
+        self.current_animation_time = 0
+        
+        # State system
+        self.state = PlayerState.IDLE
+        self.facing_direction = RIGHT_FACING
+        self.mouse_position = Vec2(0, 0)
+        
+        # Animation timing
+        self.animation_fps = 10
+        self.frame_duration = 1.0 / self.animation_fps
         
         # Load animations
         asyncio.run(self.load_animation())
@@ -105,7 +130,8 @@ class Entity(arcade.Sprite):
         
         # Loop through each animation type in the structure
         for animation_type, frame_count in PLAYER_ANIMATION_STRUCTURE.items():
-            animation_frames = []
+            # Store animations for both facing directions
+            animation_dict[animation_type] = []
             
             # Get the directory path for this animation type
             animation_dir = os.path.join(PLAYER_ASSETS_DIR, self.player_preset, animation_type)
@@ -118,6 +144,9 @@ class Entity(arcade.Sprite):
                 # Sort files alphabetically to ensure correct animation sequence
                 file_list.sort()
                 
+                # Load animation frames
+                animation_frames = []
+                
                 # Load each frame into the animation list
                 for file_name in file_list:
                     # Create the full path to the image
@@ -127,7 +156,7 @@ class Entity(arcade.Sprite):
                     # Add the texture to the animation frames
                     animation_frames.append(texture)
                 
-                # Add the animation frames to the dictionary
+                # Store the animation frames
                 animation_dict[animation_type] = animation_frames
                 total_frames += len(animation_frames)
         
@@ -157,6 +186,77 @@ class Entity(arcade.Sprite):
             velocity_length, 0, self.speed
         )
         # time.sleep(0.01)
+
+    def animate(self, delta_time: float):
+
+        if self.current_animation is None:
+            return
+
+        self.current_animation_time += delta_time
+
+        # Check if it's time to advance to the next frame
+        if self.current_animation_time >= self.frame_duration:
+            self.current_animation_time = 0
+            
+            # Get the current animation frames
+            if self.current_animation in self.animation:
+                animation_frames = self.animation[self.current_animation]
+                
+                if animation_frames:
+                    # Advance to next frame
+                    self.current_animation_frame = (self.current_animation_frame + 1) % len(animation_frames)
+                    
+                    # Update the sprite's texture
+                    self.texture = animation_frames[self.current_animation_frame]
+                    
+                    # Set the sprite's facing direction
+                    if self.facing_direction == LEFT_FACING:
+                        self.texture = self.texture.flip_horizontally()
+
+    def set_animation(self, animation_name: str):
+        """Set the current animation by name"""
+        if animation_name in self.animation and self.animation[animation_name]:
+            self.current_animation = animation_name
+            self.current_animation_frame = 0
+            self.current_animation_time = 0
+            # Set the first frame immediately
+            self.texture = self.animation[animation_name][0]
+            if self.facing_direction == LEFT_FACING:
+                self.texture = self.texture.flip_horizontally()
+                
+    def update_state(self, delta_time: float):
+        """Update player state based on velocity and other factors"""
+        # Check if player is moving
+        velocity_magnitude = self.velocity.length()
+        
+        if velocity_magnitude > DEAD_ZONE:
+            if self.state != PlayerState.WALKING:
+                self.state = PlayerState.WALKING
+                self.set_animation("Walk_gun")
+        else:
+            if self.state != PlayerState.IDLE:
+                self.state = PlayerState.IDLE
+                self.set_animation("Gun_Shot")  # Using Gun_Shot as idle animation
+                
+    def update_facing_direction(self, mouse_pos: Vec2):
+        """Update facing direction based on mouse position"""
+        self.mouse_position = mouse_pos
+        
+        # Calculate direction from player to mouse
+        direction_x = mouse_pos.x - self.position.x
+        
+        # Update facing direction
+        new_facing = RIGHT_FACING if direction_x >= 0 else LEFT_FACING
+        
+        if new_facing != self.facing_direction:
+            self.facing_direction = new_facing
+            # Update current texture to match new facing direction
+            if self.current_animation and self.current_animation in self.animation:
+                animation_frames = self.animation[self.current_animation]
+                if animation_frames:
+                    self.texture = animation_frames[self.current_animation_frame]
+                    if self.facing_direction == LEFT_FACING:
+                        self.texture = self.texture.flip_horizontally()
 
 
 class GameView(arcade.View):
@@ -196,6 +296,9 @@ class GameView(arcade.View):
             UP_KEY: False,
             DOWN_KEY: False,
         }
+
+        # Mouse position tracking
+        self.mouse_position = Vec2(0, 0)
 
         self.reset()
 
@@ -238,6 +341,10 @@ class GameView(arcade.View):
             self.player,
             self.scene.get_sprite_list("Platforms"),
         )
+        
+        # Initialize player state - state system will handle animations
+        self.player.state = PlayerState.IDLE
+        self.player.set_animation("Gun_Shot")  # Start with idle animation
 
     def on_draw(self):
         """Render the screen."""
@@ -288,6 +395,12 @@ class GameView(arcade.View):
     def on_key_release(self, key, modifiers):
         self.key_down[key] = False
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        """Handle mouse movement"""
+        # Convert screen coordinates to world coordinates
+        world_pos = self.camera.position + Vec2(x - WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2)
+        self.mouse_position = world_pos
+
     def center_camera_to_player(self, delta_time):
         # Move the camera to center on the player
         self.camera.position = arcade.math.smerp_2d(
@@ -301,12 +414,29 @@ class GameView(arcade.View):
         self.camera.view_data.position = arcade.camera.grips.constrain_xy(
             self.camera.view_data, self.camera_bounds
         )
+        
 
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
         self.player.delta_time = delta_time
         self.update_player_speed()
         self.physics_engine.update()
+        
+        # Update player state based on movement
+        self.player.update_state(delta_time)
+        
+        # Update player facing direction based on mouse position
+        self.player.update_facing_direction(self.mouse_position)
+        
+        # Update player animation
+        self.player.animate(delta_time)
+        
+        # Debug info for current animation and state
+        Debug.update("Current Animation", f"{self.player.current_animation}")
+        Debug.update("Animation Frame", f"{self.player.current_animation_frame}")
+        Debug.update("Player State", f"{self.player.state.value}")
+        Debug.update("Facing Direction", f"{'Left' if self.player.facing_direction == LEFT_FACING else 'Right'}")
+        Debug.update("Mouse Position", f"{self.mouse_position.x:.0f}, {self.mouse_position.y:.0f}")
 
     def on_resize(self, width: int, height: int):
         """Resize window"""
