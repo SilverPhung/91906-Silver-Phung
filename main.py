@@ -1,8 +1,9 @@
 import arcade
+from arcade.experimental.crt_filter import CRTFilter
+from arcade.math import rotate_point
 import random
 from pyglet.math import Vec2, clamp
 import time
-from arcade.experimental.crt_filter import CRTFilter
 import os
 import asyncio
 from enum import Enum
@@ -15,7 +16,7 @@ WINDOW_HEIGHT = 720
 WINDOW_RATE = 1 / 144  # 144hz
 
 # Constants
-CHARACTER_SCALING = 1
+CHARACTER_SCALING = 0.3
 TILE_SCALING = 0.5
 COLLECTABLE_SCALING = 0.5
 SPRITE_PIXEL_SIZE = 128
@@ -42,9 +43,6 @@ DOWN_KEY = arcade.key.DOWN
 
 PLAYER_ASSETS_DIR = "resources/Players"
 
-# Animation constants
-RIGHT_FACING = 0
-LEFT_FACING = 1
 DEAD_ZONE = 0.1  # Minimum velocity to consider as moving
 
 class PlayerState(Enum):
@@ -113,7 +111,7 @@ class Entity(arcade.Sprite):
         
         # State system
         self.state = PlayerState.IDLE
-        self.facing_direction = RIGHT_FACING
+        self.facing_direction = 0
         self.mouse_position = Vec2(0, 0)
         
         # Animation timing
@@ -187,6 +185,9 @@ class Entity(arcade.Sprite):
         )
         # time.sleep(0.01)
 
+
+
+
     def animate(self, delta_time: float):
 
         if self.current_animation is None:
@@ -208,10 +209,6 @@ class Entity(arcade.Sprite):
                     
                     # Update the sprite's texture
                     self.texture = animation_frames[self.current_animation_frame]
-                    
-                    # Set the sprite's facing direction
-                    if self.facing_direction == LEFT_FACING:
-                        self.texture = self.texture.flip_horizontally()
 
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
@@ -221,13 +218,11 @@ class Entity(arcade.Sprite):
             self.current_animation_time = 0
             # Set the first frame immediately
             self.texture = self.animation[animation_name][0]
-            if self.facing_direction == LEFT_FACING:
-                self.texture = self.texture.flip_horizontally()
                 
     def update_state(self, delta_time: float):
         """Update player state based on velocity and other factors"""
         # Check if player is moving
-        velocity_magnitude = self.velocity.length()
+        velocity_magnitude = to_vector(self.velocity).length()
         
         if velocity_magnitude > DEAD_ZONE:
             if self.state != PlayerState.WALKING:
@@ -241,23 +236,25 @@ class Entity(arcade.Sprite):
     def update_facing_direction(self, mouse_pos: Vec2):
         """Update facing direction based on mouse position"""
         self.mouse_position = mouse_pos
-        
-        # Calculate direction from player to mouse
-        direction_x = mouse_pos.x - self.position.x
-        
-        # Update facing direction
-        new_facing = RIGHT_FACING if direction_x >= 0 else LEFT_FACING
-        
-        if new_facing != self.facing_direction:
-            self.facing_direction = new_facing
-            # Update current texture to match new facing direction
-            if self.current_animation and self.current_animation in self.animation:
-                animation_frames = self.animation[self.current_animation]
-                if animation_frames:
-                    self.texture = animation_frames[self.current_animation_frame]
-                    if self.facing_direction == LEFT_FACING:
-                        self.texture = self.texture.flip_horizontally()
 
+        # Calculate angle between player and mouse position
+        dx = self.mouse_position.x - self.position[0]
+        dy = self.mouse_position.y - self.position[1]
+        angle = math.atan2(dx, dy) * 180 / math.pi+180
+        self.rotate_around_center(Vec2(self.center_x, self.center_y)+ Vec2(0, 100), angle, True)
+
+    def rotate_around_center(self, base: Vec2, angle: float, change_angle: bool = False):
+        # If change_angle is true, change the sprite's angle
+        if change_angle:
+            self.angle += angle
+
+        # Move the sprite along a circle centered on the point by degrees
+        self.position = to_vector(rotate_point(
+            self.center_x, self.center_y,
+            base.x, base.y, angle))
+
+        self.angle = angle
+    
 
 class GameView(arcade.View):
     """
@@ -425,17 +422,17 @@ class GameView(arcade.View):
         # Update player state based on movement
         self.player.update_state(delta_time)
         
-        # Update player facing direction based on mouse position
-        self.player.update_facing_direction(self.mouse_position)
-        
         # Update player animation
         self.player.animate(delta_time)
+
+        
+        self.player.update_facing_direction(self.mouse_position)
         
         # Debug info for current animation and state
         Debug.update("Current Animation", f"{self.player.current_animation}")
         Debug.update("Animation Frame", f"{self.player.current_animation_frame}")
         Debug.update("Player State", f"{self.player.state.value}")
-        Debug.update("Facing Direction", f"{'Left' if self.player.facing_direction == LEFT_FACING else 'Right'}")
+        Debug.update("Facing Direction", f"{self.player.angle}")
         Debug.update("Mouse Position", f"{self.mouse_position.x:.0f}, {self.mouse_position.y:.0f}")
 
     def on_resize(self, width: int, height: int):

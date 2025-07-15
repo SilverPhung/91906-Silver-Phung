@@ -6,9 +6,9 @@
     "activeFile": "resources/maps/map1.tmx",
     "expandedProjectPaths": [
         "resources/maps",
-        ".",
         "resources/tileset",
         "resources/tiles",
+        ".",
         "resources"
     ],
     "fileStates": {
@@ -43,11 +43,11 @@
             "scaleInEditor": 1
         },
         "resources/maps/map1.tmx": {
-            "scale": 0.5,
-            "selectedLayer": 0,
+            "scale": 0.75,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": -341,
-                "y": 310
+                "x": 647.3333333333333,
+                "y": 2021.333333333333
             }
         },
         "resources/maps/map1.tmx#objects": {
