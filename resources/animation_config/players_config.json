@@ -1,0 +1,362 @@
+{
+  "Girl": {
+    "Bat": {
+      "anchor_x": 373,
+      "anchor_y": 346,
+      "width": 747,
+      "height": 693,
+      "frames": [
+        "resources/Players/Girl/Bat/Bat_000.png",
+        "resources/Players/Girl/Bat/Bat_001.png",
+        "resources/Players/Girl/Bat/Bat_002.png",
+        "resources/Players/Girl/Bat/Bat_003.png",
+        "resources/Players/Girl/Bat/Bat_004.png",
+        "resources/Players/Girl/Bat/Bat_005.png",
+        "resources/Players/Girl/Bat/Bat_006.png",
+        "resources/Players/Girl/Bat/Bat_007.png",
+        "resources/Players/Girl/Bat/Bat_008.png",
+        "resources/Players/Girl/Bat/Bat_009.png",
+        "resources/Players/Girl/Bat/Bat_010.png",
+        "resources/Players/Girl/Bat/Bat_011.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 147,
+      "anchor_y": 163,
+      "width": 295,
+      "height": 326,
+      "frames": [
+        "resources/Players/Girl/Death/death_0006_Girl.png",
+        "resources/Players/Girl/Death/death_0007_Girl.png",
+        "resources/Players/Girl/Death/death_0008_Girl.png",
+        "resources/Players/Girl/Death/death_0009_Girl.png",
+        "resources/Players/Girl/Death/death_0010_Girl.png",
+        "resources/Players/Girl/Death/death_0011_Girl.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "FlameThrower": {
+      "anchor_x": 179,
+      "anchor_y": 497,
+      "width": 359,
+      "height": 994,
+      "frames": [
+        "resources/Players/Girl/FlameThrower/FlameThrower_000.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_001.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_002.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_003.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_004.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_005.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_006.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_007.png",
+        "resources/Players/Girl/FlameThrower/FlameThrower_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Gun_Shot": {
+      "anchor_x": 167,
+      "anchor_y": 289,
+      "width": 334,
+      "height": 579,
+      "frames": [
+        "resources/Players/Girl/Gun_Shot/Gun_Shot_000.png",
+        "resources/Players/Girl/Gun_Shot/Gun_Shot_001.png",
+        "resources/Players/Girl/Gun_Shot/Gun_Shot_002.png",
+        "resources/Players/Girl/Gun_Shot/Gun_Shot_003.png",
+        "resources/Players/Girl/Gun_Shot/Gun_Shot_004.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Knife": {
+      "anchor_x": 304,
+      "anchor_y": 240,
+      "width": 608,
+      "height": 481,
+      "frames": [
+        "resources/Players/Girl/Knife/Knife_000.png",
+        "resources/Players/Girl/Knife/Knife_001.png",
+        "resources/Players/Girl/Knife/Knife_002.png",
+        "resources/Players/Girl/Knife/Knife_003.png",
+        "resources/Players/Girl/Knife/Knife_004.png",
+        "resources/Players/Girl/Knife/Knife_005.png",
+        "resources/Players/Girl/Knife/Knife_006.png",
+        "resources/Players/Girl/Knife/Knife_007.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Riffle": {
+      "anchor_x": 180,
+      "anchor_y": 505,
+      "width": 361,
+      "height": 1010,
+      "frames": [
+        "resources/Players/Girl/Riffle/Riffle_000.png",
+        "resources/Players/Girl/Riffle/Riffle_001.png",
+        "resources/Players/Girl/Riffle/Riffle_002.png",
+        "resources/Players/Girl/Riffle/Riffle_003.png",
+        "resources/Players/Girl/Riffle/Riffle_004.png",
+        "resources/Players/Girl/Riffle/Riffle_005.png",
+        "resources/Players/Girl/Riffle/Riffle_006.png",
+        "resources/Players/Girl/Riffle/Riffle_007.png",
+        "resources/Players/Girl/Riffle/Riffle_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_bat": {
+      "anchor_x": 203,
+      "anchor_y": 205,
+      "width": 407,
+      "height": 410,
+      "frames": [
+        "resources/Players/Girl/Walk_bat/Walk_bat_000.png",
+        "resources/Players/Girl/Walk_bat/Walk_bat_001.png",
+        "resources/Players/Girl/Walk_bat/Walk_bat_002.png",
+        "resources/Players/Girl/Walk_bat/Walk_bat_003.png",
+        "resources/Players/Girl/Walk_bat/Walk_bat_004.png",
+        "resources/Players/Girl/Walk_bat/Walk_bat_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_FireThrhrower": {
+      "anchor_x": 143,
+      "anchor_y": 211,
+      "width": 287,
+      "height": 422,
+      "frames": [
+        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_000.png",
+        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_001.png",
+        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_002.png",
+        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_003.png",
+        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_004.png",
+        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_gun": {
+      "anchor_x": 135,
+      "anchor_y": 175,
+      "width": 271,
+      "height": 351,
+      "frames": [
+        "resources/Players/Girl/Walk_gun/Walk_gun_000.png",
+        "resources/Players/Girl/Walk_gun/Walk_gun_001.png",
+        "resources/Players/Girl/Walk_gun/Walk_gun_002.png",
+        "resources/Players/Girl/Walk_gun/Walk_gun_003.png",
+        "resources/Players/Girl/Walk_gun/Walk_gun_004.png",
+        "resources/Players/Girl/Walk_gun/Walk_gun_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_knife": {
+      "anchor_x": 219,
+      "anchor_y": 171,
+      "width": 438,
+      "height": 342,
+      "frames": [
+        "resources/Players/Girl/Walk_knife/Walk_knife_000.png",
+        "resources/Players/Girl/Walk_knife/Walk_knife_001.png",
+        "resources/Players/Girl/Walk_knife/Walk_knife_002.png",
+        "resources/Players/Girl/Walk_knife/Walk_knife_003.png",
+        "resources/Players/Girl/Walk_knife/Walk_knife_004.png",
+        "resources/Players/Girl/Walk_knife/Walk_knife_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_riffle": {
+      "anchor_x": 143,
+      "anchor_y": 254,
+      "width": 287,
+      "height": 509,
+      "frames": [
+        "resources/Players/Girl/Walk_riffle/Walk_riffle_000.png",
+        "resources/Players/Girl/Walk_riffle/Walk_riffle_001.png",
+        "resources/Players/Girl/Walk_riffle/Walk_riffle_002.png",
+        "resources/Players/Girl/Walk_riffle/Walk_riffle_003.png",
+        "resources/Players/Girl/Walk_riffle/Walk_riffle_004.png",
+        "resources/Players/Girl/Walk_riffle/Walk_riffle_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  },
+  "Man": {
+    "Bat": {
+      "anchor_x": 437,
+      "anchor_y": 413,
+      "width": 874,
+      "height": 826,
+      "frames": [
+        "resources/Players/Man/Bat/Bat_000.png",
+        "resources/Players/Man/Bat/Bat_001.png",
+        "resources/Players/Man/Bat/Bat_002.png",
+        "resources/Players/Man/Bat/Bat_003.png",
+        "resources/Players/Man/Bat/Bat_004.png",
+        "resources/Players/Man/Bat/Bat_005.png",
+        "resources/Players/Man/Bat/Bat_006.png",
+        "resources/Players/Man/Bat/Bat_007.png",
+        "resources/Players/Man/Bat/Bat_008.png",
+        "resources/Players/Man/Bat/Bat_009.png",
+        "resources/Players/Man/Bat/Bat_010.png",
+        "resources/Players/Man/Bat/Bat_011.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 166,
+      "anchor_y": 189,
+      "width": 332,
+      "height": 378,
+      "frames": [
+        "resources/Players/Man/Death/death_0000_Man.png",
+        "resources/Players/Man/Death/death_0001_Man.png",
+        "resources/Players/Man/Death/death_0002_Man.png",
+        "resources/Players/Man/Death/death_0003_Man.png",
+        "resources/Players/Man/Death/death_0004_Man.png",
+        "resources/Players/Man/Death/death_0005_Man.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "FlameThrower": {
+      "anchor_x": 197,
+      "anchor_y": 551,
+      "width": 394,
+      "height": 1102,
+      "frames": [
+        "resources/Players/Man/FlameThrower/FlameThrower_000.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_001.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_002.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_003.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_004.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_005.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_006.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_007.png",
+        "resources/Players/Man/FlameThrower/FlameThrower_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Gun_Shot": {
+      "anchor_x": 0,
+      "anchor_y": 0,
+      "width": 368,
+      "height": 638,
+      "frames": [
+        "resources/Players/Man/Gun_Shot/Gun_Shot_000.png",
+        "resources/Players/Man/Gun_Shot/Gun_Shot_001.png",
+        "resources/Players/Man/Gun_Shot/Gun_Shot_002.png",
+        "resources/Players/Man/Gun_Shot/Gun_Shot_003.png",
+        "resources/Players/Man/Gun_Shot/Gun_Shot_004.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Knife": {
+      "anchor_x": 369,
+      "anchor_y": 276,
+      "width": 738,
+      "height": 553,
+      "frames": [
+        "resources/Players/Man/Knife/Knife_000.png",
+        "resources/Players/Man/Knife/Knife_001.png",
+        "resources/Players/Man/Knife/Knife_002.png",
+        "resources/Players/Man/Knife/Knife_003.png",
+        "resources/Players/Man/Knife/Knife_004.png",
+        "resources/Players/Man/Knife/Knife_005.png",
+        "resources/Players/Man/Knife/Knife_006.png",
+        "resources/Players/Man/Knife/Knife_007.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Riffle": {
+      "anchor_x": 196,
+      "anchor_y": 541,
+      "width": 393,
+      "height": 1082,
+      "frames": [
+        "resources/Players/Man/Riffle/Riffle_000.png",
+        "resources/Players/Man/Riffle/Riffle_001.png",
+        "resources/Players/Man/Riffle/Riffle_002.png",
+        "resources/Players/Man/Riffle/Riffle_003.png",
+        "resources/Players/Man/Riffle/Riffle_004.png",
+        "resources/Players/Man/Riffle/Riffle_005.png",
+        "resources/Players/Man/Riffle/Riffle_006.png",
+        "resources/Players/Man/Riffle/Riffle_007.png",
+        "resources/Players/Man/Riffle/Riffle_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_bat": {
+      "anchor_x": 252,
+      "anchor_y": 245,
+      "width": 504,
+      "height": 491,
+      "frames": [
+        "resources/Players/Man/Walk_bat/Walk_bat_000.png",
+        "resources/Players/Man/Walk_bat/Walk_bat_001.png",
+        "resources/Players/Man/Walk_bat/Walk_bat_002.png",
+        "resources/Players/Man/Walk_bat/Walk_bat_003.png",
+        "resources/Players/Man/Walk_bat/Walk_bat_004.png",
+        "resources/Players/Man/Walk_bat/Walk_bat_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_firethrower": {
+      "anchor_x": 177,
+      "anchor_y": 263,
+      "width": 354,
+      "height": 526,
+      "frames": [
+        "resources/Players/Man/Walk_firethrower/Walk_firethrower_000.png",
+        "resources/Players/Man/Walk_firethrower/Walk_firethrower_001.png",
+        "resources/Players/Man/Walk_firethrower/Walk_firethrower_002.png",
+        "resources/Players/Man/Walk_firethrower/Walk_firethrower_003.png",
+        "resources/Players/Man/Walk_firethrower/Walk_firethrower_004.png",
+        "resources/Players/Man/Walk_firethrower/Walk_firethrower_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_gun": {
+      "anchor_x": 166,
+      "anchor_y": 206,
+      "width": 332,
+      "height": 413,
+      "frames": [
+        "resources/Players/Man/Walk_gun/Walk_gun_000.png",
+        "resources/Players/Man/Walk_gun/Walk_gun_001.png",
+        "resources/Players/Man/Walk_gun/Walk_gun_002.png",
+        "resources/Players/Man/Walk_gun/Walk_gun_003.png",
+        "resources/Players/Man/Walk_gun/Walk_gun_004.png",
+        "resources/Players/Man/Walk_gun/Walk_gun_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_knife": {
+      "anchor_x": 271,
+      "anchor_y": 201,
+      "width": 542,
+      "height": 402,
+      "frames": [
+        "resources/Players/Man/Walk_knife/Walk_knife_000.png",
+        "resources/Players/Man/Walk_knife/Walk_knife_001.png",
+        "resources/Players/Man/Walk_knife/Walk_knife_002.png",
+        "resources/Players/Man/Walk_knife/Walk_knife_003.png",
+        "resources/Players/Man/Walk_knife/Walk_knife_004.png",
+        "resources/Players/Man/Walk_knife/Walk_knife_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk_riffle": {
+      "anchor_x": 177,
+      "anchor_y": 293,
+      "width": 354,
+      "height": 586,
+      "frames": [
+        "resources/Players/Man/Walk_riffle/Walk_riffle_000.png",
+        "resources/Players/Man/Walk_riffle/Walk_riffle_001.png",
+        "resources/Players/Man/Walk_riffle/Walk_riffle_002.png",
+        "resources/Players/Man/Walk_riffle/Walk_riffle_003.png",
+        "resources/Players/Man/Walk_riffle/Walk_riffle_004.png",
+        "resources/Players/Man/Walk_riffle/Walk_riffle_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  }
+}

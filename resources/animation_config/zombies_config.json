@@ -1,0 +1,320 @@
+{
+  "Army_zombie": {
+    "Attack": {
+      "anchor_x": 413,
+      "anchor_y": 386,
+      "width": 826,
+      "height": 772,
+      "frames": [
+        "resources/Zombies/Army_zombie/Attack/attack_000.png",
+        "resources/Zombies/Army_zombie/Attack/attack_001.png",
+        "resources/Zombies/Army_zombie/Attack/attack_002.png",
+        "resources/Zombies/Army_zombie/Attack/attack_003.png",
+        "resources/Zombies/Army_zombie/Attack/attack_004.png",
+        "resources/Zombies/Army_zombie/Attack/attack_005.png",
+        "resources/Zombies/Army_zombie/Attack/attack_006.png",
+        "resources/Zombies/Army_zombie/Attack/attack_007.png",
+        "resources/Zombies/Army_zombie/Attack/attack_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 326,
+      "anchor_y": 477,
+      "width": 653,
+      "height": 955,
+      "frames": [
+        "resources/Zombies/Army_zombie/Death/death_000.png",
+        "resources/Zombies/Army_zombie/Death/death_001.png",
+        "resources/Zombies/Army_zombie/Death/death_002.png",
+        "resources/Zombies/Army_zombie/Death/death_003.png",
+        "resources/Zombies/Army_zombie/Death/death_004.png",
+        "resources/Zombies/Army_zombie/Death/death_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk": {
+      "anchor_x": 243,
+      "anchor_y": 276,
+      "width": 487,
+      "height": 552,
+      "frames": [
+        "resources/Zombies/Army_zombie/Walk/walk_000.png",
+        "resources/Zombies/Army_zombie/Walk/walk_001.png",
+        "resources/Zombies/Army_zombie/Walk/walk_002.png",
+        "resources/Zombies/Army_zombie/Walk/walk_003.png",
+        "resources/Zombies/Army_zombie/Walk/walk_004.png",
+        "resources/Zombies/Army_zombie/Walk/walk_005.png",
+        "resources/Zombies/Army_zombie/Walk/walk_006.png",
+        "resources/Zombies/Army_zombie/Walk/walk_007.png",
+        "resources/Zombies/Army_zombie/Walk/walk_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  },
+  "Cop_Zombie": {
+    "Attack": {
+      "anchor_x": 413,
+      "anchor_y": 364,
+      "width": 827,
+      "height": 729,
+      "frames": [
+        "resources/Zombies/Cop_Zombie/Attack/attack_000.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_001.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_002.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_003.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_004.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_005.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_006.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_007.png",
+        "resources/Zombies/Cop_Zombie/Attack/attack_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 313,
+      "anchor_y": 484,
+      "width": 626,
+      "height": 968,
+      "frames": [
+        "resources/Zombies/Cop_Zombie/Death/daeth_000.png",
+        "resources/Zombies/Cop_Zombie/Death/daeth_001.png",
+        "resources/Zombies/Cop_Zombie/Death/daeth_002.png",
+        "resources/Zombies/Cop_Zombie/Death/daeth_003.png",
+        "resources/Zombies/Cop_Zombie/Death/daeth_004.png",
+        "resources/Zombies/Cop_Zombie/Death/daeth_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk": {
+      "anchor_x": 250,
+      "anchor_y": 276,
+      "width": 501,
+      "height": 552,
+      "frames": [
+        "resources/Zombies/Cop_Zombie/Walk/walk_000.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_001.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_002.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_003.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_004.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_005.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_006.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_007.png",
+        "resources/Zombies/Cop_Zombie/Walk/walk_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  },
+  "Zombie1_female": {
+    "Attack": {
+      "anchor_x": 318,
+      "anchor_y": 303,
+      "width": 637,
+      "height": 606,
+      "frames": [
+        "resources/Zombies/Zombie1_female/Attack/Attack_000.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_001.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_002.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_003.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_004.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_005.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_006.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_007.png",
+        "resources/Zombies/Zombie1_female/Attack/Attack_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 287,
+      "anchor_y": 401,
+      "width": 575,
+      "height": 802,
+      "frames": [
+        "resources/Zombies/Zombie1_female/Death/Death_000.png",
+        "resources/Zombies/Zombie1_female/Death/Death_001.png",
+        "resources/Zombies/Zombie1_female/Death/Death_002.png",
+        "resources/Zombies/Zombie1_female/Death/Death_003.png",
+        "resources/Zombies/Zombie1_female/Death/Death_004.png",
+        "resources/Zombies/Zombie1_female/Death/Death_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk": {
+      "anchor_x": 192,
+      "anchor_y": 224,
+      "width": 384,
+      "height": 448,
+      "frames": [
+        "resources/Zombies/Zombie1_female/Walk/Walk_000.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_001.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_002.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_003.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_004.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_005.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_006.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_007.png",
+        "resources/Zombies/Zombie1_female/Walk/Walk_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  },
+  "Zombie2_female": {
+    "Attack": {
+      "anchor_x": 331,
+      "anchor_y": 284,
+      "width": 662,
+      "height": 568,
+      "frames": [
+        "resources/Zombies/Zombie2_female/Attack/Attack_000.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_001.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_002.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_003.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_004.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_005.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_006.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_007.png",
+        "resources/Zombies/Zombie2_female/Attack/Attack_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 299,
+      "anchor_y": 398,
+      "width": 598,
+      "height": 796,
+      "frames": [
+        "resources/Zombies/Zombie2_female/Death/Death_000.png",
+        "resources/Zombies/Zombie2_female/Death/Death_001.png",
+        "resources/Zombies/Zombie2_female/Death/Death_002.png",
+        "resources/Zombies/Zombie2_female/Death/Death_003.png",
+        "resources/Zombies/Zombie2_female/Death/Death_004.png",
+        "resources/Zombies/Zombie2_female/Death/Death_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk": {
+      "anchor_x": 192,
+      "anchor_y": 222,
+      "width": 384,
+      "height": 444,
+      "frames": [
+        "resources/Zombies/Zombie2_female/Walk/Walk_000.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_001.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_002.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_003.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_004.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_005.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_006.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_007.png",
+        "resources/Zombies/Zombie2_female/Walk/Walk_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  },
+  "Zombie3_male": {
+    "Attack": {
+      "anchor_x": 399,
+      "anchor_y": 294,
+      "width": 798,
+      "height": 589,
+      "frames": [
+        "resources/Zombies/Zombie3_male/Attack/Attack_000.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_001.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_002.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_003.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_004.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_005.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_006.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_007.png",
+        "resources/Zombies/Zombie3_male/Attack/Attack_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 352,
+      "anchor_y": 466,
+      "width": 704,
+      "height": 932,
+      "frames": [
+        "resources/Zombies/Zombie3_male/Death/Death_000.png",
+        "resources/Zombies/Zombie3_male/Death/Death_001.png",
+        "resources/Zombies/Zombie3_male/Death/Death_002.png",
+        "resources/Zombies/Zombie3_male/Death/Death_003.png",
+        "resources/Zombies/Zombie3_male/Death/Death_004.png",
+        "resources/Zombies/Zombie3_male/Death/Death_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk": {
+      "anchor_x": 255,
+      "anchor_y": 251,
+      "width": 511,
+      "height": 502,
+      "frames": [
+        "resources/Zombies/Zombie3_male/Walk/walk_000.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_001.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_002.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_003.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_004.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_005.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_006.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_007.png",
+        "resources/Zombies/Zombie3_male/Walk/walk_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  },
+  "Zombie4_male": {
+    "Attack": {
+      "anchor_x": 390,
+      "anchor_y": 304,
+      "width": 781,
+      "height": 608,
+      "frames": [
+        "resources/Zombies/Zombie4_male/Attack/Attack_000.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_001.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_002.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_003.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_004.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_005.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_006.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_007.png",
+        "resources/Zombies/Zombie4_male/Attack/Attack_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Death": {
+      "anchor_x": 351,
+      "anchor_y": 450,
+      "width": 703,
+      "height": 901,
+      "frames": [
+        "resources/Zombies/Zombie4_male/Death/Death_000.png",
+        "resources/Zombies/Zombie4_male/Death/Death_001.png",
+        "resources/Zombies/Zombie4_male/Death/Death_002.png",
+        "resources/Zombies/Zombie4_male/Death/Death_003.png",
+        "resources/Zombies/Zombie4_male/Death/Death_004.png",
+        "resources/Zombies/Zombie4_male/Death/Death_005.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    },
+    "Walk": {
+      "anchor_x": 247,
+      "anchor_y": 251,
+      "width": 495,
+      "height": 503,
+      "frames": [
+        "resources/Zombies/Zombie4_male/Walk/Walk_000.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_001.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_002.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_003.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_004.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_005.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_006.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_007.png",
+        "resources/Zombies/Zombie4_male/Walk/Walk_008.png"
+      ],
+      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+    }
+  }
+}

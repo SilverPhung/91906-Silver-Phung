@@ -1,0 +1,28 @@
+{
+  "Girl": {
+    "Walk_gun": {
+      "anchor_x": 64,
+      "anchor_y": 80,
+      "width": 128,
+      "height": 128,
+      "frames": [
+        "resources/Players/Girl/Walk_gun/Walk_gun_000.png",
+        "resources/Players/Girl/Walk_gun/Walk_gun_001.png",
+        "resources/Players/Girl/Walk_gun/Walk_gun_002.png"
+      ],
+      "notes": "Set anchor_x and anchor_y to the character's center of mass for proper rotation"
+    },
+    "Riffle": {
+      "anchor_x": 64,
+      "anchor_y": 80,
+      "width": 128,
+      "height": 128,
+      "frames": [
+        "resources/Players/Girl/Riffle/Riffle_000.png",
+        "resources/Players/Girl/Riffle/Riffle_001.png",
+        "resources/Players/Girl/Riffle/Riffle_002.png"
+      ],
+      "notes": "Each animation folder has its own anchor point settings"
+    }
+  }
+}
