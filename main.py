@@ -1,6 +1,8 @@
 import arcade
 from arcade.experimental.crt_filter import CRTFilter
 from arcade.math import rotate_point
+from arcade.texture.transforms import Rotate180Transform, Transform, VertexOrder
+from arcade.types import Point2List
 import random
 from pyglet.math import Vec2, clamp
 import time
@@ -92,12 +94,14 @@ def load_character_config(config_file: str) -> dict:
         print(f"Error parsing JSON file {config_file}: {e}")
         return {}
 
+
+
 def load_texture_with_anchor(frame_path: str, animation_config: dict) -> tuple[arcade.Texture, tuple[float, float]]:
     """Load a texture and return both texture and center offset from animation configuration."""
     try:
         # Load texture normally (without anchor parameters which aren't supported)
         texture = arcade.load_texture(frame_path)
-        
+
         # Calculate offset from image center to desired center of mass
         image_center_x = animation_config.get("width", 128) / 2
         image_center_y = animation_config.get("height", 128) / 2
@@ -105,7 +109,7 @@ def load_texture_with_anchor(frame_path: str, animation_config: dict) -> tuple[a
         # Get desired center of mass from config (default to center if not specified)
         anchor_x = animation_config.get("anchor_x", image_center_x)
         anchor_y = animation_config.get("anchor_y", image_center_y)
-        print(f"Anchor: {anchor_x}, {anchor_y}")
+        # print(f"Anchor: {anchor_x}, {anchor_y}")
         
         # Calculate offset (how much to move sprite from its current center)
         offset_x = image_center_x - anchor_x
@@ -125,22 +129,31 @@ def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
 
 class Debug:
     debug_dict = {}
+    text_objects = {}
 
     @staticmethod
     def update(key: str, text: str):
         Debug.debug_dict[key] = text
+        if key in Debug.text_objects:
+            Debug.text_objects[key].text = f"{key}: {text}"
+        else:
+            # Create a new Text object if it doesn't exist
+            # Position will be set in render, but it needs an initial position
+            Debug.text_objects[key] = arcade.Text(
+                f"{key}: {text}",
+                0, # placeholder x
+                0, # placeholder y
+                arcade.csscolor.WHITE,
+                18,
+            )
 
     @staticmethod
     def render(x: float, y: float):
 
-        for key, text in Debug.debug_dict.items():
-            arcade.draw_text(
-                f"{key}: {text}",
-                x,
-                y,
-                arcade.csscolor.WHITE,
-                18,
-            )
+        for key, text_object in Debug.text_objects.items():
+            text_object.x = x
+            text_object.y = y
+            text_object.draw()
             y += 20
 
 PLAYER_ANIMATION_STRUCTURE = {
@@ -158,6 +171,45 @@ PLAYER_ANIMATION_STRUCTURE = {
     "Walk_riffle": 6
 }
 
+class Character_Display_Sprite(arcade.Sprite):
+    class AnimationType(Enum):
+        MOVEMENT = "Movement"
+        ATTACK = "Attack"
+        DEATH = "Death"
+        
+
+    def __init__(self, image_path, scale=CHARACTER_SCALING, pivot_point: Vec2 = Vec2(0, 0)):
+        super().__init__(image_path, scale=scale)
+        self.position: Vec2 = Vec2(0, 0)
+        self.pivot_point = pivot_point
+        self.animations = {}
+
+        # Basic animation properties
+        self.animation = {}
+        self.current_animation = None
+        self.current_animation_frame = 0
+        self.current_animation_time = 0
+        self.animation_fps = 10
+        self.frame_duration = 1.0 / self.animation_fps
+        
+        # Base state
+        self.state = EntityState.IDLE
+        self.facing_direction = 0
+
+    def load_animation_sequence(self, name:str, animation_type: AnimationType, animation_sequence: list[tuple[str, Vec2]], idle_texture: str):
+        # animation_sequence is a list of tuples, each containing a texture and a pivot point
+        # Load a sequence of textures, and save it to the animation dictionary
+        """
+        "animations":{
+            "Gun":{
+                "type": "Movement",
+                "Sequence":[Texture...],
+                "Idle": Texture
+            },
+            ...
+        }
+        """
+
 class Entity(arcade.Sprite):
     """Base class for all entities in the game (players, enemies)"""
     
@@ -171,18 +223,10 @@ class Entity(arcade.Sprite):
         self.velocity: Vec2 = Vec2(0, 0)
         self.friction = clamp(friction, 0, 1)
         self.delta_time = WINDOW_RATE
+
+        self.display_sprite = Character_Display_Sprite(image_path, scale=scale)
         
-        # Basic animation properties
-        self.animation = {}
-        self.current_animation = None
-        self.current_animation_frame = 0
-        self.current_animation_time = 0
-        self.animation_fps = 10
-        self.frame_duration = 1.0 / self.animation_fps
         
-        # Base state
-        self.state = EntityState.IDLE
-        self.facing_direction = 0
 
     def move(self, direction: Vec2):
         """Move the entity in the given direction"""
@@ -225,7 +269,7 @@ class Entity(arcade.Sprite):
                     self.current_animation_frame = (self.current_animation_frame + 1) % len(animation_frames)
                     
                     # Update the sprite's texture
-                    self.texture = animation_frames[self.current_animation_frame]
+                    self.texture = animation_frames[self.current_animation_frame][0]
 
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
@@ -234,7 +278,7 @@ class Entity(arcade.Sprite):
             self.current_animation_frame = 0
             self.current_animation_time = 0
             # Set the first frame immediately
-            self.texture = self.animation[animation_name][0]
+            self.texture = self.animation[animation_name][0][0]
     
     def update_state(self, delta_time: float):
         """Update entity state based on velocity and other factors - to be overridden by child classes"""
@@ -285,8 +329,8 @@ class Player(Entity):
             frame_paths = animation_config.get("frames", [])
             
             for frame_path in frame_paths:
-                texture = load_texture_with_anchor(frame_path, animation_config)[0] # Only get texture
-                textures.append(texture)
+                texture, offset = load_texture_with_anchor(frame_path, animation_config)
+                textures.append((texture, offset)) # Store texture and offset as a tuple
                 total_frames += 1
             
             animation_dict[animation_name] = textures
@@ -296,7 +340,7 @@ class Player(Entity):
                 weapon_type = animation_name[5:]  # Remove "Walk_" prefix
                 idle_key = f"Idle_{weapon_type}"
                 if textures:
-                    animation_dict[idle_key] = [textures[0]]
+                    animation_dict[idle_key] = [textures[0]] # Store texture and offset as a tuple for idle
                     total_frames += 1
         
         self.animation = animation_dict
@@ -474,15 +518,15 @@ class Enemy(Entity):
             frame_paths = animation_config.get("frames", [])
             
             for frame_path in frame_paths:
-                texture = load_texture_with_anchor(frame_path, animation_config)[0] # Only get texture
-                textures.append(texture)
+                texture, offset = load_texture_with_anchor(frame_path, animation_config)
+                textures.append((texture, offset)) # Store texture and offset as a tuple
                 total_frames += 1
             
             animation_dict[animation_name] = textures
             
             # Create idle animation from first frame of walk animation
             if animation_name == "Walk" and textures:
-                animation_dict["Idle"] = [textures[0]]
+                animation_dict["Idle"] = [textures[0]] # Store texture and offset as a tuple for idle
                 total_frames += 1
         
         self.animation = animation_dict
