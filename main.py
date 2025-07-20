@@ -1,7 +1,11 @@
 import arcade
 from arcade.experimental.crt_filter import CRTFilter
 from arcade.math import rotate_point
-from arcade.texture.transforms import Rotate180Transform, Transform, VertexOrder
+from arcade.texture.transforms import (
+    Rotate180Transform,
+    Transform,
+    VertexOrder,
+)
 from arcade.types import Point2List
 import random
 from pyglet.math import Vec2, clamp
@@ -20,7 +24,7 @@ WINDOW_RATE = 1 / 144  # 144hz
 
 # Constants
 CHARACTER_SCALING = 0.3
-TILE_SCALING = 0.5
+TILE_SCALING = 2
 COLLECTABLE_SCALING = 0.5
 SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = SPRITE_PIXEL_SIZE * TILE_SCALING
@@ -51,6 +55,11 @@ D_KEY = arcade.key.D
 # Fullscreen toggle
 FULLSCREEN_KEY = arcade.key.F11
 
+# Camera zoom constants
+ZOOM_STEP = 0.1
+MAX_ZOOM = 2.0
+MIN_ZOOM = 0.5
+
 # Asset directories
 PLAYER_ASSETS_DIR = "resources/Players"
 ZOMBIE_ASSETS_DIR = "resources/Zombies"
@@ -61,11 +70,13 @@ ZOMBIE_CONFIG_FILE = "resources/animation_config/zombies_config.json"
 
 DEAD_ZONE = 0.1  # Minimum velocity to consider as moving
 
+
 class EntityState(Enum):
     IDLE = "idle"
     WALKING = "walking"
     ATTACKING = "attacking"
     DYING = "dying"
+
 
 class PlayerState(Enum):
     IDLE = "idle"
@@ -74,6 +85,7 @@ class PlayerState(Enum):
     ATTACKING = "attacking"
     DYING = "dying"
 
+
 class WeaponType(Enum):
     BAT = "Bat"
     GUN = "Gun"
@@ -81,22 +93,26 @@ class WeaponType(Enum):
     RIFLE = "Riffle"
     FLAMETHROWER = "FlameThrower"
 
+
 def load_character_config(config_file: str) -> dict:
     """Load character configuration from JSON file."""
     try:
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             return json.load(f)
     except FileNotFoundError:
         print(f"Configuration file not found: {config_file}")
-        print("Please run character_analyzer.py first to generate configuration files")
+        print(
+            "Please run character_analyzer.py first to generate configuration files"
+        )
         return {}
     except json.JSONDecodeError as e:
         print(f"Error parsing JSON file {config_file}: {e}")
         return {}
 
 
-
-def load_texture_with_anchor(frame_path: str, animation_config: dict) -> tuple[arcade.Texture, tuple[float, float]]:
+def load_texture_with_anchor(
+    frame_path: str, animation_config: dict
+) -> tuple[arcade.Texture, tuple[float, float]]:
     """Load a texture and return both texture and center offset from animation configuration."""
     try:
         # Load texture normally (without anchor parameters which aren't supported)
@@ -105,23 +121,26 @@ def load_texture_with_anchor(frame_path: str, animation_config: dict) -> tuple[a
         # Calculate offset from image center to desired center of mass
         image_center_x = animation_config.get("width", 128) / 2
         image_center_y = animation_config.get("height", 128) / 2
-        
+
         # Get desired center of mass from config (default to center if not specified)
         anchor_x = animation_config.get("anchor_x", image_center_x)
         anchor_y = animation_config.get("anchor_y", image_center_y)
         # print(f"Anchor: {anchor_x}, {anchor_y}")
-        
+
         # Calculate offset (how much to move sprite from its current center)
         offset_x = image_center_x - anchor_x
         offset_y = image_center_y - anchor_y
-        
+
         return texture, (offset_x, offset_y)
-        
+
     except Exception as e:
         print(f"Error loading texture {frame_path}: {e}")
         # Return a fallback texture with no offset
-        fallback_texture = arcade.make_soft_square_texture(32, arcade.color.RED, name="fallback")
+        fallback_texture = arcade.make_soft_square_texture(
+            32, arcade.color.RED, name="fallback"
+        )
         return fallback_texture, (0, 0)
+
 
 def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
     return Vec2(point[0], point[1])
@@ -141,8 +160,8 @@ class Debug:
             # Position will be set in render, but it needs an initial position
             Debug.text_objects[key] = arcade.Text(
                 f"{key}: {text}",
-                0, # placeholder x
-                0, # placeholder y
+                0,  # placeholder x
+                0,  # placeholder y
                 arcade.csscolor.WHITE,
                 18,
             )
@@ -156,6 +175,7 @@ class Debug:
             text_object.draw()
             y += 20
 
+
 PLAYER_ANIMATION_STRUCTURE = {
     "Bat": 12,
     "Death": 6,
@@ -168,53 +188,19 @@ PLAYER_ANIMATION_STRUCTURE = {
     "Walk_FireThrhrower": 6,
     "Walk_gun": 6,
     "Walk_knife": 6,
-    "Walk_riffle": 6
+    "Walk_riffle": 6,
 }
 
-class Character_Display_Sprite(arcade.Sprite):
-    class AnimationType(Enum):
-        MOVEMENT = "Movement"
-        ATTACK = "Attack"
-        DEATH = "Death"
-        
-
-    def __init__(self, image_path, scale=CHARACTER_SCALING, pivot_point: Vec2 = Vec2(0, 0)):
-        super().__init__(image_path, scale=scale)
-        self.position: Vec2 = Vec2(0, 0)
-        self.pivot_point = pivot_point
-        self.animations = {}
-
-        # Basic animation properties
-        self.animation = {}
-        self.current_animation = None
-        self.current_animation_frame = 0
-        self.current_animation_time = 0
-        self.animation_fps = 10
-        self.frame_duration = 1.0 / self.animation_fps
-        
-        # Base state
-        self.state = EntityState.IDLE
-        self.facing_direction = 0
-
-    def load_animation_sequence(self, name:str, animation_type: AnimationType, animation_sequence: list[tuple[str, Vec2]], idle_texture: str):
-        # animation_sequence is a list of tuples, each containing a texture and a pivot point
-        # Load a sequence of textures, and save it to the animation dictionary
-        """
-        "animations":{
-            "Gun":{
-                "type": "Movement",
-                "Sequence":[Texture...],
-                "Idle": Texture
-            },
-            ...
-        }
-        """
 
 class Entity(arcade.Sprite):
     """Base class for all entities in the game (players, enemies)"""
-    
+
     def __init__(
-        self, image_path, scale=CHARACTER_SCALING, friction=PLAYER_FRICTION, speed=PLAYER_MOVEMENT_SPEED
+        self,
+        image_path,
+        scale=CHARACTER_SCALING,
+        friction=PLAYER_FRICTION,
+        speed=PLAYER_MOVEMENT_SPEED,
     ):
         super().__init__(image_path, scale=scale)
 
@@ -224,9 +210,129 @@ class Entity(arcade.Sprite):
         self.friction = clamp(friction, 0, 1)
         self.delta_time = WINDOW_RATE
 
-        self.display_sprite = Character_Display_Sprite(image_path, scale=scale)
-        
-        
+        # Animation properties moved from Character_Display_Sprite
+        self.animations = {}
+        self.current_animation = None
+        self.current_animation_frame = 0
+        self.current_animation_time = 0
+        self.animation_fps = 10
+        self.frame_duration = 1.0 / self.animation_fps
+
+        # Base state
+        self.state = EntityState.IDLE
+        self.facing_direction = 0
+
+    class AnimationType(Enum):
+        MOVEMENT = "Movement"
+        ATTACK = "Attack"
+        DEATH = "Death"
+
+    def _apply_texture_and_offset(
+        self, texture: arcade.Texture, offset: tuple[float, float]
+    ):
+        """Helper to set texture and apply offset to center_x, center_y"""
+        self.texture = texture
+        self.sync_hit_box_to_texture()
+        # self.center_x = self.center_x + offset[0] * self.scale_x
+        # self.center_y = self.center_y + offset[1] * self.scale_y
+
+    def load_animation_sequence(
+        self,
+        name: str,
+        animation_type: AnimationType,
+        animation_sequence: list[tuple[arcade.Texture, tuple[float, float]]],
+        idle_texture: tuple[arcade.Texture, tuple[float, float]] | None,
+    ):
+        self.animations[name] = {
+            "type": animation_type,
+            "sequence": [],
+            "idle": None,
+        }
+
+        loaded_sequence = []
+        for texture, offset in animation_sequence:
+            loaded_sequence.append((texture, offset))
+
+        self.animations[name]["sequence"] = loaded_sequence
+
+        # Set idle texture (this is also already an arcade.Texture and offset tuple)
+        self.animations[name]["idle"] = idle_texture
+
+        # If no current animation is set, or if this is the first animation loaded, set it as the current one
+        if self.current_animation is None:
+            self.set_animation(name)
+
+    def animate(self, delta_time: float):
+        """Update animation based on delta time"""
+        if self.current_animation is None:
+            return
+
+        self.current_animation_time += delta_time
+
+        # Check if it's time to advance to the next frame
+        if self.current_animation_time >= self.frame_duration:
+            self.current_animation_time = 0
+
+            # Get the current animation frames
+            if self.current_animation in self.animations:
+                animation_data = self.animations[self.current_animation]
+                animation_frames = animation_data.get("sequence", [])
+
+                if animation_frames:
+                    # Advance to next frame
+                    self.current_animation_frame = (
+                        self.current_animation_frame + 1
+                    ) % len(animation_frames)
+
+                    # Check if animation has completed a full loop (for non-looping animations)
+                    is_attack_animation = (
+                        animation_data.get("type")
+                        == Entity.AnimationType.ATTACK
+                    )
+                    is_last_frame = (
+                        self.current_animation_frame == 0
+                    )  # Back to first frame means a loop completed
+
+                    # Removed state change from Entity.animate, handled in update_state of subclasses
+                    # if is_attack_animation and is_last_frame and len(animation_frames) > 1:
+                    #     self.state = EntityState.IDLE
+                    #     self.set_animation_for_state()
+
+                    # Update the sprite's texture and apply offset
+                    texture, offset = animation_frames[
+                        self.current_animation_frame
+                    ]
+                    self._apply_texture_and_offset(texture, offset)
+
+    def set_animation(self, animation_name: str):
+        """Set the current animation by name"""
+        if animation_name in self.animations and self.animations[
+            animation_name
+        ].get("sequence"):
+            self.current_animation = animation_name
+            self.current_animation_frame = 0
+            self.current_animation_time = 0
+            # Set the first frame immediately
+            animation_data = self.animations[animation_name]
+            first_frame_texture, first_frame_offset = animation_data[
+                "sequence"
+            ][0]
+            self._apply_texture_and_offset(
+                first_frame_texture, first_frame_offset
+            )
+        elif animation_name in self.animations and self.animations[
+            animation_name
+        ].get("idle"):
+            # If it's an idle animation, it might only have an "idle" texture and no sequence
+            self.current_animation = animation_name
+            self.current_animation_frame = 0
+            self.current_animation_time = 0
+            idle_texture, idle_offset = self.animations[animation_name]["idle"]
+            self._apply_texture_and_offset(idle_texture, idle_offset)
+        else:
+            print(
+                f"Warning: Animation '{animation_name}' not found or has no frames."
+            )
 
     def move(self, direction: Vec2):
         """Move the entity in the given direction"""
@@ -249,204 +355,280 @@ class Entity(arcade.Sprite):
             velocity_length, 0, self.speed
         )
 
-    def animate(self, delta_time: float):
-        """Update animation based on delta time"""
-        if self.current_animation is None:
-            return
-
-        self.current_animation_time += delta_time
-
-        # Check if it's time to advance to the next frame
-        if self.current_animation_time >= self.frame_duration:
-            self.current_animation_time = 0
-            
-            # Get the current animation frames
-            if self.current_animation in self.animation:
-                animation_frames = self.animation[self.current_animation]
-                
-                if animation_frames:
-                    # Advance to next frame
-                    self.current_animation_frame = (self.current_animation_frame + 1) % len(animation_frames)
-                    
-                    # Update the sprite's texture
-                    self.texture = animation_frames[self.current_animation_frame][0]
-
-    def set_animation(self, animation_name: str):
-        """Set the current animation by name"""
-        if animation_name in self.animation and self.animation[animation_name]:
-            self.current_animation = animation_name
-            self.current_animation_frame = 0
-            self.current_animation_time = 0
-            # Set the first frame immediately
-            self.texture = self.animation[animation_name][0][0]
-    
     def update_state(self, delta_time: float):
         """Update entity state based on velocity and other factors - to be overridden by child classes"""
         pass
-    
+
     def die(self):
         """Trigger death animation"""
         self.state = EntityState.DYING
-        
+
+
 class Player(Entity):
     """Player class representing the user-controlled character"""
-    
+
     def __init__(
-        self, image_path, scale=CHARACTER_SCALING, friction=PLAYER_FRICTION, speed=PLAYER_MOVEMENT_SPEED, player_preset="Girl"
+        self,
+        image_path,
+        scale=CHARACTER_SCALING,
+        friction=PLAYER_FRICTION,
+        speed=PLAYER_MOVEMENT_SPEED,
+        player_preset="Girl",
     ):
-        super().__init__(image_path, scale=scale, friction=friction, speed=speed)
-        
+        super().__init__(
+            image_path, scale=scale, friction=friction, speed=speed
+        )
+
         self.player_preset = player_preset
-        
+
         # Player-specific properties
         self.state = PlayerState.IDLE
         self.mouse_position = Vec2(0, 0)
-        
+
         # Weapon handling
         self.current_weapon = WeaponType.GUN
-        
+
         # Load character configuration
         self.character_config = load_character_config(PLAYER_CONFIG_FILE)
-        
+
         # Load animations
         asyncio.run(self.load_animation())
-    
+
     async def load_animation(self):
         """Load player animations from configuration file"""
-        if not self.character_config or self.player_preset not in self.character_config:
-            print(f"No configuration found for player preset: {self.player_preset}")
+        if (
+            not self.character_config
+            or self.player_preset not in self.character_config
+        ):
+            print(
+                f"No configuration found for player preset: {self.player_preset}"
+            )
             return
-        
+
         character_data = self.character_config[self.player_preset]
         animation_dict = {}
         total_frames = 0
-        
+
         # Load animations from configuration
         for animation_name, animation_config in character_data.items():
             textures = []
-            
+
             # Get the list of frame paths from the animation config
             frame_paths = animation_config.get("frames", [])
-            
+
             for frame_path in frame_paths:
-                texture, offset = load_texture_with_anchor(frame_path, animation_config)
-                textures.append((texture, offset)) # Store texture and offset as a tuple
+                texture, offset = load_texture_with_anchor(
+                    frame_path, animation_config
+                )
+                textures.append(
+                    (texture, offset)
+                )  # Store texture and offset as a tuple
                 total_frames += 1
-            
+
             animation_dict[animation_name] = textures
-            
+
             # Create idle animations from first frame of walk animations
             if animation_name.startswith("Walk_"):
                 weapon_type = animation_name[5:]  # Remove "Walk_" prefix
                 idle_key = f"Idle_{weapon_type}"
                 if textures:
-                    animation_dict[idle_key] = [textures[0]] # Store texture and offset as a tuple for idle
-                    total_frames += 1
-        
-        self.animation = animation_dict
+                    # Pass the name, type, sequence, and idle texture to the Entity's animation system
+                    self.load_animation_sequence(
+                        animation_name,
+                        Entity.AnimationType.MOVEMENT,
+                        textures,
+                        textures[0],
+                    )
+
+                    # Store a specific idle animation as well
+                    self.load_animation_sequence(
+                        idle_key,
+                        Entity.AnimationType.MOVEMENT,
+                        [textures[0]],
+                        textures[0],
+                    )
+                total_frames += 1
+            else:
+                # Load other animations (Attack, Death) directly into the Entity's animation system
+                if animation_name == "Death":
+                    self.load_animation_sequence(
+                        animation_name,
+                        Entity.AnimationType.DEATH,
+                        textures,
+                        textures[0] if textures else None,
+                    )
+                elif animation_name in [
+                    "Bat",
+                    "FlameThrower",
+                    "Gun_Shot",
+                    "Knife",
+                    "Riffle",
+                ]:  # Attack animations
+                    self.load_animation_sequence(
+                        animation_name,
+                        Entity.AnimationType.ATTACK,
+                        textures,
+                        textures[0] if textures else None,
+                    )
+                else:
+                    self.load_animation_sequence(
+                        animation_name,
+                        Entity.AnimationType.MOVEMENT,
+                        textures,
+                        textures[0] if textures else None,
+                    )
+
         # Add summary debug info
-        Debug.update(f"{self.player_preset} Animations", f"{len(animation_dict)} types, {total_frames} frames")
+        Debug.update(
+            f"{self.player_preset} Animations",
+            f"{len(self.animations)} types, {total_frames} frames",
+        )
         Debug.update(f"Current Weapon", f"{self.current_weapon.name}")
-    
+
     def set_weapon(self, weapon_type: WeaponType):
         """Set the current weapon"""
         self.current_weapon = weapon_type
         self.set_animation_for_state()
-    
+
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state and weapon"""
         weapon_name = self.current_weapon.value
-        
+
         if self.state == PlayerState.IDLE:
             # Try to use the specific idle animation for this weapon
             idle_anim = f"Idle_{weapon_name.lower()}"
             Debug.update("Trying Idle Animation", idle_anim)
-            
-            if idle_anim in self.animation and self.animation[idle_anim]:
+
+            if idle_anim in self.animations and (
+                self.animations[idle_anim].get("sequence")
+                or self.animations[idle_anim].get("idle")
+            ):
                 self.set_animation(idle_anim)
             else:
                 # If specific idle animation not found, try generic weapon idle
                 # Check for matching weapon types with different case formats
                 found = False
-                for anim_name in self.animation:
-                    if anim_name.startswith("Idle_") and weapon_name.lower() in anim_name.lower():
+                for anim_name in self.animations:
+                    if (
+                        anim_name.startswith("Idle_")
+                        and weapon_name.lower() in anim_name.lower()
+                    ):
                         self.set_animation(anim_name)
                         found = True
                         break
-                
+
                 # If still not found, use any available idle animation as last resort
                 if not found:
-                    Debug.update("Fallback Animation", "Using first available idle")
-                    weapon_priority = [self.current_weapon.value]  # Try current weapon first
+                    Debug.update(
+                        "Fallback Animation", "Using first available idle"
+                    )
+                    weapon_priority = [
+                        self.current_weapon.value
+                    ]  # Try current weapon first
                     for weapon in WeaponType:
                         if weapon != self.current_weapon:
                             weapon_priority.append(weapon.value)
-                    
+
                     for weapon_type in weapon_priority:
                         idle_check = f"Idle_{weapon_type.lower()}"
-                        if idle_check in self.animation and self.animation[idle_check]:
+                        if idle_check in self.animations and (
+                            self.animations[idle_check].get("sequence")
+                            or self.animations[idle_check].get("idle")
+                        ):
                             self.set_animation(idle_check)
                             found = True
                             break
-                            
+
                     # Last resort - use any idle animation
                     if not found:
-                        for anim_name in self.animation:
+                        for anim_name in self.animations:
                             if anim_name.startswith("Idle_"):
                                 self.set_animation(anim_name)
                                 break
-        
+
         elif self.state == PlayerState.WALKING:
             # Try exact match first
             walk_anim = f"Walk_{weapon_name.lower()}"
-            
+
             # Then try alternative cases
-            if not (walk_anim in self.animation and self.animation[walk_anim]):
-                for anim_name in self.animation:
-                    if anim_name.startswith("Walk_") and weapon_name.lower() in anim_name.lower():
+            if not (
+                walk_anim in self.animations
+                and (
+                    self.animations[walk_anim].get("sequence")
+                    or self.animations[walk_anim].get("idle")
+                )
+            ):
+                for anim_name in self.animations:
+                    if (
+                        anim_name.startswith("Walk_")
+                        and weapon_name.lower() in anim_name.lower()
+                    ):
                         walk_anim = anim_name
                         break
-            
-            if walk_anim in self.animation and self.animation[walk_anim]:
+
+            if walk_anim in self.animations and (
+                self.animations[walk_anim].get("sequence")
+                or self.animations[walk_anim].get("idle")
+            ):
                 self.set_animation(walk_anim)
             else:
                 # Fallback to any walk animation
-                for anim_name in self.animation:
+                for anim_name in self.animations:
                     if anim_name.startswith("Walk_"):
                         self.set_animation(anim_name)
                         break
-        
+
         elif self.state == PlayerState.SHOOTING:
             shoot_anim = "Gun_Shot"
-            if shoot_anim in self.animation and self.animation[shoot_anim]:
+            if shoot_anim in self.animations and (
+                self.animations[shoot_anim].get("sequence")
+                or self.animations[shoot_anim].get("idle")
+            ):
                 self.set_animation(shoot_anim)
-                
+
         elif self.state == PlayerState.ATTACKING:
             # Try to use the specific attack animation for this weapon
-            if weapon_name in self.animation and self.animation[weapon_name]:
+            if weapon_name in self.animations and (
+                self.animations[weapon_name].get("sequence")
+                or self.animations[weapon_name].get("idle")
+            ):
                 self.set_animation(weapon_name)
             else:
                 # Try to find a matching attack animation
-                for anim_name in self.animation:
-                    if weapon_name.lower() in anim_name.lower() and not anim_name.startswith("Walk_") and not anim_name.startswith("Idle_"):
+                for anim_name in self.animations:
+                    if (
+                        weapon_name.lower() in anim_name.lower()
+                        and not anim_name.startswith("Walk_")
+                        and not anim_name.startswith("Idle_")
+                    ):
                         self.set_animation(anim_name)
                         break
-        
+
         elif self.state == PlayerState.DYING:
-            if "Death" in self.animation and self.animation["Death"]:
+            if "Death" in self.animations and (
+                self.animations["Death"].get("sequence")
+                or self.animations["Death"].get("idle")
+            ):
                 self.set_animation("Death")
-                
-        Debug.update("Selected Animation", str(self.current_animation) if self.current_animation else "None")
-    
+
+        Debug.update(
+            "Selected Animation",
+            str(self.current_animation) if self.current_animation else "None",
+        )
+
     def update_state(self, delta_time: float):
         """Update player state based on velocity and other factors"""
         # Skip state update if in the middle of an attack or death animation
-        if self.state in [PlayerState.SHOOTING, PlayerState.ATTACKING, PlayerState.DYING]:
+        if self.state in [
+            PlayerState.SHOOTING,
+            PlayerState.ATTACKING,
+            PlayerState.DYING,
+        ]:
             return
-            
+
         # Check if player is moving
         velocity_magnitude = to_vector(self.velocity).length()
-        
+
         if velocity_magnitude > DEAD_ZONE:
             if self.state != PlayerState.WALKING:
                 self.state = PlayerState.WALKING
@@ -455,7 +637,7 @@ class Player(Entity):
             if self.state != PlayerState.IDLE:
                 self.state = PlayerState.IDLE
                 self.set_animation_for_state()
-    
+
     def update_facing_direction(self, mouse_pos: Vec2):
         """Update facing direction based on mouse position"""
         self.mouse_position = mouse_pos
@@ -463,102 +645,181 @@ class Player(Entity):
         # Calculate angle between player and mouse position
         dx = self.mouse_position.x - self.position[0]
         dy = self.mouse_position.y - self.position[1]
-        angle = math.atan2(dx, dy) * 180 / math.pi+180
+        angle = math.atan2(dx, dy) * 180 / math.pi + 180
         self.angle = angle
-    
+
     def attack(self):
         """Trigger an attack animation based on current weapon"""
-        if self.state not in [PlayerState.ATTACKING, PlayerState.SHOOTING, PlayerState.DYING]:
+        if self.state not in [
+            PlayerState.ATTACKING,
+            PlayerState.SHOOTING,
+            PlayerState.DYING,
+        ]:
             if self.current_weapon == WeaponType.GUN:
                 self.state = PlayerState.SHOOTING
             else:
                 self.state = PlayerState.ATTACKING
             self.set_animation_for_state()
-    
+
     def die(self):
         """Trigger death animation"""
         self.state = PlayerState.DYING
         self.set_animation_for_state()
 
+
 class Enemy(Entity):
     """Base class for all enemies (zombies, monsters)"""
-    
+
     def __init__(
-        self, image_path, scale=CHARACTER_SCALING, friction=PLAYER_FRICTION, 
-        speed=int(PLAYER_MOVEMENT_SPEED * 0.5), enemy_type="Army_zombie"
+        self,
+        image_path,
+        scale=CHARACTER_SCALING,
+        friction=PLAYER_FRICTION,
+        speed=int(PLAYER_MOVEMENT_SPEED * 0.5),
+        enemy_type="Army_zombie",
+        player_ref: Player | None = None,
     ):
-        super().__init__(image_path, scale=scale, friction=friction, speed=speed)
-        
+        super().__init__(
+            image_path, scale=scale, friction=friction, speed=speed
+        )
+
         self.enemy_type = enemy_type
-        
+        self.player = player_ref  # Store player reference
+        self.attack_range = 50  # Initialize attack_range in base Enemy class
+
         # Load enemy configuration
         self.enemy_config = load_character_config(ZOMBIE_CONFIG_FILE)
-        
+
         # Load animations
         asyncio.run(self.load_animation())
-        
+
         # Set initial animation
         self.set_animation_for_state()
-    
+
     async def load_animation(self):
         """Load enemy animations from configuration file"""
         if not self.enemy_config or self.enemy_type not in self.enemy_config:
             print(f"No configuration found for enemy type: {self.enemy_type}")
             return
-        
+
         enemy_data = self.enemy_config[self.enemy_type]
         animation_dict = {}
         total_frames = 0
-        
+
         # Load animations from configuration
         for animation_name, animation_config in enemy_data.items():
             textures = []
-            
+
             # Get the list of frame paths from the animation config
             frame_paths = animation_config.get("frames", [])
-            
+
             for frame_path in frame_paths:
-                texture, offset = load_texture_with_anchor(frame_path, animation_config)
-                textures.append((texture, offset)) # Store texture and offset as a tuple
+                texture, offset = load_texture_with_anchor(
+                    frame_path, animation_config
+                )
+                textures.append(
+                    (texture, offset)
+                )  # Store texture and offset as a tuple
                 total_frames += 1
-            
-            animation_dict[animation_name] = textures
-            
+
             # Create idle animation from first frame of walk animation
             if animation_name == "Walk" and textures:
-                animation_dict["Idle"] = [textures[0]] # Store texture and offset as a tuple for idle
-                total_frames += 1
-        
-        self.animation = animation_dict
-        Debug.update(f"{self.enemy_type} Animations", f"{len(animation_dict)} types, {total_frames} frames")
-    
+                # Pass the name, type, sequence, and idle texture to the Entity's animation system
+                self.load_animation_sequence(
+                    animation_name,
+                    Entity.AnimationType.MOVEMENT,
+                    textures,
+                    textures[0],
+                )
+                self.load_animation_sequence(
+                    "Idle",
+                    Entity.AnimationType.MOVEMENT,
+                    [textures[0]],
+                    textures[0],
+                )
+            elif animation_name == "Attack":
+                self.load_animation_sequence(
+                    animation_name,
+                    Entity.AnimationType.ATTACK,
+                    textures,
+                    textures[0] if textures else None,
+                )
+            elif animation_name == "Death":
+                self.load_animation_sequence(
+                    animation_name,
+                    Entity.AnimationType.DEATH,
+                    textures,
+                    textures[0] if textures else None,
+                )
+            else:
+                self.load_animation_sequence(
+                    animation_name,
+                    Entity.AnimationType.MOVEMENT,
+                    textures,
+                    textures[0] if textures else None,
+                )
+
+        Debug.update(
+            f"{self.enemy_type} Animations",
+            f"{len(self.animations)} types, {total_frames} frames",
+        )
+
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state"""
         if self.state == EntityState.IDLE:
-            if "Idle" in self.animation and self.animation["Idle"]:
+            if "Idle" in self.animations and (
+                self.animations["Idle"].get("sequence")
+                or self.animations["Idle"].get("idle")
+            ):
                 self.set_animation("Idle")
-        
+
         elif self.state == EntityState.WALKING:
-            if "Walk" in self.animation and self.animation["Walk"]:
+            if "Walk" in self.animations and (
+                self.animations["Walk"].get("sequence")
+                or self.animations["Walk"].get("idle")
+            ):
                 self.set_animation("Walk")
-        
+
         elif self.state == EntityState.ATTACKING:
-            if "Attack" in self.animation and self.animation["Attack"]:
+            if "Attack" in self.animations and (
+                self.animations["Attack"].get("sequence")
+                or self.animations["Attack"].get("idle")
+            ):
                 self.set_animation("Attack")
-        
+
         elif self.state == EntityState.DYING:
-            if "Death" in self.animation and self.animation["Death"]:
+            if "Death" in self.animations and (
+                self.animations["Death"].get("sequence")
+                or self.animations["Death"].get("idle")
+            ):
                 self.set_animation("Death")
-    
+
     def update_state(self, delta_time: float):
         """Update enemy state based on velocity and other factors"""
-        # Skip state update if in the middle of an attack or death animation
-        if self.state in [EntityState.ATTACKING, EntityState.DYING]:
+        # Skip state update if in the middle of death animation
+        if self.state == EntityState.DYING:
             return
-            
-        # Check if enemy is moving
+
+        # Check if enemy is currently attacking
+        if self.state == EntityState.ATTACKING:
+            # If the animation has completed a cycle (handled in animate), it will already reset state.
+            # Otherwise, check if player is out of range to stop attacking
+            if (
+                self.player
+            ):  # Ensure player exists before accessing its position
+                dx = self.player.position[0] - self.position[0]
+                dy = self.player.position[1] - self.position[1]
+                distance = math.sqrt(dx * dx + dy * dy)
+
+                if distance > self.attack_range + 20:  # Add a small buffer
+                    # Player moved out of range, stop attacking
+                    self.state = EntityState.IDLE
+                    self.set_animation_for_state()
+                    return
+
+        # If not attacking or dying, check for movement
         velocity_magnitude = to_vector(self.velocity).length()
-        
+
         if velocity_magnitude > DEAD_ZONE:
             if self.state != EntityState.WALKING:
                 self.state = EntityState.WALKING
@@ -567,33 +828,47 @@ class Enemy(Entity):
             if self.state != EntityState.IDLE:
                 self.state = EntityState.IDLE
                 self.set_animation_for_state()
-    
+
     def attack(self):
         """Trigger attack animation"""
         if self.state not in [EntityState.ATTACKING, EntityState.DYING]:
             self.state = EntityState.ATTACKING
             self.set_animation_for_state()
-    
+
     def update_facing_direction(self, target_pos: Vec2):
         """Update facing direction to look at target"""
         # Calculate angle between enemy and target
         dx = target_pos[0] - self.position[0]
         dy = target_pos[1] - self.position[1]
-        angle = math.atan2(dx, dy) * 180 / math.pi+180
+        angle = math.atan2(dx, dy) * 180 / math.pi + 180
         self.angle = angle
-        
+
         # Set facing based on angle
         self.facing_direction = angle
 
+
 class Zombie(Enemy):
     """Specific implementation for zombie enemies"""
-    
+
     def __init__(
-        self, image_path, zombie_type="Army_zombie", scale=CHARACTER_SCALING,
-        friction=PLAYER_FRICTION, speed=int(PLAYER_MOVEMENT_SPEED * 0.4)
+        self,
+        image_path,
+        zombie_type="Army_zombie",
+        scale=CHARACTER_SCALING,
+        friction=PLAYER_FRICTION,
+        speed=int(PLAYER_MOVEMENT_SPEED * 0.4),
+        player_ref: Player | None = None,
     ):
-        super().__init__(image_path, scale=scale, friction=friction, speed=speed, enemy_type=zombie_type)
-        
+        super().__init__(
+            image_path,
+            scale=scale,
+            friction=friction,
+            speed=speed,
+            enemy_type=zombie_type,
+        )
+
+        self.player = player_ref
+
         # Zombie-specific properties
         self.detection_range = 300
         self.attack_range = 50
@@ -613,6 +888,7 @@ class GameView(arcade.View):
         # Camera for scrolling
         self.camera = arcade.Camera2D()
         self.camera_bounds = self.window.rect
+        self.target_zoom = 1.0 # Initial normal zoom
 
         # A non-scrolling camera that can be used to draw GUI elements
         self.camera_gui = arcade.Camera2D()
@@ -624,18 +900,20 @@ class GameView(arcade.View):
             ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png",
             speed=PLAYER_MOVEMENT_SPEED,
         )
-        
+
         # Enemy list and physics engines - initialize before spawning enemies
         self.enemies = []
         self.enemy_physics_engines = []
-        
+
         # Add a test zombie
-        self.spawn_zombie("Army_zombie", x=400, y=350)
+        self.spawn_zombie(
+            "Army_zombie", x=400, y=350, player_ref=self.player
+        )  # Pass player reference
 
         # Physics engines - one for player and one for each enemy
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player,
-            self.scene.get_sprite_list("Platforms"),
+            self.scene.get_sprite_list("Walls"),
         )
 
         # Track the current state of what key is pressed
@@ -652,26 +930,37 @@ class GameView(arcade.View):
 
         # Mouse position tracking
         self.mouse_position = Vec2(0, 0)
+        self.left_mouse_pressed = (
+            False  # New attribute to track mouse button state
+        )
 
         self.reset()
 
-    def spawn_zombie(self, zombie_type, x, y):
+    def spawn_zombie(
+        self, zombie_type, x, y, player_ref: Player | None = None
+    ):
         """Spawn a zombie at the specified position"""
         # Use a placeholder image initially - it will be replaced by the animation system
-        placeholder_image = os.path.join(ZOMBIE_ASSETS_DIR, zombie_type, "Walk", "walk_000.png")
+        placeholder_image = os.path.join(
+            ZOMBIE_ASSETS_DIR, zombie_type, "Walk", "walk_000.png"
+        )
         if not os.path.exists(placeholder_image):
-            placeholder_image = ":resources:images/animated_characters/zombie/zombie_idle.png"
-            
-        zombie = Zombie(placeholder_image, zombie_type=zombie_type)
+            placeholder_image = (
+                ":resources:images/animated_characters/zombie/zombie_idle.png"
+            )
+
+        zombie = Zombie(
+            placeholder_image, zombie_type=zombie_type, player_ref=self.player
+        )
         zombie.position = Vec2(x, y)
-        
+
         self.enemies.append(zombie)
         self.scene.add_sprite("Enemies", zombie)
         
         # Create physics engine for this enemy
         physics_engine = arcade.PhysicsEngineSimple(
             zombie,
-            self.scene.get_sprite_list("Platforms"),
+            self.scene.get_sprite_list("Walls"),
         )
         self.enemy_physics_engines.append(physics_engine)
         
@@ -681,26 +970,38 @@ class GameView(arcade.View):
         """Set up the game and initialize the variables."""
         scene = arcade.Scene()
         
-        # Add sprite lists to the scene
-        scene.add_sprite_list("Platforms")
-        scene.add_sprite_list("Player")
-        scene.add_sprite_list("Enemies")
+        # Load the Tiled map
+        map_name = "resources/maps/Map1.tmx"
+        self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
         
-        spacing = 200
-        for column in range(10):
-            for row in range(10):
-                sprite = arcade.Sprite(
-                    ":resources:images/tiles/grassCenter.png",
-                    scale=TILE_SCALING,
-                )
+        # Add the ground layers to the scene (in drawing order from bottom to top)
+        scene.add_sprite_list("Dirt", sprite_list=self.tile_map.sprite_lists["Dirt"])
+        scene.add_sprite_list("Grass", sprite_list=self.tile_map.sprite_lists["Grass"])
+        scene.add_sprite_list("Road", sprite_list=self.tile_map.sprite_lists["Road"])
+        
+        # Add the walls layer to the scene for collision
+        scene.add_sprite_list("Walls", sprite_list=self.tile_map.sprite_lists["Walls"])
+        
+        # Add sprite lists for Player and Enemies (drawn on top)
+        scene.add_sprite_list("Enemies")
+        scene.add_sprite_list("Player")
 
-                x = (column + 1) * spacing
-                y = (row + 1) * sprite.height
+        # Remove the old platform generation code
+        # spacing = 200
+        # for column in range(10):
+        #     for row in range(10):
+        #         sprite = arcade.Sprite(
+        #             ":resources:images/tiles/grassCenter.png",
+        #             scale=TILE_SCALING,
+        #         )
 
-                sprite.center_x = x
-                sprite.center_y = y
-                if random.randrange(100) > 20:
-                    scene.add_sprite("Platforms", sprite)
+        #         x = (column + 1) * spacing
+        #         y = (row + 1) * sprite.height
+
+        #         sprite.center_x = x
+        #         sprite.center_y = y
+        #         if random.randrange(100) > 20:
+        #             scene.add_sprite("Platforms", sprite)
 
         return scene
 
@@ -709,20 +1010,28 @@ class GameView(arcade.View):
 
         self.player.position = Vec2(50, 350)
         self.scene.add_sprite("Player", self.player)
-        
+
         # Clear and recreate enemy lists
         self.enemies = []
         self.enemy_physics_engines = []
         
         # Add a test zombie
-        self.spawn_zombie("Army_zombie", x=400, y=350)
-        
+        zombie = self.spawn_zombie("Army_zombie", x=400, y=350, player_ref=self.player) # Store zombie instance
+        # self.scene.add_sprite("Enemies", zombie) # Remove duplicate add to scene
+
         # Physics engine for player
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player,
-            self.scene.get_sprite_list("Platforms"),
+            self.scene.get_sprite_list("Walls"), # Update to use "Walls" for collision
         )
         
+        # Create physics engine for this enemy (after adding to scene)
+        enemy_physics_engine = arcade.PhysicsEngineSimple(
+            zombie,
+            self.scene.get_sprite_list("Walls"),
+        )
+        self.enemy_physics_engines.append(enemy_physics_engine)
+
         # Initialize player state - state system will handle animations
         self.player.state = PlayerState.IDLE
         self.player.set_animation_for_state()
@@ -746,18 +1055,26 @@ class GameView(arcade.View):
         movement_direction_y = 0
         has_movement = False
         # Handle left/right movement (Left/Right arrows or A/D)
-        if (self.key_down[LEFT_KEY] or self.key_down[A_KEY]) and not (self.key_down[RIGHT_KEY] or self.key_down[D_KEY]):
+        if (self.key_down[LEFT_KEY] or self.key_down[A_KEY]) and not (
+            self.key_down[RIGHT_KEY] or self.key_down[D_KEY]
+        ):
             has_movement = True
             movement_direction_x = -1
-        elif (self.key_down[RIGHT_KEY] or self.key_down[D_KEY]) and not (self.key_down[LEFT_KEY] or self.key_down[A_KEY]):
+        elif (self.key_down[RIGHT_KEY] or self.key_down[D_KEY]) and not (
+            self.key_down[LEFT_KEY] or self.key_down[A_KEY]
+        ):
             has_movement = True
             movement_direction_x = 1
 
         # Handle up/down movement (Up/Down arrows or W/S)
-        if (self.key_down[UP_KEY] or self.key_down[W_KEY]) and not (self.key_down[DOWN_KEY] or self.key_down[S_KEY]):
+        if (self.key_down[UP_KEY] or self.key_down[W_KEY]) and not (
+            self.key_down[DOWN_KEY] or self.key_down[S_KEY]
+        ):
             has_movement = True
             movement_direction_y = 1
-        elif (self.key_down[DOWN_KEY] or self.key_down[S_KEY]) and not (self.key_down[UP_KEY] or self.key_down[W_KEY]):
+        elif (self.key_down[DOWN_KEY] or self.key_down[S_KEY]) and not (
+            self.key_down[UP_KEY] or self.key_down[W_KEY]
+        ):
             has_movement = True
             movement_direction_y = -1
 
@@ -771,52 +1088,57 @@ class GameView(arcade.View):
         for i, enemy in enumerate(self.enemies):
             # Update enemy delta time
             enemy.delta_time = delta_time
-            
+
             # Simple AI: move towards player if within detection range
             dx = self.player.position[0] - enemy.position[0]
             dy = self.player.position[1] - enemy.position[1]
-            distance = math.sqrt(dx*dx + dy*dy)
-            
+            distance = math.sqrt(dx * dx + dy * dy)
+
             if distance < enemy.detection_range:
                 # Move towards player
-                direction = Vec2(dx, dy).normalize() if distance > 0 else Vec2(0, 0)
+                direction = (
+                    Vec2(dx, dy).normalize() if distance > 0 else Vec2(0, 0)
+                )
                 enemy.move(direction)
-                
+
                 # Attack if close enough
-                if distance < enemy.attack_range and random.random() < 0.01:  # Small chance to attack each frame
+                if (
+                    distance < enemy.attack_range and random.random() < 0.01
+                ):  # Small chance to attack each frame
                     enemy.attack()
             else:
                 # Random movement when player not detected
                 if random.random() < 0.01:  # Change direction occasionally
                     direction = Vec2(
-                        random.uniform(-1, 1),
-                        random.uniform(-1, 1)
+                        random.uniform(-1, 1), random.uniform(-1, 1)
                     ).normalize()
                     enemy.move(direction)
                 else:
                     # Continue current movement
-                    enemy.move(Vec2(0, 0))  # This will apply friction but not add new velocity
-            
+                    enemy.move(
+                        Vec2(0, 0)
+                    )  # This will apply friction but not add new velocity
+
             # Update the enemy facing direction to look at player
             enemy.update_facing_direction(self.player.position)
-            
+
             # Update animation state
             enemy.update_state(delta_time)
             enemy.animate(delta_time)
-            
+
             # Update physics
             if i < len(self.enemy_physics_engines):
                 self.enemy_physics_engines[i].update()
 
     def on_key_press(self, key, modifiers):
         self.key_down[key] = True
-        
+
         # Toggle fullscreen with F11
         if key == FULLSCREEN_KEY:
             self.window.set_fullscreen(not self.window.fullscreen)
             # Update camera when toggling fullscreen
             self.on_resize(self.window.width, self.window.height)
-        
+
         # Weapon switching with number keys
         if key == arcade.key.KEY_1:
             self.player.set_weapon(WeaponType.GUN)
@@ -828,38 +1150,67 @@ class GameView(arcade.View):
             self.player.set_weapon(WeaponType.RIFLE)
         elif key == arcade.key.KEY_5:
             self.player.set_weapon(WeaponType.FLAMETHROWER)
-        
+
         # Attack with space
         if key == arcade.key.SPACE:
             self.player.attack()
-        
+
         # Death animation with K (for testing)
         if key == arcade.key.K:
             self.player.die()
-        
+
         # Spawn different zombies with Z key (for testing)
-        if key == arcade.key.Z:
-            zombie_types = ["Army_zombie", "Cop_Zombie", "Zombie1_female", 
-                           "Zombie2_female", "Zombie3_male", "Zombie4_male"]
-            zombie_type = random.choice(zombie_types)
-            x = self.player.position.x + random.randint(-300, 300)
-            y = self.player.position.y + random.randint(-300, 300)
-            self.spawn_zombie(zombie_type, x, y)
-            Debug.update("Spawned", f"{zombie_type} at {x}, {y}")
+        if key == arcade.key.LCTRL:
+            # Removed zombie spawning here, replaced with zoom functionality
+            # zombie_types = ["Army_zombie", "Cop_Zombie", "Zombie1_female", 
+            #                "Zombie2_female", "Zombie3_male", "Zombie4_male"]
+            # zombie_type = random.choice(zombie_types)
+            # x = self.player.position.x + random.randint(-300, 300)
+            # y = self.player.position.y + random.randint(-300, 300)
+            # self.spawn_zombie(zombie_type, x, y, self.player) # Pass player reference
+            # Debug.update("Spawned", f"{zombie_type} at {x}, {y}")
+            
+            # Zoom out by increasing camera zoom
+            # self.camera.zoom = clamp(self.camera.zoom + ZOOM_STEP, MIN_ZOOM, MAX_ZOOM)
+            # Debug.update("Camera Zoom", f"{self.camera.zoom:.2f}")
+            
+            # Set target zoom for smooth transition
+            self.target_zoom = MIN_ZOOM # Zoom out
 
     def on_key_release(self, key, modifiers):
         self.key_down[key] = False
+        
+        if key == arcade.key.LCTRL:
+            self.target_zoom = 1.0 # Return to normal zoom
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Handle mouse movement"""
         # Convert screen coordinates to world coordinates
-        world_pos = self.camera.position + Vec2(x - WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2)
+        world_pos = self.camera.position + Vec2(
+            x - WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2
+        ) * self.camera.zoom
         self.mouse_position = world_pos
+        
 
     def on_mouse_press(self, x, y, button, modifiers):
         """Handle mouse clicks"""
         if button == arcade.MOUSE_BUTTON_LEFT:
+            self.left_mouse_pressed = True
             self.player.attack()
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        """Handle mouse clicks"""
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            self.left_mouse_pressed = False
+            # If player was shooting, transition back to idle/walking
+            if self.player.state == PlayerState.SHOOTING:
+                # Check if player is moving to set state correctly
+                velocity_magnitude = to_vector(self.player.velocity).length()
+                if velocity_magnitude > DEAD_ZONE:
+                    self.player.state = PlayerState.WALKING
+                else:
+                    self.player.state = PlayerState.IDLE
+                self.player.set_animation_for_state()
 
     def center_camera_to_player(self, delta_time):
         # Move the camera to center on the player
@@ -871,36 +1222,46 @@ class GameView(arcade.View):
         )
 
         # Constrain the camera's position to the camera bounds.
-        self.camera.view_data.position = arcade.camera.grips.constrain_xy(
-            self.camera.view_data, self.camera_bounds
-        )
+        # self.camera.view_data.position = arcade.camera.grips.constrain_xy(
+        #     self.camera.view_data, self.camera_bounds
+        # )
         
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
+        
+        # Smoothly interpolate camera zoom towards target zoom
+        if abs(self.camera.zoom - self.target_zoom) > 0.001: # Check for a small difference to avoid constant updates
+            self.camera.zoom = arcade.math.lerp(self.camera.zoom, self.target_zoom, 5 * delta_time) # Increased interpolation speed
+            Debug.update("Camera Zoom", f"{self.camera.zoom:.2f}")
         
         # Update player
         self.player.delta_time = delta_time
         self.update_player_speed()
         self.physics_engine.update()
-        
+
         # Update player state based on movement
         self.player.update_state(delta_time)
-        
+
         # Update player animation
         self.player.animate(delta_time)
-        
+
         # Update player facing direction
         self.player.update_facing_direction(self.mouse_position)
-        
+
         # Update all enemies
         self.update_enemies(delta_time)
-        
+
         # Debug info for current animation and state
         Debug.update("Current Animation", f"{self.player.current_animation}")
-        Debug.update("Animation Frame", f"{self.player.current_animation_frame}")
+        Debug.update(
+            "Animation Frame", f"{self.player.current_animation_frame}"
+        )
         Debug.update("Player State", f"{self.player.state.value}")
         Debug.update("Facing Direction", f"{self.player.angle}")
-        Debug.update("Mouse Position", f"{self.mouse_position.x:.0f}, {self.mouse_position.y:.0f}")
+        Debug.update(
+            "Mouse Position",
+            f"{self.mouse_position.x:.0f}, {self.mouse_position.y:.0f}",
+        )
         Debug.update("Enemy Count", f"{len(self.enemies)}")
 
     def on_resize(self, width: int, height: int):
@@ -910,18 +1271,20 @@ class GameView(arcade.View):
         self.camera.match_window()
         # The position argument keeps `0, 0` in the bottom left corner.
         self.camera_gui.match_window(position=True)
-        
+
         # Handle fullscreen detection - check if window dimensions match display dimensions
         display_width, display_height = arcade.get_display_size()
-        
+
         # Handle fullscreen detection
         if width == display_width and height == display_height:
             # We're in fullscreen or maximized
             self.window.set_fullscreen(True)
-        elif self.window.fullscreen and (width < display_width or height < display_height):
+        elif self.window.fullscreen and (
+            width < display_width or height < display_height
+        ):
             # We were in fullscreen but now in a smaller window
             self.window.set_fullscreen(False)
-            
+
         Debug.update("Window Size", f"{width}x{height}")
         Debug.update("Display Size", f"{display_width}x{display_height}")
         Debug.update("Fullscreen", f"{self.window.fullscreen}")
