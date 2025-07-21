@@ -19,12 +19,12 @@ import concurrent.futures # Import for ThreadPoolExecutor
 
 
 # Health bar constants
-HEALTHBAR_WIDTH = 25
-HEALTHBAR_HEIGHT = 4
-HEALTHBAR_OFFSET_Y = 10
+HEALTHBAR_WIDTH = 75
+HEALTHBAR_HEIGHT = 10
+INDICATOR_BAR_OFFSET = 32 # New constant for health bar offset
 
 # Constants for bullet properties
-BULLET_SPEED = 50 # Reduced for testing
+BULLET_SPEED = 100 # Reduced for testing
 BULLET_LIFE = 0.5  # Seconds until bullet disappears
 
 # Window settings
@@ -105,116 +105,6 @@ class WeaponType(Enum):
     FLAMETHROWER = "FlameThrower"
 
 
-def load_character_config(config_file: str) -> dict:
-    """Load character configuration from JSON file."""
-    try:
-        with open(config_file, "r") as f:
-            config_data = json.load(f)
-            return config_data
-    except FileNotFoundError:
-        print(f"Configuration file not found: {config_file}")
-        print(
-            "Please run character_analyzer.py first to generate configuration files"
-        )
-        return {}
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON file {config_file}: {e}")
-        return {}
-
-
-def load_texture_with_anchor(
-    frame_path: str, animation_config: dict
-) -> tuple[str, float, float, float, float]: # Return raw image data and properties
-    """Load raw image data and return properties from animation configuration."""
-    try:
-        # No longer loading arcade.Texture here, just returning path and properties
-        # This ensures image loading is decoupled from OpenGL texture creation
-        print(f"DEBUG: load_texture_with_anchor - frame_path: {frame_path}, animation_config keys: {animation_config.keys()}") # Debugging
-
-        image_width = animation_config.get("width", 128)
-        image_height = animation_config.get("height", 128)
-        anchor_x = animation_config.get("anchor_x", image_width / 2)
-        anchor_y = animation_config.get("anchor_y", image_height / 2)
-
-        return frame_path, image_width, image_height, anchor_x, anchor_y
-
-    except Exception as e:
-        print(f"Error processing image path {frame_path}: {e}")
-        return "", 0, 0, 0, 0 # Return empty data on error
-
-
-def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float, float]) -> tuple[arcade.Texture, tuple[float, float]]:
-    """Loads arcade.Texture from raw image data on the main thread."""
-    frame_path, image_width, image_height, anchor_x, anchor_y = raw_texture_data
-    # print(f"Processing loaded texture data for: {frame_path}")
-    def return_fallback_texture():
-        fallback_texture = arcade.make_soft_square_texture(
-            64, arcade.color.RED, name="fallback"
-        )
-        return fallback_texture, (0, 0)
-    
-    if not frame_path:
-        # Handle the error case from load_texture_with_anchor
-        return return_fallback_texture()
-    else:   
-        try:
-            texture = arcade.load_texture(frame_path)
-            texture = texture.flip_vertically() # Flip vertically since the characters are pointed down
-        except Exception as e:
-            print(f"ERROR: Failed to load arcade.Texture for {frame_path}: {e}")
-            return return_fallback_texture()
-
-    # Offset is currently not used, but it's here for future reference
-
-    # Calculate offset from image center to desired center of mass
-    image_center_x = image_width / 2
-    image_center_y = image_height / 2
-
-    # Calculate offset (how much to move sprite from its current center)
-    offset_x = image_center_x - anchor_x
-    offset_y = image_center_y - anchor_y
-
-    return texture, (offset_x, offset_y)
-
-class Bullet(arcade.Sprite):
-    """Bullet class for ray casting visual."""
-
-    def __init__(self, start_position: tuple[float, float], end_position: tuple[float, float], bullet_speed: float = BULLET_SPEED, bullet_lifetime: float = BULLET_LIFE, **kwargs):
-        # Create a yellow rectangle texture for the bullet
-        bullet_texture = arcade.make_soft_square_texture(20, 4, arcade.types.RGBA255(255, 255, 0, 255), name="bullet")
-        super().__init__(texture=bullet_texture, **kwargs)
-        self.position = start_position
-        self.target_position = end_position
-        
-        # Calculate direction and speed
-        direction_x = end_position[0] - start_position[0]
-        direction_y = end_position[1] - start_position[1]
-        magnitude = math.sqrt(direction_x**2 + direction_y**2)
-        
-        if magnitude > 0:
-            normalized_direction_x = direction_x / magnitude
-            normalized_direction_y = direction_y / magnitude
-        else:
-            normalized_direction_x = 0.0
-            normalized_direction_y = 0.0
-
-        self.velocity = (normalized_direction_x * bullet_speed, normalized_direction_y * bullet_speed)
-
-        self.lifetime = bullet_lifetime
-
-    def on_update(self, delta_time: float):
-        self.lifetime -= delta_time
-        if self.lifetime <= 0:
-            self.remove_from_sprite_lists()
-
-        self.center_x += self.velocity[0] * delta_time
-        self.center_y += self.velocity[1] * delta_time
-
-    def draw(self):
-        # No longer drawing a line, as it's a sprite now
-        pass
-
-
 class Debug:
     debug_dict = {}
     text_objects = [] # Change to a list for pre-initialized objects
@@ -272,20 +162,292 @@ class Debug:
             Debug.text_objects[text_object_index].text = "" # Clear text
             text_object_index += 1
 
-PLAYER_ANIMATION_STRUCTURE = {
-    "Bat": 12,
-    "Death": 6,
-    "FlameThrower": 9,
-    "Gun_Shot": 5,
-    "Gun_Idle": 1,  # Custom idle animation
-    "Knife": 8,
-    "Riffle": 9,
-    "Walk_bat": 6,
-    "Walk_FireThrhrower": 6,
-    "Walk_gun": 6,
-    "Walk_knife": 6,
-    "Walk_riffle": 6,
-}
+def load_character_config(config_file: str) -> dict:
+    """Load character configuration from JSON file."""
+    try:
+        with open(config_file, "r") as f:
+            config_data = json.load(f)
+            return config_data
+    except FileNotFoundError:
+        print(f"Configuration file not found: {config_file}")
+        print(
+            "Please run character_analyzer.py first to generate configuration files"
+        )
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON file {config_file}: {e}")
+        return {}
+
+
+def load_texture_with_anchor(
+    frame_path: str, animation_config: dict
+) -> tuple[str, float, float, float, float]: # Return raw image data and properties
+    """Load raw image data and return properties from animation configuration."""
+    try:
+        
+        image_width = animation_config.get("width", 128)
+        image_height = animation_config.get("height", 128)
+        anchor_x = animation_config.get("anchor_x", image_width / 2)
+        anchor_y = animation_config.get("anchor_y", image_height / 2)
+
+        return frame_path, image_width, image_height, anchor_x, anchor_y
+
+    except Exception as e:
+        print(f"Error processing image path {frame_path}: {e}")
+        return "", 0, 0, 0, 0 # Return empty data on error
+
+
+def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float, float]) -> tuple[arcade.Texture, tuple[float, float]]:
+    """Loads arcade.Texture from raw image data on the main thread."""
+    frame_path, image_width, image_height, anchor_x, anchor_y = raw_texture_data
+    # print(f"Processing loaded texture data for: {frame_path}")
+    def return_fallback_texture():
+        fallback_texture = arcade.make_soft_square_texture(
+            64, arcade.color.RED, name="fallback"
+        )
+        return fallback_texture, (0, 0)
+    
+    if not frame_path:
+        # Handle the error case from load_texture_with_anchor
+        return return_fallback_texture()
+    else:   
+        try:
+            texture = arcade.load_texture(frame_path)
+            texture = texture.flip_vertically() # Flip vertically since the characters are pointed down
+        except Exception as e:
+            print(f"ERROR: Failed to load arcade.Texture for {frame_path}: {e}")
+            return return_fallback_texture()
+
+    # Offset is currently not used, but it's here for future reference
+
+    # Calculate offset from image center to desired center of mass
+    image_center_x = image_width / 2
+    image_center_y = image_height / 2
+
+    # Calculate offset (how much to move sprite from its current center)
+    offset_x = image_center_x - anchor_x
+    offset_y = image_center_y - anchor_y
+
+    return texture, (offset_x, offset_y)
+
+class IndicatorBar:
+    """
+    Represents a bar which can display information about a sprite.
+
+    Args:
+        owner:
+            The owner of this indicator bar.
+        sprite_list:
+            The sprite list used to draw the indicator bar components.
+        position:
+            The initial position of the bar.
+        full_color:
+            The color of the bar.
+        background_color:
+            The background color of the bar.
+        width:
+            The width of the bar.
+        height:
+            The height of the bar.
+        border_size:
+            The size of the bar's border.
+        scale:
+            The scale of the indicator bar.
+    """
+
+    def __init__(
+        self,
+        owner: arcade.Sprite,
+        sprite_list: arcade.SpriteList,
+        position: tuple[float, float] = (0, 0),
+        full_color: arcade.types.Color = arcade.color.GREEN,
+        background_color: arcade.types.Color = arcade.color.BLACK,
+        width: int = 100,
+        height: int = 4,
+        border_size: int = 4,
+        scale: tuple[float, float] = (1.0, 1.0),
+    ) -> None:
+        # Store the reference to the owner and the sprite list
+        self.owner: arcade.Sprite = owner
+        self.sprite_list: arcade.SpriteList = sprite_list
+
+        # Set the needed size variables
+        self._bar_width: int = width
+        self._bar_height: int = height
+        self._center_x: float = 0.0
+        self._center_y: float = 0.0
+        self._fullness: float = 0.0
+        self._scale: tuple[float, float] = (1.0, 1.0)
+
+        # Create the boxes needed to represent the indicator bar
+        self._background_box: arcade.SpriteSolidColor = arcade.SpriteSolidColor(
+            self._bar_width + border_size,
+            self._bar_height + border_size,
+            color=background_color,
+        )
+        self._full_box: arcade.SpriteSolidColor = arcade.SpriteSolidColor(
+            self._bar_width,
+            self._bar_height,
+            color=full_color,
+        )
+        self.sprite_list.append(self._background_box)
+        self.sprite_list.append(self._full_box)
+
+        # Set the fullness, position and scale of the bar
+        self.fullness = 1.0
+        self.position = position
+        self.scale = scale
+
+    def __repr__(self) -> str:
+        return f"<IndicatorBar (Owner={self.owner})>"
+
+    @property
+    def background_box(self) -> arcade.SpriteSolidColor:
+        """Returns the background box of the indicator bar."""
+        return self._background_box
+
+    @property
+    def full_box(self) -> arcade.SpriteSolidColor:
+        """Returns the full box of the indicator bar."""
+        return self._full_box
+
+    @property
+    def bar_width(self) -> int:
+        """Gets the width of the bar."""
+        return self._bar_width
+
+    @property
+    def bar_height(self) -> int:
+        """Gets the height of the bar."""
+        return self._bar_height
+
+    @property
+    def center_x(self) -> float:
+        """Gets the x position of the bar."""
+        return self._center_x
+
+    @property
+    def center_y(self) -> float:
+        """Gets the y position of the bar."""
+        return self._center_y
+
+    @property
+    def top(self) -> float:
+        """Gets the y coordinate of the top of the bar."""
+        return self.background_box.top
+
+    @property
+    def bottom(self) -> float:
+        """Gets the y coordinate of the bottom of the bar."""
+        return self.background_box.bottom
+
+    @property
+    def left(self) -> float:
+        """Gets the x coordinate of the left of the bar."""
+        return self.background_box.left
+
+    @property
+    def right(self) -> float:
+        """Gets the x coordinate of the right of the bar."""
+        return self.background_box.right
+
+    @property
+    def fullness(self) -> float:
+        """Returns the fullness of the bar."""
+        return self._fullness
+
+    @fullness.setter
+    def fullness(self, new_fullness: float) -> None:
+        """Sets the fullness of the bar."""
+        # Check if new_fullness if valid
+        if not (0.0 <= new_fullness <= 1.0):
+            raise ValueError(
+                f"Got {new_fullness}, but fullness must be between 0.0 and 1.0."
+            )
+
+        # Set the size of the bar
+        self._fullness = new_fullness
+        if new_fullness == 0.0:
+            # Set the full_box to not be visible since it is not full anymore
+            self.full_box.visible = False
+        else:
+            # Set the full_box to be visible incase it wasn't then update the bar
+            self.full_box.visible = True
+            self.full_box.width = self._bar_width * new_fullness * self.scale[0]
+            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
+
+    @property
+    def position(self) -> tuple[float, float]:
+        """Returns the current position of the bar."""
+        return self._center_x, self._center_y
+
+    @position.setter
+    def position(self, new_position: tuple[float, float]) -> None:
+        """Sets the new position of the bar."""
+        # Check if the position has changed. If so, change the bar's position
+        if new_position != self.position:
+            self._center_x, self._center_y = new_position
+            self.background_box.position = new_position
+            self.full_box.position = new_position
+
+            # Make sure full_box is to the left of the bar instead of the middle
+            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
+
+    @property
+    def scale(self) -> tuple[float, float]:
+        """Returns the scale of the bar."""
+        return self._scale
+
+    @scale.setter
+    def scale(self, value: tuple[float, float]) -> None:
+        """Sets the new scale of the bar."""
+        # Check if the scale has changed. If so, change the bar's scale
+        if value != self.scale:
+            self._scale = value
+            self.background_box.scale = value
+            self.full_box.scale = value
+
+
+class Bullet(arcade.Sprite):
+    """Bullet class for ray casting visual."""
+
+    def __init__(self, start_position: tuple[float, float], end_position: tuple[float, float], bullet_speed: float = BULLET_SPEED, bullet_lifetime: float = BULLET_LIFE, **kwargs):
+        # Create a yellow rectangle texture for the bullet
+        bullet_texture = arcade.make_soft_square_texture(20, arcade.color.YELLOW, name="bullet")
+        super().__init__(path_or_texture=bullet_texture,scale=(0.5,10), **kwargs)
+        self.position = start_position
+        self.target_position = end_position
+        
+        
+        # Calculate direction and speed
+        direction_x = end_position[0] - start_position[0]
+        direction_y = end_position[1] - start_position[1]
+        magnitude = math.sqrt(direction_x**2 + direction_y**2)
+        
+        if magnitude > 0:
+            normalized_direction_x = direction_x / magnitude
+            normalized_direction_y = direction_y / magnitude
+        else:
+            normalized_direction_x = 0.0
+            normalized_direction_y = 0.0
+
+        self.angle = math.degrees(math.atan2(normalized_direction_x, normalized_direction_y))   
+        self.velocity = (normalized_direction_x * bullet_speed, normalized_direction_y * bullet_speed)
+
+        self.lifetime = bullet_lifetime
+
+    def on_update(self, delta_time: float):
+        self.lifetime -= delta_time
+        if self.lifetime <= 0:
+            self.remove_from_sprite_lists()
+
+        self.center_x += self.velocity[0] * delta_time
+        self.center_y += self.velocity[1] * delta_time
+
+    def draw(self):
+        # No longer drawing a line, as it's a sprite now
+        pass
+
 
 
 class Entity(arcade.Sprite):
@@ -323,36 +485,36 @@ class Entity(arcade.Sprite):
         # Health attributes
         self.max_health = 100
         self.current_health = 100
-        # self.health_bar = None # Will hold an instance of IndicatorBar
+        self.health_bar = None # Will hold an instance of IndicatorBar
 
     def draw(self):
         """Draw the entity, including its health bar."""
         super().draw()
 
         # Draw health bar
-        if self.current_health < self.max_health:
-            # Calculate health bar position
-            health_x = self.center_x
-            health_y = self.center_y + self.height / 2 + HEALTHBAR_OFFSET_Y
+        # if self.current_health < self.max_health:
+        #     # Calculate health bar position
+        #     health_x = self.center_x
+        #     health_y = self.center_y + self.height / 2 + HEALTHBAR_OFFSET_Y
 
-            # Draw background box
-            arcade.draw_rectangle_filled(
-                health_x,
-                health_y,
-                HEALTHBAR_WIDTH,
-                HEALTHBAR_HEIGHT,
-                arcade.color.BLACK,
-            )
+        #     # Draw background box
+        #     arcade.draw_rectangle_filled(
+        #         health_x,
+        #         health_y,
+        #         HEALTHBAR_WIDTH,
+        #         HEALTHBAR_HEIGHT,
+        #         arcade.color.BLACK,
+        #     )
 
-            # Draw health amount
-            health_percentage = self.current_health / self.max_health
-            arcade.draw_rectangle_filled(
-                health_x - HEALTHBAR_WIDTH / 2 * (1 - health_percentage),
-                health_y,
-                HEALTHBAR_WIDTH * health_percentage,
-                HEALTHBAR_HEIGHT,
-                arcade.color.RED,
-            )
+        #     # Draw health amount
+        #     health_percentage = self.current_health / self.max_health
+        #     arcade.draw_rectangle_filled(
+        #         health_x - HEALTHBAR_WIDTH / 2 * (1 - health_percentage),
+        #         health_y,
+        #         HEALTHBAR_WIDTH * health_percentage,
+        #         HEALTHBAR_HEIGHT,
+        #         arcade.color.RED,
+        #     )
 
     def take_damage(self, damage_amount: float):
         """Reduce entity health and handle death."""
@@ -360,8 +522,8 @@ class Entity(arcade.Sprite):
         if self.current_health <= 0:
             self.current_health = 0
             self.die() # Trigger death animation or removal
-        # if self.health_bar:
-        #     self.health_bar.fullness = self.current_health / self.max_health
+        if self.health_bar:
+            self.health_bar.fullness = self.current_health / self.max_health
 
     class AnimationType(Enum):
         MOVEMENT = "Movement"
@@ -552,6 +714,7 @@ class Player(Entity):
         friction=PLAYER_FRICTION,
         speed=PLAYER_MOVEMENT_SPEED,
         player_preset="Man",
+        bar_list: arcade.SpriteList = None, # Add bar_list parameter
     ):
         super().__init__(
             image_path, scale=scale, friction=friction, speed=speed
@@ -571,6 +734,17 @@ class Player(Entity):
 
         # Loading will be managed externally via thread pool
         self._is_loading = False # No longer loading asynchronously
+
+        self.current_health = self.max_health
+        if bar_list:
+            self.health_bar = IndicatorBar(
+                self, 
+                bar_list, 
+                (self.center_x, self.center_y),
+                width=HEALTHBAR_WIDTH,
+                height=HEALTHBAR_HEIGHT,
+            )
+
 
     def load_animations(self):
         """Synchronous method to load player animations from configuration file"""
@@ -1136,10 +1310,14 @@ class GameView(arcade.View):
 
         self.scene = self.create_scene()
 
+        # Create a sprite list for health bars
+        self.bar_list = arcade.SpriteList()
+
         # Set up the player info
         self.player = Player(
             ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png",
             speed=PLAYER_MOVEMENT_SPEED,
+            bar_list=self.bar_list, # Pass the bar_list to the Player constructor
         )
         self.player.load_animations() # Call sync method directly
 
@@ -1219,9 +1397,16 @@ class GameView(arcade.View):
             zombie._is_loading = False # No longer loading asynchronously
             self.loading_futures.append((self.loading_executor.submit(zombie.load_animations), zombie))
 
-        # Initialize player state - state system will handle animations
-        # self.player.state = PlayerState.IDLE
-        # self.player.set_animation_for_state()
+        # Re-initialize player's health bar on reset
+        self.player.health_bar = IndicatorBar(
+            self.player,
+            self.bar_list,
+            (self.player.center_x, self.player.center_y),
+            width=HEALTHBAR_WIDTH,
+            height=HEALTHBAR_HEIGHT,
+        )
+        self.player.current_health = self.player.max_health
+        self.player.health_bar.fullness = 1.0
 
     def spawn_zombie(
         self,
@@ -1290,6 +1475,7 @@ class GameView(arcade.View):
         with self.camera.activate():
             self.scene.draw()
             self.bullet_list.draw() # Draw bullets after scene is drawn
+            self.bar_list.draw() # Draw health bars after bullets
 
         with self.camera_gui.activate():
             Debug.render(10, 10)
@@ -1540,7 +1726,6 @@ class GameView(arcade.View):
 
             # Create a bullet sprite to visualize the ray
             bullet = Bullet((start_x, start_y), (end_x, end_y))
-            bullet.angle = math.degrees(math.atan2(normalized_dir_x, normalized_dir_y))-90
             self.bullet_list.append(bullet)
 
     def center_camera_to_player(self, delta_time):
@@ -1589,6 +1774,13 @@ class GameView(arcade.View):
 
         # Update player animation
         self.player.animate(delta_time)
+
+        # Update player health bar position
+        if self.player.health_bar:
+            self.player.health_bar.position = (
+                self.player.center_x,
+                self.player.center_y + INDICATOR_BAR_OFFSET,
+            )
 
         # Update all enemies
         self.update_enemies(delta_time)
