@@ -24,7 +24,7 @@ HEALTHBAR_HEIGHT = 4
 HEALTHBAR_OFFSET_Y = 10
 
 # Constants for bullet properties
-BULLET_SPEED = 500 # Reduced for testing
+BULLET_SPEED = 50 # Reduced for testing
 BULLET_LIFE = 0.5  # Seconds until bullet disappears
 
 # Window settings
@@ -153,16 +153,17 @@ def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float
     if not frame_path:
         # Handle the error case from load_texture_with_anchor
         fallback_texture = arcade.make_soft_square_texture(
-            32, arcade.color.RED, name="fallback"
+            64, arcade.color.RED, name="fallback"
         )
         return fallback_texture, (0, 0)
     else:
         try:
             texture = arcade.load_texture(frame_path)
+            texture = texture.flip_vertically()
         except Exception as e:
             print(f"ERROR: Failed to load arcade.Texture for {frame_path}: {e}")
             fallback_texture = arcade.make_soft_square_texture(
-                32, arcade.color.MAGENTA, name="fallback_load_err"
+                64, arcade.color.MAGENTA, name="fallback_load_err"
             )
             return fallback_texture, (0, 0)
 
@@ -179,10 +180,11 @@ def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float
 class Bullet(arcade.Sprite):
     """Bullet class for ray casting visual."""
 
-    def __init__(self, start_position: Vec2, end_position: Vec2, **kwargs):
+    def __init__(self, start_position: tuple[float, float], end_position: tuple[float, float], **kwargs):
         # Initialize with a texture. Adjust path and scale as needed.
         super().__init__(":resources:images/space_shooter/laserBlue01.png", scale=0.5, **kwargs)
         self.position = start_position
+        self.target_position = end_position
         
         # Calculate direction and speed
         direction_x = end_position[0] - start_position[0]
@@ -196,19 +198,22 @@ class Bullet(arcade.Sprite):
             normalized_direction_x = 0.0
             normalized_direction_y = 0.0
 
-        self.change_x = normalized_direction_x * BULLET_SPEED
-        self.change_y = normalized_direction_y * BULLET_SPEED
+        self.velocity = (normalized_direction_x * BULLET_SPEED, normalized_direction_y * BULLET_SPEED)
 
         self.lifetime = BULLET_LIFE
+        # self.speed = BULLET_SPEED # No longer needed, as velocity is set directly
 
     def on_update(self, delta_time: float):
-        super().on_update(delta_time) # Update position based on change_x, change_y
         self.lifetime -= delta_time
         if self.lifetime <= 0:
             self.remove_from_sprite_lists()
 
+        self.center_x += self.velocity[0] * delta_time
+        self.center_y += self.velocity[1] * delta_time
+
     def draw(self):
-        super().draw()
+        # No longer drawing a line, as it's a sprite now
+        pass
 
 
 class Debug:
@@ -319,6 +324,7 @@ class Entity(arcade.Sprite):
         # Health attributes
         self.max_health = 100
         self.current_health = 100
+        # self.health_bar = None # Will hold an instance of IndicatorBar
 
     def draw(self):
         """Draw the entity, including its health bar."""
@@ -355,6 +361,8 @@ class Entity(arcade.Sprite):
         if self.current_health <= 0:
             self.current_health = 0
             self.die() # Trigger death animation or removal
+        # if self.health_bar:
+        #     self.health_bar.fullness = self.current_health / self.max_health
 
     class AnimationType(Enum):
         MOVEMENT = "Movement"
@@ -494,8 +502,7 @@ class Entity(arcade.Sprite):
     def move(self, direction: Vec2):
         """Move the entity in the given direction"""
         if direction.length() > 0:
-            self.change_x = direction.x * self.speed * self.delta_time
-            self.change_y = direction.y * self.speed * self.delta_time
+            self.velocity = direction * self.speed * self.delta_time
 
         self.update_physics()
     
@@ -517,17 +524,15 @@ class Entity(arcade.Sprite):
         friction_factor = (1 - self.friction) ** (
             self.delta_time
         )
-        self.change_x *= friction_factor
-        self.change_y *= friction_factor
+        self.velocity *= friction_factor
 
         # Clamp the velocity (change_x, change_y) to the max speed
-        velocity_length = math.sqrt(self.change_x**2 + self.change_y**2)
+        velocity_length = math.sqrt(self.velocity.x**2 + self.velocity.y**2)
 
         if velocity_length > self.speed:
-            normalized_x = self.change_x / velocity_length
-            normalized_y = self.change_y / velocity_length
-            self.change_x = normalized_x * self.speed
-            self.change_y = normalized_y * self.speed
+            normalized_x = self.velocity.x / velocity_length
+            normalized_y = self.velocity.y / velocity_length
+            self.velocity = Vec2(normalized_x * self.speed, normalized_y * self.speed)
 
     def update_state(self, delta_time: float):
         """Update entity state based on velocity and other factors - to be overridden by child classes"""
@@ -557,7 +562,7 @@ class Player(Entity):
 
         # Player-specific properties
         self.state = PlayerState.IDLE
-        self.mouse_position = Vec2(0, 0) # Changed to Vec2
+        self.mouse_position = (0.0, 0.0)
 
         # Weapon handling
         self.current_weapon = WeaponType.GUN
@@ -566,9 +571,9 @@ class Player(Entity):
         self.character_config = load_character_config(PLAYER_CONFIG_FILE)
 
         # Loading will be managed externally via thread pool
-        self._is_loading = True # Set initial state to loading
+        self._is_loading = False # No longer loading asynchronously
 
-    def load_animation_sync(self):
+    def load_animations(self):
         """Synchronous method to load player animations from configuration file"""
         if (
             not self.character_config
@@ -659,7 +664,29 @@ class Player(Entity):
             f"{len(self.animations)} types, {total_frames} frames",
         )
         Debug.update(f"Current Weapon", f"{self.current_weapon.name}")
-        return animation_dict # Return the loaded animation data
+
+        # Process loaded textures into arcade.Texture objects
+        for anim_name, animation_info in self.animations.items():
+            if "sequence" in animation_info and animation_info["sequence"]:
+                for raw_frame_data in animation_info["sequence"]:
+                    frame_path = raw_frame_data[0]
+                    if frame_path not in self.processed_textures:
+                        try:
+                            texture, offset = process_loaded_texture_data(raw_frame_data)
+                            self.processed_textures[frame_path] = (texture, offset)
+                        except Exception as e:
+                            print(f"Error processing and storing texture {frame_path}: {e}")
+            if "idle" in animation_info and animation_info["idle"]:
+                raw_frame_data = animation_info["idle"]
+                frame_path = raw_frame_data[0]
+                if frame_path not in self.processed_textures:
+                    try:
+                        texture, offset = process_loaded_texture_data(raw_frame_data)
+                        self.processed_textures[frame_path] = (texture, offset)
+                    except Exception as e:
+                        print(f"Error processing and storing idle texture {frame_path}: {e}")
+
+        self._is_loading = False # Mark as not loading after processing
 
     def set_weapon(self, weapon_type: WeaponType):
         """Set the current weapon"""
@@ -816,7 +843,7 @@ class Player(Entity):
             current_anim_data = self.animations.get(self.current_animation)
             if current_anim_data and self.current_animation_frame == len(current_anim_data['sequence']) - 1:
                 # Animation finished, transition to idle/walking
-                velocity_magnitude = math.sqrt(self.change_x**2 + self.change_y**2) # Use change_x/y
+                velocity_magnitude = math.sqrt(self.velocity.x**2 + self.velocity.y**2) # Use change_x/y
                 if velocity_magnitude > DEAD_ZONE:
                     self.state = PlayerState.WALKING
                 else:
@@ -829,7 +856,7 @@ class Player(Entity):
             return
 
         # Check if player is moving
-        velocity_magnitude = math.sqrt(self.change_x**2 + self.change_y**2) # Use change_x/y
+        velocity_magnitude = math.sqrt(self.velocity.x**2 + self.velocity.y**2) # Use change_x/y
 
         if velocity_magnitude > DEAD_ZONE:
             if self.state != PlayerState.WALKING:
@@ -889,9 +916,9 @@ class Enemy(Entity):
         self.enemy_config = load_character_config(ZOMBIE_CONFIG_FILE)
 
         # Load animations
-        self._is_loading = True # Set initial state to loading
+        self._is_loading = False # No longer loading asynchronously
 
-    def load_animation_sync(self):
+    def load_animations(self):
         """Synchronous method to load enemy animations from configuration file"""
         if not self.enemy_config or self.enemy_type not in self.enemy_config:
             print(f"No configuration found for enemy type: {self.enemy_type}")
@@ -909,7 +936,6 @@ class Enemy(Entity):
             frame_paths = animation_config.get("frames", [])
 
             for frame_path in frame_paths:
-                print(f"DEBUG: Enemy.load_animation_sync - loading frame_path: {frame_path}") # Debugging
                 raw_texture_data = load_texture_with_anchor(
                     frame_path, animation_config
                 )
@@ -959,8 +985,29 @@ class Enemy(Entity):
             f"{self.enemy_type} Animations",
             f"{len(self.animations)} types, {total_frames} frames",
         )
+
+        # Process loaded textures into arcade.Texture objects
+        for anim_name, animation_info in self.animations.items():
+            if "sequence" in animation_info and animation_info["sequence"]:
+                for raw_frame_data in animation_info["sequence"]:
+                    frame_path = raw_frame_data[0]
+                    if frame_path not in self.processed_textures:
+                        try:
+                            texture, offset = process_loaded_texture_data(raw_frame_data)
+                            self.processed_textures[frame_path] = (texture, offset)
+                        except Exception as e:
+                            print(f"Error processing and storing texture {frame_path}: {e}")
+            if "idle" in animation_info and animation_info["idle"]:
+                raw_frame_data = animation_info["idle"]
+                frame_path = raw_frame_data[0]
+                if frame_path not in self.processed_textures:
+                    try:
+                        texture, offset = process_loaded_texture_data(raw_frame_data)
+                        self.processed_textures[frame_path] = (texture, offset)
+                    except Exception as e:
+                        print(f"Error processing and storing idle texture {frame_path}: {e}")
+
         self._is_loading = False # Unset loading flag - MOVED TO MAIN THREAD
-        return animation_dict # Return the loaded animation data
 
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state"""
@@ -1016,7 +1063,7 @@ class Enemy(Entity):
                     return
 
         # If not attacking or dying, check for movement
-        velocity_magnitude = math.sqrt(self.change_x**2 + self.change_y**2) # Use change_x/y
+        velocity_magnitude = math.sqrt(self.velocity.x**2 + self.velocity.y**2) # Use change_x/y
 
         if velocity_magnitude > DEAD_ZONE:
             if self.state != EntityState.WALKING:
@@ -1057,6 +1104,7 @@ class Zombie(Enemy):
             friction=friction,
             speed=speed,
             enemy_type=zombie_type,
+            player_ref=player_ref,
         )
 
         self.player = player_ref
@@ -1073,7 +1121,7 @@ class GameView(arcade.View):
     def __init__(self):
         super().__init__()
 
-        # Removed: Debug._initialize() # Initialize the Debug system here
+        Debug._initialize() # Initialize the Debug system here
         self.loading_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4) # Initialize thread pool
         self.loading_futures = [] # List to hold Futures for loading tasks
 
@@ -1094,14 +1142,11 @@ class GameView(arcade.View):
             ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png",
             speed=PLAYER_MOVEMENT_SPEED,
         )
-        self.player._is_loading = True # Set loading state
-        self.player_loading_future = self.loading_executor.submit(self.player.load_animation_sync) # Store the player\'s future
-        self.loading_futures.append((self.player_loading_future, self.player)) # Add player future and entity to generic list
+        self.player.load_animations() # Call sync method directly
 
         # Enemy list and physics engines - initialize before spawning enemies
         self.enemies = []
         self.enemy_physics_engines = []
-        # self.enemy_loading_tasks = [] # No longer needed, using loading_futures
 
         # Add a test zombie
         self.spawn_zombie(
@@ -1138,9 +1183,6 @@ class GameView(arcade.View):
 
         self.reset()
 
-    def on_show_view(self):
-        Debug._initialize() # Initialize debug here when the view is shown
-
     def reset(self):
         self.scene = self.create_scene()
 
@@ -1169,21 +1211,25 @@ class GameView(arcade.View):
 
         # Clear and re-add loading futures on reset
         self.loading_futures = []
-        self.player._is_loading = True
-        self.player_loading_future = self.loading_executor.submit(self.player.load_animation_sync)
+        self.player._is_loading = False # No longer loading asynchronously
+        self.player_loading_future = self.loading_executor.submit(self.player.load_animations)
         self.loading_futures.append((self.player_loading_future, self.player))
         
         # Add initial enemy loading futures (for the newly spawned zombie)
         if zombie:
-            zombie._is_loading = True
-            self.loading_futures.append((self.loading_executor.submit(zombie.load_animation_sync), zombie))
+            zombie._is_loading = False # No longer loading asynchronously
+            self.loading_futures.append((self.loading_executor.submit(zombie.load_animations), zombie))
 
         # Initialize player state - state system will handle animations
         # self.player.state = PlayerState.IDLE
         # self.player.set_animation_for_state()
 
     def spawn_zombie(
-        self, zombie_type, x, y, player_ref: Player | None = None
+        self,
+        zombie_type,
+        x,
+        y,
+        player_ref: Player | None = None,
     ):
         """Spawn a zombie at the specified position"""
         # Use a placeholder image initially - it will be replaced by the animation system
@@ -1199,9 +1245,8 @@ class GameView(arcade.View):
         zombie = Zombie(
             placeholder_image, zombie_type=zombie_type, player_ref=self.player
         )
-        zombie.position = Vec2(float(x), float(y))
-        zombie._is_loading = True # Set loading state
-        self.loading_futures.append((self.loading_executor.submit(zombie.load_animation_sync), zombie)) # Submit to thread pool as a tuple
+        zombie.position = (float(x), float(y))
+        zombie.load_animations() # Call sync method directly
 
         self.enemies.append(zombie)
         self.scene.add_sprite("Enemies", zombie)
@@ -1280,7 +1325,7 @@ class GameView(arcade.View):
             has_movement = True
             movement_direction_y = -1
 
-        self.player.move(Vec2(movement_direction_x, movement_direction_y))
+        self.player.velocity = Vec2(movement_direction_x, movement_direction_y) * self.player.speed * self.player.delta_time
 
     def update_enemies(self, delta_time):
         """Update all enemies in the game"""
@@ -1301,9 +1346,9 @@ class GameView(arcade.View):
                 if direction_magnitude > 0:
                     normalized_dir_x = direction_x / direction_magnitude
                     normalized_dir_y = direction_y / direction_magnitude
-                    enemy.move(Vec2(normalized_dir_x, normalized_dir_y))
+                    enemy.velocity = Vec2(normalized_dir_x, normalized_dir_y) * enemy.speed * enemy.delta_time
                 else:
-                    enemy.move(Vec2(0.0, 0.0))
+                    enemy.velocity = Vec2(0.0, 0.0)
 
                 # Attack if close enough
                 if (
@@ -1324,14 +1369,12 @@ class GameView(arcade.View):
                     if direction_magnitude > 0:
                         normalized_dir_x = direction_x / direction_magnitude
                         normalized_dir_y = direction_y / direction_magnitude
-                        enemy.move(Vec2(normalized_dir_x, normalized_dir_y))
+                        enemy.velocity = Vec2(normalized_dir_x, normalized_dir_y) * enemy.speed * enemy.delta_time
                     else:
-                        enemy.move(Vec2(0.0, 0.0))
+                        enemy.velocity = Vec2(0.0, 0.0)
                 else:
                     # Continue current movement
-                    enemy.move(
-                        Vec2(0.0, 0.0)
-                    )  # This will apply friction but not add new velocity
+                    enemy.velocity = Vec2(0.0, 0.0) # This will apply friction but not add new velocity
 
             # Update the enemy facing direction to look at player
             enemy.look_at(self.player.position)
@@ -1403,7 +1446,7 @@ class GameView(arcade.View):
         # Convert screen coordinates to world coordinates
         offset_x = (x - WINDOW_WIDTH / 2) / self.camera.zoom
         offset_y = (y - WINDOW_HEIGHT / 2) / self.camera.zoom
-        self.mouse_offset = Vec2(offset_x, offset_y)
+        self.mouse_offset = (offset_x, offset_y)
         
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -1421,7 +1464,7 @@ class GameView(arcade.View):
             # If player was shooting, transition back to idle/walking is now handled by animation completion
             # if self.player.state == PlayerState.SHOOTING:
             #     # Check if player is moving to set state correctly
-            #     velocity_magnitude = math.sqrt(self.player.change_x**2 + self.player.change_y**2)
+            #     velocity_magnitude = math.sqrt(self.player.velocity[0]**2 + self.player.velocity[1]**2)
             #     if velocity_magnitude > DEAD_ZONE:
             #         self.player.state = PlayerState.WALKING
             #     else:
@@ -1432,34 +1475,40 @@ class GameView(arcade.View):
         """Performs ray casting for shooting."""
         if self.player.current_weapon == WeaponType.GUN:
             arcade.play_sound(self.gun_shot_sound)
-            start_x, start_y = self.player.position # Access .x and .y
+            start_x, start_y = self.player.position
             
-            # Calculate the direction vector from player\'s facing angle
-            angle_radians = math.radians(self.player.angle) + 180
+            # Calculate the direction vector from player's facing angle
+            angle_radians = math.radians(self.player.angle)
             # This is correct, sin for x and cos for y since 0 degrees is to the right
             dir_x = math.sin(angle_radians)
             dir_y = math.cos(angle_radians)
             
             # Normalize direction vector
-            direction_vector = Vec2(dir_x, dir_y).normalize() # Ensure it\'s Vec2
+            direction_magnitude = math.sqrt(dir_x**2 + dir_y**2)
+            if direction_magnitude > 0:
+                normalized_dir_x = dir_x / direction_magnitude
+                normalized_dir_y = dir_y / direction_magnitude
+            else:
+                normalized_dir_x = 0.0
+                normalized_dir_y = 0.0
 
             # Define the length of the ray (e.g., screen diagonal or further)
             ray_length = max(WINDOW_WIDTH, WINDOW_HEIGHT) * 1.5 # Extend beyond screen
 
             # Calculate the end point of the ray
-            end_x = start_x + direction_vector.x * ray_length
-            end_y = start_y + direction_vector.y * ray_length
+            end_x = start_x + normalized_dir_x * ray_length
+            end_y = start_y + normalized_dir_y * ray_length
 
             # Create a temporary sprite for the ray for collision detection
             # Make it a thin rectangle extending from player to ray_length
             ray_sprite = arcade.SpriteSolidColor(
                 1,  # width
                 ray_length,  # height
-                arcade.color.YELLOW  # color - doesn\'t really matter as it\'s removed
+                arcade.color.YELLOW  # color - doesn't really matter as it's removed
             )
-            ray_sprite.center_x = start_x + direction_vector.x * ray_length / 2
-            ray_sprite.center_y = start_y + direction_vector.y * ray_length / 2
-            ray_sprite.angle = math.degrees(math.atan2(direction_vector.y, direction_vector.x)) # Use direction_vector components
+            ray_sprite.center_x = start_x + normalized_dir_x * ray_length / 2
+            ray_sprite.center_y = start_y + normalized_dir_y * ray_length / 2
+            ray_sprite.angle = math.degrees(math.atan2(normalized_dir_y, normalized_dir_x))
 
             # Perform collision check
             hit_sprites = arcade.check_for_collision_with_list(
@@ -1467,8 +1516,8 @@ class GameView(arcade.View):
                 self.scene.get_sprite_list("Enemies")
             )
 
-            # Remove the temporary ray sprite immediately
-            ray_sprite.remove_from_sprite_lists()
+            # # Remove the temporary ray sprite immediately
+            # ray_sprite.remove_from_sprite_lists()
 
             if hit_sprites:
                 # Find the closest hit enemy
@@ -1484,21 +1533,22 @@ class GameView(arcade.View):
                     closest_enemy.take_damage(10) # Apply damage to the enemy
                     Debug.update("Hit Enemy", closest_enemy.enemy_type)
                     # Adjust end_x, end_y to the hit point for the bullet visual
-                    end_x, end_y = closest_enemy.position[0], closest_enemy.position[1] # Access .x and .y
+                    end_x, end_y = closest_enemy.position
                 else:
                     Debug.update("Hit Enemy", "None")
             else:
                 Debug.update("Hit Enemy", "None")
 
             # Create a bullet sprite to visualize the ray
-            bullet = Bullet(Vec2(start_x, start_y), Vec2(end_x, end_y)) # Initialize with Vec2
+            bullet = Bullet((start_x, start_y), (end_x, end_y))
+            bullet.angle = math.degrees(math.atan2(normalized_dir_x, normalized_dir_y))-90
             self.bullet_list.append(bullet)
 
     def center_camera_to_player(self, delta_time):
         # Move the camera to center on the player
         # arcade.math.smerp_2d expects Vec2, so convert player.position
-        current_camera_position = Vec2(self.camera.position[0], self.camera.position[1]) # Access .x and .y
-        player_position_vec = self.player.position # Already Vec2
+        current_camera_position = Vec2(self.camera.position[0], self.camera.position[1])
+        player_position_vec = Vec2(self.player.position[0], self.player.position[1])
 
         new_camera_position_vec = arcade.math.smerp_2d(
             current_camera_position,
@@ -1506,81 +1556,23 @@ class GameView(arcade.View):
             delta_time,
             FOLLOW_DECAY_CONST,
         )
-        self.camera.position = new_camera_position_vec # Assign Vec2 directly
+        self.camera.position = (new_camera_position_vec.x, new_camera_position_vec.y)
 
-        # Check if assets are still loading
-        remaining_futures = []
-        all_loading_done = True
-
-        for future, entity in self.loading_futures:
-            if future.done():
-                try:
-                    animation_data = future.result()
-                    
-                    # Check if the entity just finished loading
-                    if entity._is_loading:
-                        for anim_name, animation_info in entity.animations.items():
-                            if "sequence" in animation_info and animation_info["sequence"]:
-                                for raw_frame_data in animation_info["sequence"]:
-                                    frame_path = raw_frame_data[0]
-                                    if frame_path not in entity.processed_textures:
-                                        try:
-                                            texture, offset = process_loaded_texture_data(raw_frame_data)
-                                            entity.processed_textures[frame_path] = (texture, offset)
-                                            # print(f"DEBUG: Stored texture for {frame_path} in {entity.__class__.__name__}.processed_textures")
-                                        except Exception as e:
-                                            print(f"Error processing and storing texture {frame_path}: {e}")
-                            if "idle" in animation_info and animation_info["idle"]:
-                                raw_frame_data = animation_info["idle"]
-                                frame_path = raw_frame_data[0]
-                                if frame_path not in entity.processed_textures:
-                                    try:
-                                        texture, offset = process_loaded_texture_data(raw_frame_data)
-                                        entity.processed_textures[frame_path] = (texture, offset)
-                                        print(f"DEBUG: Stored idle texture for {frame_path} in {entity.__class__.__name__}.processed_textures")
-                                    except Exception as e:
-                                        print(f"Error processing and storing idle texture {frame_path}: {e}")
-                        
-                        entity._is_loading = False # Mark the entity as not loading
-                        Debug.update("Loading Status", "Game Ready!")
-                        entity.set_animation_for_state() # Set initial animation state once textures are loaded
-
-                except Exception as e:
-                    print(f"Error processing loaded assets for {entity.__class__.__name__}: {e}")
-                    entity._is_loading = False # Ensure entity is not stuck in loading state
-            else:
-                all_loading_done = False
-                remaining_futures.append((future, entity))
-
-        self.loading_futures = remaining_futures
-
-        # Check if all entities are no longer loading (including newly spawned ones)
-        if not self.player._is_loading and all(not enemy._is_loading for enemy in self.enemies):
-            Debug.update("Loading Status", "Game Ready!")
-            pass # No longer returning early if main entities are loaded
-        else:
-            if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
-                Debug.update("Loading Status", "Loading assets...")
-                pass # Allow game to update even if loading
-            else:
-                Debug.update("Loading Status", "Processing remaining assets...")
-                pass # Allow game to update even if loading
-        
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
 
         # Debug info for current animation, state, and position (always update)
         Debug.update("Current Animation", f"{self.player.current_animation}")
         Debug.update("Player State", f"{self.player.state.value}")
-        Debug.update("Player Position", f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}") # Access .x and .y
+        Debug.update("Player Position", f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}")
         # Log player velocity
-        Debug.update("Player Velocity", f"{self.player.change_x:.2f}, {self.player.change_y:.2f}")
+        Debug.update("Player Velocity", f"{self.player.velocity[0]:.2f}, {self.player.velocity[1]:.2f}")
 
         # Only proceed with game logic if player and initial enemies are no longer loading
-        if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
-            return
+        # if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
+        #     return
 
-        self.mouse_position = self.mouse_offset + self.camera.position # Use Vec2 addition
+        self.mouse_position = (self.mouse_offset[0] + self.camera.position[0], self.mouse_offset[1] + self.camera.position[1])
         self.player.look_at(self.mouse_position)
         
         # Smoothly interpolate camera zoom towards target zoom
