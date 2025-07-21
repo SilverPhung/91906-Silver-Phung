@@ -494,17 +494,31 @@ class Entity(arcade.Sprite):
     def move(self, direction: Vec2):
         """Move the entity in the given direction"""
         if direction.length() > 0:
-            self.change_x = direction.x * self.speed
-            self.change_y = direction.y * self.speed
-        else:
-            self.change_x = 0
-            self.change_y = 0
+            self.change_x = direction.x * self.speed * self.delta_time
+            self.change_y = direction.y * self.speed * self.delta_time
+
+        self.update_physics()
+    
+    def look_at(self, target_pos: Vec2):
+        """Update facing direction to look at target"""
+        # Calculate angle between enemy and target
+        dx = target_pos[0] - self.center_x # Access .x and .y
+        dy = target_pos[1] - self.center_y # Access .x and .y
+        angle = math.atan2(dx, dy) * 180 / math.pi
+        self.angle = angle
+
+        # Set facing based on angle
+        self.facing_direction = angle
 
     def update_physics(self):
         """Update physics calculations"""
         # Apply friction directly to change_x and change_y
-        self.change_x *= self.friction
-        self.change_y *= self.friction
+        # friction
+        friction_factor = (1 - self.friction) ** (
+            self.delta_time
+        )
+        self.change_x *= friction_factor
+        self.change_y *= friction_factor
 
         # Clamp the velocity (change_x, change_y) to the max speed
         velocity_length = math.sqrt(self.change_x**2 + self.change_y**2)
@@ -826,15 +840,10 @@ class Player(Entity):
                 self.state = PlayerState.IDLE
                 self.set_animation_for_state()
 
-    def update_facing_direction(self, mouse_pos: Vec2):
+    def look_at(self, mouse_pos: Vec2):
         """Update facing direction based on mouse position"""
         self.mouse_position = mouse_pos
-
-        # Calculate angle between player and mouse position
-        dx = self.mouse_position[0] - self.position[0] # Access .x and .y
-        dy = self.mouse_position[1] - self.position[1] # Access .x and .y
-        angle = math.atan2(dx, dy) * 180 / math.pi + 180
-        self.angle = angle
+        super().look_at(mouse_pos)
         Debug.update("Player Angle (internal)", f"{self.angle:.2f}") # Add debug for player angle
 
     def attack(self):
@@ -1024,16 +1033,10 @@ class Enemy(Entity):
             self.state = EntityState.ATTACKING
             self.set_animation_for_state()
 
-    def update_facing_direction(self, target_pos: Vec2):
+    def look_at(self, target_pos: Vec2):
         """Update facing direction to look at target"""
-        # Calculate angle between enemy and target
-        dx = target_pos[0] - self.position[0] # Access .x and .y
-        dy = target_pos[1] - self.position[1] # Access .x and .y
-        angle = math.atan2(dx, dy) * 180 / math.pi + 180
-        self.angle = angle
+        super().look_at(target_pos)
 
-        # Set facing based on angle
-        self.facing_direction = angle
 
 
 class Zombie(Enemy):
@@ -1331,7 +1334,7 @@ class GameView(arcade.View):
                     )  # This will apply friction but not add new velocity
 
             # Update the enemy facing direction to look at player
-            enemy.update_facing_direction(self.player.position)
+            enemy.look_at(self.player.position)
 
             # Update animation state
             enemy.update_state(delta_time)
@@ -1429,12 +1432,13 @@ class GameView(arcade.View):
         """Performs ray casting for shooting."""
         if self.player.current_weapon == WeaponType.GUN:
             arcade.play_sound(self.gun_shot_sound)
-            start_x, start_y = self.player.position[0], self.player.position[1] # Access .x and .y
+            start_x, start_y = self.player.position # Access .x and .y
             
             # Calculate the direction vector from player\'s facing angle
-            angle_radians = math.radians(self.player.angle)
-            dir_x = math.cos(angle_radians)
-            dir_y = math.sin(angle_radians)
+            angle_radians = math.radians(self.player.angle) + 180
+            # This is correct, sin for x and cos for y since 0 degrees is to the right
+            dir_x = math.sin(angle_radians)
+            dir_y = math.cos(angle_radians)
             
             # Normalize direction vector
             direction_vector = Vec2(dir_x, dir_y).normalize() # Ensure it\'s Vec2
@@ -1523,7 +1527,7 @@ class GameView(arcade.View):
                                         try:
                                             texture, offset = process_loaded_texture_data(raw_frame_data)
                                             entity.processed_textures[frame_path] = (texture, offset)
-                                            print(f"DEBUG: Stored texture for {frame_path} in {entity.__class__.__name__}.processed_textures")
+                                            # print(f"DEBUG: Stored texture for {frame_path} in {entity.__class__.__name__}.processed_textures")
                                         except Exception as e:
                                             print(f"Error processing and storing texture {frame_path}: {e}")
                             if "idle" in animation_info and animation_info["idle"]:
@@ -1577,7 +1581,7 @@ class GameView(arcade.View):
             return
 
         self.mouse_position = self.mouse_offset + self.camera.position # Use Vec2 addition
-        self.player.update_facing_direction(self.mouse_position)
+        self.player.look_at(self.mouse_position)
         
         # Smoothly interpolate camera zoom towards target zoom
         if abs(self.camera.zoom - self.target_zoom) > 0.001: # Check for a small difference to avoid constant updates
