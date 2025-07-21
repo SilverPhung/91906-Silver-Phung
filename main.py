@@ -1200,6 +1200,7 @@ class GameView(arcade.View):
             ZOMBIE_ASSETS_DIR, zombie_type, "Walk", "walk_000.png"
         )
         if not os.path.exists(placeholder_image):
+            print(f"ERROR: Placeholder image path does not exist: {placeholder_image}") # Debugging
             placeholder_image = (
                 ":resources:images/animated_characters/zombie/zombie_idle.png"
             )
