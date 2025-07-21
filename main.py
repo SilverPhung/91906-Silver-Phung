@@ -103,7 +103,10 @@ def load_character_config(config_file: str) -> dict:
     """Load character configuration from JSON file."""
     try:
         with open(config_file, "r") as f:
-            return json.load(f)
+            config_data = json.load(f)
+            print(f"Successfully loaded config: {config_file}")
+            print(f"Config data keys: {config_data.keys()}")
+            return config_data
     except FileNotFoundError:
         print(f"Configuration file not found: {config_file}")
         print(
@@ -120,6 +123,7 @@ def load_texture_with_anchor(
 ) -> tuple[str, float, float, float, float]: # Return raw image data and properties
     """Load raw image data and return properties from animation configuration."""
     try:
+        print(f"Loading texture with anchor: {frame_path}")
         # No longer loading arcade.Texture here, just returning path and properties
         # This ensures image loading is decoupled from OpenGL texture creation
 
@@ -141,6 +145,7 @@ def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
 def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float, float]) -> tuple[arcade.Texture, tuple[float, float]]:
     """Loads arcade.Texture from raw image data on the main thread."""
     frame_path, image_width, image_height, anchor_x, anchor_y = raw_texture_data
+    print(f"Processing loaded texture data for: {frame_path}")
     
     if not frame_path:
         # Handle the error case from load_texture_with_anchor
@@ -197,7 +202,7 @@ class Debug:
 
         # Pre-create a fixed number of Text objects
         # Adjust MAX_DEBUG_LINES based on expected debug output
-        MAX_DEBUG_LINES = 10 
+        MAX_DEBUG_LINES = 20 # Increased to accommodate more debug lines
         for i in range(MAX_DEBUG_LINES):
             Debug.text_objects.append(
                 arcade.Text(
@@ -373,6 +378,7 @@ class Entity(arcade.Sprite):
                         )
                         self._apply_texture_and_offset(fallback_texture, (0, 0))
                         print(f"Warning: Processed texture for {current_frame_key} not found during animation. Using fallback.")
+                        print(f"Available textures: {self.processed_textures.keys()}")
 
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
@@ -399,6 +405,7 @@ class Entity(arcade.Sprite):
                 )
                 self._apply_texture_and_offset(fallback_texture, (0, 0))
                 print(f"Warning: Processed texture for {first_frame_key} not found. Using fallback.")
+                print(f"Available textures: {self.processed_textures.keys()}")
         elif animation_name in self.animations and self.animations[
             animation_name
         ].get("idle"):
@@ -419,6 +426,7 @@ class Entity(arcade.Sprite):
                 )
                 self._apply_texture_and_offset(fallback_texture, (0, 0))
                 print(f"Warning: Processed idle texture for {idle_key} not found. Using fallback.")
+                print(f"Available textures: {self.processed_textures.keys()}")
         else:
             print(
                 f"Warning: Animation '{animation_name}' not found or has no frames."
@@ -434,9 +442,10 @@ class Entity(arcade.Sprite):
     def update_physics(self):
         """Update physics calculations"""
         # friction
-        self.velocity = to_vector(self.velocity) * (1 - self.friction) ** (
+        friction_factor = (1 - self.friction) ** (
             self.delta_time
         )
+        self.velocity = Vec2(self.velocity.x * friction_factor, self.velocity.y * friction_factor)
 
         # Clamp the velocity to the max speed
         velocity_length = self.velocity.length()
@@ -575,7 +584,6 @@ class Player(Entity):
             f"{len(self.animations)} types, {total_frames} frames",
         )
         Debug.update(f"Current Weapon", f"{self.current_weapon.name}")
-        self._is_loading = False # Unset loading flag
         return animation_dict # Return the loaded animation data
 
     def set_weapon(self, weapon_type: WeaponType):
@@ -880,7 +888,7 @@ class Enemy(Entity):
             f"{self.enemy_type} Animations",
             f"{len(self.animations)} types, {total_frames} frames",
         )
-        self._is_loading = False # Unset loading flag
+        # self._is_loading = False # Unset loading flag - MOVED TO MAIN THREAD
         return animation_dict # Return the loaded animation data
 
     def set_animation_for_state(self):
@@ -1000,6 +1008,7 @@ class GameView(arcade.View):
     def __init__(self):
         super().__init__()
 
+        Debug._initialize() # Initialize the Debug system here
         self.loading_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4) # Initialize thread pool
         self.loading_futures = [] # List to hold Futures for loading tasks
 
@@ -1102,8 +1111,8 @@ class GameView(arcade.View):
             self.loading_futures.append((self.loading_executor.submit(zombie.load_animation_sync), zombie))
 
         # Initialize player state - state system will handle animations
-        self.player.state = PlayerState.IDLE
-        self.player.set_animation_for_state()
+        # self.player.state = PlayerState.IDLE
+        # self.player.set_animation_for_state()
 
     def spawn_zombie(
         self, zombie_type, x, y, player_ref: Player | None = None
@@ -1415,19 +1424,42 @@ class GameView(arcade.View):
         for future, entity in self.loading_futures:
             if future.done():
                 try:
-                    # Get the raw animation data from the completed future
                     animation_data = future.result()
                     
-                    # Process animation data on the main thread
-                    for anim_name, anim_sequences in animation_data.items():
-                        for raw_frame_data in anim_sequences:
-                            frame_path = raw_frame_data[0]
-                            if frame_path not in entity.processed_textures: # Process only if not already processed
-                                texture, offset = process_loaded_texture_data(raw_frame_data)
-                                entity.processed_textures[frame_path] = (texture, offset)
-                    
-                    entity._is_loading = False # Mark the entity as not loading
-                    entity.set_animation_for_state() # Set initial animation state once textures are loaded
+                    if entity._is_loading:
+                        print(f"Entity {entity.__class__.__name__} ({entity.player_preset if hasattr(entity, 'player_preset') else entity.enemy_type}) finished loading raw data. _is_loading is True.")
+                        print(f"Animations loaded into entity.animations: {entity.animations.keys()}")
+
+                        print("Starting texture processing loop...")
+                        # Iterate directly over entity.animations to ensure all frames are processed
+                        for anim_name, animation_info in entity.animations.items():
+                            if "sequence" in animation_info and animation_info["sequence"]:
+                                for raw_frame_data in animation_info["sequence"]:
+                                    frame_path = raw_frame_data[0]
+                                    print(f"Attempting to process frame: {frame_path}")
+                                    if frame_path not in entity.processed_textures:
+                                        try:
+                                            texture, offset = process_loaded_texture_data(raw_frame_data)
+                                            entity.processed_textures[frame_path] = (texture, offset)
+                                            print(f"Stored processed texture for key: {frame_path}")
+                                        except Exception as e:
+                                            print(f"Error processing and storing texture {frame_path}: {e}")
+                            if "idle" in animation_info and animation_info["idle"]:
+                                raw_frame_data = animation_info["idle"]
+                                frame_path = raw_frame_data[0]
+                                print(f"Attempting to process idle frame: {frame_path}")
+                                if frame_path not in entity.processed_textures:
+                                    try:
+                                        texture, offset = process_loaded_texture_data(raw_frame_data)
+                                        entity.processed_textures[frame_path] = (texture, offset)
+                                        print(f"Stored processed texture for key: {frame_path}")
+                                    except Exception as e:
+                                        print(f"Error processing and storing idle texture {frame_path}: {e}")
+                        print("Finished texture processing loop.")
+                        
+                        entity._is_loading = False # Mark the entity as not loading
+                        print(f"Entity {entity.__class__.__name__} ({entity.player_preset if hasattr(entity, 'player_preset') else entity.enemy_type}) _is_loading set to False.")
+                        entity.set_animation_for_state() # Set initial animation state once textures are loaded
 
                 except Exception as e:
                     print(f"Error processing loaded assets for {entity.__class__.__name__}: {e}")
@@ -1443,11 +1475,20 @@ class GameView(arcade.View):
             Debug.update("Loading Status", "Game Ready!") # Clear message when done
             # If all loading is done, no need to return, proceed with game logic
         else:
-            Debug.update("Loading Status", "Loading assets...")
-            return # Skip game logic if still loading
+            # Debug.update("Loading Status", "Loading assets...")
+            # return # Skip game logic if still loading
+            # Update loading status to reflect if player or main enemies are still loading
+            if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
+                Debug.update("Loading Status", "Loading assets...")
+            else:
+                Debug.update("Loading Status", "Processing remaining assets...") # For background loading
         
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
+
+        # Only proceed with game logic if player and initial enemies are no longer loading
+        if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
+            return
 
         self.mouse_position = self.mouse_offset + self.camera.position
         self.player.update_facing_direction(self.mouse_position)
