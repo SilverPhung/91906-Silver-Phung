@@ -185,8 +185,8 @@ class Bullet(arcade.Sprite):
         self.position = start_position
         
         # Calculate direction and speed
-        direction_x = end_position.x - start_position.x
-        direction_y = end_position.y - start_position.y
+        direction_x = end_position[0] - start_position[0]
+        direction_y = end_position[1] - start_position[1]
         magnitude = math.sqrt(direction_x**2 + direction_y**2)
         
         if magnitude > 0:
@@ -831,8 +831,8 @@ class Player(Entity):
         self.mouse_position = mouse_pos
 
         # Calculate angle between player and mouse position
-        dx = self.mouse_position.x - self.position.x # Access .x and .y
-        dy = self.mouse_position.y - self.position.y # Access .x and .y
+        dx = self.mouse_position[0] - self.position[0] # Access .x and .y
+        dy = self.mouse_position[1] - self.position[1] # Access .x and .y
         angle = math.atan2(dx, dy) * 180 / math.pi + 180
         self.angle = angle
         Debug.update("Player Angle (internal)", f"{self.angle:.2f}") # Add debug for player angle
@@ -996,8 +996,8 @@ class Enemy(Entity):
             if (
                 self.player
             ):  # Ensure player exists before accessing its position
-                dx = self.player.position.x - self.position.x # Access .x and .y
-                dy = self.player.position.y - self.position.y # Access .x and .y
+                dx = self.player.position[0] - self.position[0] # Access .x and .y
+                dy = self.player.position[1] - self.position[1] # Access .x and .y
                 distance = math.sqrt(dx * dx + dy * dy)
 
                 if distance > self.attack_range + 20:  # Add a small buffer
@@ -1027,8 +1027,8 @@ class Enemy(Entity):
     def update_facing_direction(self, target_pos: Vec2):
         """Update facing direction to look at target"""
         # Calculate angle between enemy and target
-        dx = target_pos.x - self.position.x # Access .x and .y
-        dy = target_pos.y - self.position.y # Access .x and .y
+        dx = target_pos[0] - self.position[0] # Access .x and .y
+        dy = target_pos[1] - self.position[1] # Access .x and .y
         angle = math.atan2(dx, dy) * 180 / math.pi + 180
         self.angle = angle
 
@@ -1286,8 +1286,8 @@ class GameView(arcade.View):
             enemy.delta_time = delta_time
 
             # Simple AI: move towards player if within detection range
-            dx = self.player.position.x - enemy.position.x # Access .x and .y
-            dy = self.player.position.y - enemy.position.y # Access .x and .y
+            dx = self.player.position[0] - enemy.position[0] # Access .x and .y
+            dy = self.player.position[1] - enemy.position[1] # Access .x and .y
             distance = math.sqrt(dx * dx + dy * dy)
 
             if distance < enemy.detection_range:
@@ -1378,8 +1378,8 @@ class GameView(arcade.View):
             # zombie_types = ["Army_zombie", "Cop_Zombie", "Zombie1_female", 
             #                "Zombie2_female", "Zombie3_male", "Zombie4_male"]
             # zombie_type = random.choice(zombie_types)
-            # x = self.player.position.x + random.randint(-300, 300)
-            # y = self.player.position.y + random.randint(-300, 300)
+            # x = self.player.position[0] + random.randint(-300, 300)
+            # y = self.player.position[1] + random.randint(-300, 300)
             # self.spawn_zombie(zombie_type, x, y, self.player) # Pass player reference
             
             # Zoom out by increasing camera zoom
@@ -1429,7 +1429,7 @@ class GameView(arcade.View):
         """Performs ray casting for shooting."""
         if self.player.current_weapon == WeaponType.GUN:
             arcade.play_sound(self.gun_shot_sound)
-            start_x, start_y = self.player.position.x, self.player.position.y # Access .x and .y
+            start_x, start_y = self.player.position[0], self.player.position[1] # Access .x and .y
             
             # Calculate the direction vector from player\'s facing angle
             angle_radians = math.radians(self.player.angle)
@@ -1480,7 +1480,7 @@ class GameView(arcade.View):
                     closest_enemy.take_damage(10) # Apply damage to the enemy
                     Debug.update("Hit Enemy", closest_enemy.enemy_type)
                     # Adjust end_x, end_y to the hit point for the bullet visual
-                    end_x, end_y = closest_enemy.position.x, closest_enemy.position.y # Access .x and .y
+                    end_x, end_y = closest_enemy.position[0], closest_enemy.position[1] # Access .x and .y
                 else:
                     Debug.update("Hit Enemy", "None")
             else:
@@ -1493,7 +1493,7 @@ class GameView(arcade.View):
     def center_camera_to_player(self, delta_time):
         # Move the camera to center on the player
         # arcade.math.smerp_2d expects Vec2, so convert player.position
-        current_camera_position = Vec2(self.camera.position.x, self.camera.position.y) # Access .x and .y
+        current_camera_position = Vec2(self.camera.position[0], self.camera.position[1]) # Access .x and .y
         player_position_vec = self.player.position # Already Vec2
 
         new_camera_position_vec = arcade.math.smerp_2d(
@@ -1568,7 +1568,9 @@ class GameView(arcade.View):
         # Debug info for current animation, state, and position (always update)
         Debug.update("Current Animation", f"{self.player.current_animation}")
         Debug.update("Player State", f"{self.player.state.value}")
-        Debug.update("Player Position", f"{self.player.position.x:.0f}, {self.player.position.y:.0f}") # Access .x and .y
+        Debug.update("Player Position", f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}") # Access .x and .y
+        # Log player velocity
+        Debug.update("Player Velocity", f"{self.player.change_x:.2f}, {self.player.change_y:.2f}")
 
         # Only proceed with game logic if player and initial enemies are no longer loading
         if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
