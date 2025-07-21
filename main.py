@@ -17,8 +17,14 @@ import math
 import json
 import concurrent.futures # Import for ThreadPoolExecutor
 
+
+# Health bar constants
+HEALTHBAR_WIDTH = 25
+HEALTHBAR_HEIGHT = 4
+HEALTHBAR_OFFSET_Y = 10
+
 # Constants for bullet properties
-BULLET_SPEED = 2000
+BULLET_SPEED = 500 # Reduced for testing
 BULLET_LIFE = 0.5  # Seconds until bullet disappears
 
 # Window settings
@@ -123,6 +129,7 @@ def load_texture_with_anchor(
     try:
         # No longer loading arcade.Texture here, just returning path and properties
         # This ensures image loading is decoupled from OpenGL texture creation
+        print(f"DEBUG: load_texture_with_anchor - frame_path: {frame_path}, animation_config keys: {animation_config.keys()}") # Debugging
 
         image_width = animation_config.get("width", 128)
         image_height = animation_config.get("height", 128)
@@ -148,7 +155,14 @@ def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float
         )
         return fallback_texture, (0, 0)
     else:
-        texture = arcade.load_texture(frame_path)
+        try:
+            texture = arcade.load_texture(frame_path)
+        except Exception as e:
+            print(f"ERROR: Failed to load arcade.Texture for {frame_path}: {e}")
+            fallback_texture = arcade.make_soft_square_texture(
+                32, arcade.color.MAGENTA, name="fallback_load_err"
+            )
+            return fallback_texture, (0, 0)
 
     # Calculate offset from image center to desired center of mass
     image_center_x = image_width / 2
@@ -257,6 +271,8 @@ class Debug:
             Debug.text_objects[text_object_index].text = "" # Clear text
             text_object_index += 1
 
+        print(f"Debug dictionary contents: {Debug.debug_dict}") # Add this line for debugging
+
 
 PLAYER_ANIMATION_STRUCTURE = {
     "Bat": 12,
@@ -305,6 +321,46 @@ class Entity(arcade.Sprite):
         self.state = EntityState.IDLE
         self.facing_direction = 0
         self._is_loading = False # New attribute to track loading status
+
+        # Health attributes
+        self.max_health = 100
+        self.current_health = 100
+
+    def draw(self):
+        """Draw the entity, including its health bar."""
+        super().draw()
+
+        # Draw health bar
+        if self.current_health < self.max_health:
+            # Calculate health bar position
+            health_x = self.center_x
+            health_y = self.center_y + self.height / 2 + HEALTHBAR_OFFSET_Y
+
+            # Draw background box
+            arcade.draw_rectangle_filled(
+                health_x,
+                health_y,
+                HEALTHBAR_WIDTH,
+                HEALTHBAR_HEIGHT,
+                arcade.color.BLACK,
+            )
+
+            # Draw health amount
+            health_percentage = self.current_health / self.max_health
+            arcade.draw_rectangle_filled(
+                health_x - HEALTHBAR_WIDTH / 2 * (1 - health_percentage),
+                health_y,
+                HEALTHBAR_WIDTH * health_percentage,
+                HEALTHBAR_HEIGHT,
+                arcade.color.RED,
+            )
+
+    def take_damage(self, damage_amount: float):
+        """Reduce entity health and handle death."""
+        self.current_health -= damage_amount
+        if self.current_health <= 0:
+            self.current_health = 0
+            self.die() # Trigger death animation or removal
 
     class AnimationType(Enum):
         MOVEMENT = "Movement"
@@ -383,8 +439,9 @@ class Entity(arcade.Sprite):
                         self._apply_texture_and_offset(texture, offset)
                     else:
                         # Use a fallback texture if the processed texture is not yet available
+                        print(f"DEBUG: {self.__class__.__name__} processed_textures keys: {self.processed_textures.keys()}") # Debug keys
                         fallback_texture = arcade.make_soft_square_texture(
-                            32, arcade.color.BLUE, name="fallback_anim"
+                            32, arcade.color.MAGENTA, name="fallback_anim"
                         )
                         self._apply_texture_and_offset(fallback_texture, (0, 0))
                         print(f"Warning: Processed texture for {current_frame_key} not found during animation. Using fallback.")
@@ -409,8 +466,9 @@ class Entity(arcade.Sprite):
                 )
             else:
                 # Use a fallback texture if the processed texture is not yet available
+                print(f"DEBUG: {self.__class__.__name__} processed_textures keys in set_animation: {self.processed_textures.keys()}") # Debug keys
                 fallback_texture = arcade.make_soft_square_texture(
-                    32, arcade.color.BLUE, name="fallback_setanim"
+                    32, arcade.color.MAGENTA, name="fallback_setanim"
                 )
                 self._apply_texture_and_offset(fallback_texture, (0, 0))
                 print(f"Warning: Processed texture for {first_frame_key} not found. Using fallback.")
@@ -857,6 +915,7 @@ class Enemy(Entity):
             frame_paths = animation_config.get("frames", [])
 
             for frame_path in frame_paths:
+                print(f"DEBUG: Enemy.load_animation_sync - loading frame_path: {frame_path}") # Debugging
                 raw_texture_data = load_texture_with_anchor(
                     frame_path, animation_config
                 )
@@ -1259,6 +1318,11 @@ class GameView(arcade.View):
                     distance < enemy.attack_range and random.random() < 0.01
                 ):  # Small chance to attack each frame
                     enemy.attack()
+                    # Check for collision with player when attacking
+                    if arcade.check_for_collision(enemy, self.player):
+                        self.player.take_damage(enemy.damage) # Apply zombie's damage to player
+                        Debug.update("Player Health", self.player.current_health) # Debug player health
+
             else:
                 # Random movement when player not detected
                 if random.random() < 0.01:  # Change direction occasionally
@@ -1430,7 +1494,7 @@ class GameView(arcade.View):
                         closest_enemy = enemy
 
                 if closest_enemy:
-                    closest_enemy.die()
+                    closest_enemy.take_damage(10) # Apply damage to the enemy
                     Debug.update("Hit Enemy", closest_enemy.enemy_type)
                     # Adjust end_x, end_y to the hit point for the bullet visual
                     end_x, end_y = closest_enemy.position
@@ -1476,6 +1540,7 @@ class GameView(arcade.View):
                                         try:
                                             texture, offset = process_loaded_texture_data(raw_frame_data)
                                             entity.processed_textures[frame_path] = (texture, offset)
+                                            print(f"DEBUG: Stored texture for {frame_path} in {entity.__class__.__name__}.processed_textures")
                                         except Exception as e:
                                             print(f"Error processing and storing texture {frame_path}: {e}")
                             if "idle" in animation_info and animation_info["idle"]:
@@ -1485,6 +1550,7 @@ class GameView(arcade.View):
                                     try:
                                         texture, offset = process_loaded_texture_data(raw_frame_data)
                                         entity.processed_textures[frame_path] = (texture, offset)
+                                        print(f"DEBUG: Stored idle texture for {frame_path} in {entity.__class__.__name__}.processed_textures")
                                     except Exception as e:
                                         print(f"Error processing and storing idle texture {frame_path}: {e}")
                         
@@ -1504,20 +1570,25 @@ class GameView(arcade.View):
         # Check if all entities are no longer loading (including newly spawned ones)
         if not self.player._is_loading and all(not enemy._is_loading for enemy in self.enemies):
             Debug.update("Loading Status", "Game Ready!")
+            pass # No longer returning early if main entities are loaded
         else:
             if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
                 Debug.update("Loading Status", "Loading assets...")
+                pass # Allow game to update even if loading
             else:
                 Debug.update("Loading Status", "Processing remaining assets...")
+                pass # Allow game to update even if loading
         
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
 
+        # Debug info for current animation, state, and position (always update)
+        Debug.update("Current Animation", f"{self.player.current_animation}")
+        Debug.update("Player State", f"{self.player.state.value}")
+        Debug.update("Player Position", f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}")
+
         # Only proceed with game logic if player and initial enemies are no longer loading
         if self.player._is_loading or any(enemy._is_loading for enemy in self.enemies):
-            Debug.update("Current Animation", f"{self.player.current_animation}")
-            Debug.update("Player State", f"{self.player.state.value}")
-            Debug.update("Player Position", f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}")
             return
 
         self.mouse_position = (self.mouse_offset[0] + self.camera.position[0], self.mouse_offset[1] + self.camera.position[1])
@@ -1544,15 +1615,6 @@ class GameView(arcade.View):
 
         # Update bullets
         self.bullet_list.update(delta_time)
-
-        # Debug info for current animation and state
-        Debug.update("Current Animation", f"{self.player.current_animation}")
-        Debug.update("Player State", f"{self.player.state.value}")
-        Debug.update(
-            "Mouse Position",
-            f"{self.mouse_position[0]:.0f}, {self.mouse_position[1]:.0f}",
-        )
-        Debug.update("Player Position", f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}")
 
     def on_resize(self, width: int, height: int):
         """Resize window"""
