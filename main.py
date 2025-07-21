@@ -142,30 +142,29 @@ def load_texture_with_anchor(
         print(f"Error processing image path {frame_path}: {e}")
         return "", 0, 0, 0, 0 # Return empty data on error
 
-def to_vector(point: tuple[float, float] | arcade.types.Point2 | Vec2) -> Vec2:
-    return Vec2(point[0], point[1])
 
 def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float, float]) -> tuple[arcade.Texture, tuple[float, float]]:
     """Loads arcade.Texture from raw image data on the main thread."""
     frame_path, image_width, image_height, anchor_x, anchor_y = raw_texture_data
     # print(f"Processing loaded texture data for: {frame_path}")
-    
-    if not frame_path:
-        # Handle the error case from load_texture_with_anchor
+    def return_fallback_texture():
         fallback_texture = arcade.make_soft_square_texture(
             64, arcade.color.RED, name="fallback"
         )
         return fallback_texture, (0, 0)
-    else:
+    
+    if not frame_path:
+        # Handle the error case from load_texture_with_anchor
+        return return_fallback_texture()
+    else:   
         try:
             texture = arcade.load_texture(frame_path)
-            texture = texture.flip_vertically()
+            texture = texture.flip_vertically() # Flip vertically since the characters are pointed down
         except Exception as e:
             print(f"ERROR: Failed to load arcade.Texture for {frame_path}: {e}")
-            fallback_texture = arcade.make_soft_square_texture(
-                64, arcade.color.MAGENTA, name="fallback_load_err"
-            )
-            return fallback_texture, (0, 0)
+            return return_fallback_texture()
+
+    # Offset is currently not used, but it's here for future reference
 
     # Calculate offset from image center to desired center of mass
     image_center_x = image_width / 2
@@ -180,9 +179,10 @@ def process_loaded_texture_data(raw_texture_data: tuple[str, float, float, float
 class Bullet(arcade.Sprite):
     """Bullet class for ray casting visual."""
 
-    def __init__(self, start_position: tuple[float, float], end_position: tuple[float, float], **kwargs):
-        # Initialize with a texture. Adjust path and scale as needed.
-        super().__init__(":resources:images/space_shooter/laserBlue01.png", scale=0.5, **kwargs)
+    def __init__(self, start_position: tuple[float, float], end_position: tuple[float, float], bullet_speed: float = BULLET_SPEED, bullet_lifetime: float = BULLET_LIFE, **kwargs):
+        # Create a yellow rectangle texture for the bullet
+        bullet_texture = arcade.make_soft_square_texture(20, 4, arcade.types.RGBA255(255, 255, 0, 255), name="bullet")
+        super().__init__(texture=bullet_texture, **kwargs)
         self.position = start_position
         self.target_position = end_position
         
@@ -198,10 +198,9 @@ class Bullet(arcade.Sprite):
             normalized_direction_x = 0.0
             normalized_direction_y = 0.0
 
-        self.velocity = (normalized_direction_x * BULLET_SPEED, normalized_direction_y * BULLET_SPEED)
+        self.velocity = (normalized_direction_x * bullet_speed, normalized_direction_y * bullet_speed)
 
-        self.lifetime = BULLET_LIFE
-        # self.speed = BULLET_SPEED # No longer needed, as velocity is set directly
+        self.lifetime = bullet_lifetime
 
     def on_update(self, delta_time: float):
         self.lifetime -= delta_time
