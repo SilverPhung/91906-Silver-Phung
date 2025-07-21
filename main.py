@@ -271,7 +271,7 @@ class Debug:
             Debug.text_objects[text_object_index].text = "" # Clear text
             text_object_index += 1
 
-        print(f"Debug dictionary contents: {Debug.debug_dict}") # Add this line for debugging
+        # print(f"Debug dictionary contents: {Debug.debug_dict}") # Add this line for debugging
 
 
 PLAYER_ANIMATION_STRUCTURE = {
