@@ -1,5 +1,5 @@
 import arcade
-from src.constants import HEALTHBAR_WIDTH, HEALTHBAR_HEIGHT
+from src.constants import *
 
 
 class IndicatorBar:

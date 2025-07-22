@@ -7,19 +7,7 @@ import math
 import json
 import os
 from enum import Enum
-from src.constants import (
-    PLAYER_MOVEMENT_SPEED,
-    PLAYER_FRICTION,
-    HEALTHBAR_WIDTH,
-    HEALTHBAR_HEIGHT,
-    INDICATOR_BAR_OFFSET,
-    DEAD_ZONE,
-    PLAYER_CONFIG_FILE,
-)
-from src.entities.entity import (
-    load_texture_with_anchor,
-    process_loaded_texture_data,
-)
+from src.constants import *
 
 def load_character_config(config_file: str) -> dict:
     """Load character configuration from JSON file."""
@@ -119,7 +107,7 @@ class Player(Entity):
             frame_paths = animation_config.get("frames", [])
 
             for frame_path in frame_paths:
-                raw_texture_data = load_texture_with_anchor(
+                raw_texture_data = super().load_texture_with_anchor(
                     frame_path, animation_config
                 )
                 textures.append(raw_texture_data)
@@ -192,7 +180,7 @@ class Player(Entity):
                     frame_path = raw_frame_data[0]
                     if frame_path not in self.processed_textures:
                         try:
-                            texture, offset = process_loaded_texture_data(
+                            texture, offset = super().process_loaded_texture_data(
                                 raw_frame_data
                             )
                             self.processed_textures[frame_path] = (texture, offset)
@@ -203,7 +191,7 @@ class Player(Entity):
                 frame_path = raw_frame_data[0]
                 if frame_path not in self.processed_textures:
                     try:
-                        texture, offset = process_loaded_texture_data(raw_frame_data)
+                        texture, offset = super().process_loaded_texture_data(raw_frame_data)
                         self.processed_textures[frame_path] = (texture, offset)
                     except Exception as e:
                         print(f"Error processing and storing idle texture {frame_path}: {e}")
@@ -215,149 +203,101 @@ class Player(Entity):
         self.current_weapon = weapon_type
         self.set_animation_for_state()
 
+    def _animation_exists_and_has_frames(self, anim_name: str) -> bool:
+        """Helper to check if an animation exists and has a sequence or idle texture."""
+        return anim_name in self.animations and (
+            self.animations[anim_name].get("sequence")
+            or self.animations[anim_name].get("idle")
+        )
+
+    def _try_set_animation(self, anim_name: str) -> bool:
+        """Helper to attempt setting an animation if it exists and has frames. Returns True if set, False otherwise."""
+        if self._animation_exists_and_has_frames(anim_name):
+            self.set_animation(anim_name)
+            return True
+        return False
+
+    def _find_and_set_prefixed_animation(
+        self, prefix: str, weapon_name: str, fallback_prefix: str
+    ):
+        """Helper to find and set animations with a given prefix, with specific and generic fallbacks."""
+        # Try specific weapon animation
+        specific_anim = f"{prefix}{weapon_name.lower()}"
+        if self._try_set_animation(specific_anim):
+            return
+
+        # Try alternative cases for weapon name
+        for anim_name in self.animations:
+            if anim_name.startswith(prefix) and weapon_name.lower() in anim_name.lower():
+                if self._try_set_animation(anim_name):
+                    return
+
+        # Fallback to any animation with the prefix
+        for anim_name in self.animations:
+            if anim_name.startswith(fallback_prefix):
+                if self._try_set_animation(anim_name):
+                    return
+
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state and weapon"""
         weapon_name = self.current_weapon.value
 
-        if self.state == PlayerState.IDLE:
-            # Try to use the specific idle animation for this weapon
-            idle_anim = f"Idle_{weapon_name.lower()}"
-            Debug.update("Trying Idle Animation", idle_anim)
-
-            if idle_anim in self.animations and (
-                self.animations[idle_anim].get("sequence")
-                or self.animations[idle_anim].get("idle")
-            ):
-                self.set_animation(idle_anim)
-            else:
-                # If specific idle animation not found, try generic weapon idle
-                # Check for matching weapon types with different case formats
-                found = False
-                for anim_name in self.animations:
-                    if (
-                        anim_name.startswith("Idle_")
-                        and weapon_name.lower() in anim_name.lower()
-                    ):
-                        self.set_animation(anim_name)
-                        found = True
-                        break
-
-                # If still not found, use any available idle animation as last resort
-                if not found:
-                    Debug.update("Fallback Animation", "Using first available idle")
-                    weapon_priority = [
-                        self.current_weapon.value
-                    ]
-                    for weapon in WeaponType:
-                        if weapon != self.current_weapon:
-                            weapon_priority.append(weapon.value)
-
-                    for weapon_type in weapon_priority:
-                        idle_check = f"Idle_{weapon_type.lower()}"
-                        if idle_check in self.animations and (
-                            self.animations[idle_check].get("sequence")
-                            or self.animations[idle_check].get("idle")
-                        ):
-                            self.set_animation(idle_check)
-                            found = True
+        match self.state:
+            case PlayerState.IDLE:
+                Debug.update("Trying Idle Animation", f"Idle_{weapon_name.lower()}")
+                self._find_and_set_prefixed_animation("Idle_", weapon_name, "Idle_")
+                if not self.current_animation:  # If no idle animation was set yet
+                    # Last resort - use any available idle animation
+                    for anim_name in self.animations:
+                        if anim_name.startswith("Idle_"):
+                            self.set_animation(anim_name)
                             break
 
-                    # Last resort - use any idle animation
-                    if not found:
-                        for anim_name in self.animations:
-                            if anim_name.startswith("Idle_"):
-                                self.set_animation(anim_name)
+            case PlayerState.WALKING:
+                self._find_and_set_prefixed_animation("Walk_", weapon_name, "Walk_")
+                if not self.current_animation:  # If no walk animation was set yet
+                    # Fallback to any walk animation
+                    for anim_name in self.animations:
+                        if anim_name.startswith("Walk_"):
+                            self.set_animation(anim_name)
+                            break
+
+            case PlayerState.SHOOTING:
+                shoot_anim = "Gun_Shot"
+                if self._animation_exists_and_has_frames(shoot_anim):
+                    if (
+                        self.current_animation != shoot_anim
+                        or self.current_animation == shoot_anim
+                        and self.current_animation_frame
+                        == len(self.animations[shoot_anim]["sequence"]) - 1
+                    ):
+                        self.set_animation(shoot_anim)
+
+            case PlayerState.ATTACKING:
+                # Try to use the specific attack animation for this weapon
+                if self._animation_exists_and_has_frames(weapon_name):
+                    if (
+                        self.current_animation != weapon_name
+                        or self.current_animation == weapon_name
+                        and self.current_animation_frame
+                        == len(self.animations[weapon_name]["sequence"]) - 1
+                    ):
+                        self.set_animation(weapon_name)
+                else:
+                    # Fallback to any attack animation (if not weapon_name specific)
+                    for anim_name in self.animations:
+                        if anim_name in [
+                            "Bat",
+                            "FlameThrower",
+                            "Knife",
+                            "Riffle",
+                        ]:
+                            if self._try_set_animation(anim_name):
                                 break
 
-        elif self.state == PlayerState.WALKING:
-            # Try exact match first
-            walk_anim = f"Walk_{weapon_name.lower()}"
-
-            # Then try alternative cases
-            if not (
-                walk_anim in self.animations
-                and (
-                    self.animations[walk_anim].get("sequence")
-                    or self.animations[walk_anim].get("idle")
-                )
-            ):
-                for anim_name in self.animations:
-                    if (
-                        anim_name.startswith("Walk_")
-                        and weapon_name.lower() in anim_name.lower()
-                    ):
-                        walk_anim = anim_name
-                        break
-
-            if walk_anim in self.animations and (
-                self.animations[walk_anim].get("sequence")
-                or self.animations[walk_anim].get("idle")
-            ):
-                self.set_animation(walk_anim)
-            else:
-                # Fallback to any walk animation
-                for anim_name in self.animations:
-                    if anim_name.startswith("Walk_"):
-                        self.set_animation(anim_name)
-                        break
-
-        elif self.state == PlayerState.SHOOTING:
-            shoot_anim = "Gun_Shot"
-            if shoot_anim in self.animations and (
-                self.animations[shoot_anim].get("sequence")
-                or self.animations[shoot_anim].get("idle")
-            ):
-                # Only set animation if not already shooting or if current animation is not the full shooting cycle
-                if (
-                    self.current_animation != shoot_anim
-                    or self.current_animation == shoot_anim
-                    and self.current_animation_frame
-                    == len(self.animations[shoot_anim]["sequence"]) - 1
-                ):
-                    self.set_animation(shoot_anim)
-
-        elif self.state == PlayerState.ATTACKING:
-            # Try to use the specific attack animation for this weapon
-            if weapon_name in self.animations and (
-                self.animations[weapon_name].get("sequence")
-                or self.animations[weapon_name].get("idle")
-            ):
-                # Only set animation if not already attacking or if current animation is not the full attack cycle
-                if (
-                    self.current_animation != weapon_name
-                    or self.current_animation == weapon_name
-                    and self.current_animation_frame
-                    == len(self.animations[weapon_name]["sequence"]) - 1
-                ):
-                    self.set_animation(weapon_name)
-            else:
-                # Try to find a matching attack animation
-                for anim_name in self.animations:
-                    if (
-                        anim_name.startswith("Walk_")
-                        and weapon_name.lower() in anim_name.lower()
-                    ):
-                        walk_anim = anim_name
-                        break
-
-            if walk_anim in self.animations and (
-                self.animations[walk_anim].get("sequence")
-                or self.animations[walk_anim].get("idle")
-            ):
-                self.set_animation(walk_anim)
-            else:
-                # Fallback to any walk animation
-                for anim_name in self.animations:
-                    if anim_name.startswith("Walk_"):
-                        self.set_animation(anim_name)
-                        break
-
-        elif self.state == PlayerState.DYING:
-            if "Death" in self.animations and (
-                self.animations["Death"].get("sequence")
-                or self.animations["Death"].get("idle")
-            ):
-                self.set_animation("Death")
+            case PlayerState.DYING:
+                if self._animation_exists_and_has_frames("Death"):
+                    self.set_animation("Death")
 
         Debug.update(
             "Selected Animation",

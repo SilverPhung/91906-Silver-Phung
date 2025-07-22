@@ -1,7 +1,7 @@
 import arcade
 import math
 from pyglet.math import Vec2
-from src.constants import BULLET_SPEED, BULLET_LIFE
+from src.constants import *
 
 
 class Bullet(arcade.Sprite):

@@ -16,7 +16,7 @@
         "resources/Zombies/Army_zombie/Attack/attack_007.png",
         "resources/Zombies/Army_zombie/Attack/attack_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Death": {
       "anchor_x": 326,
@@ -31,7 +31,7 @@
         "resources/Zombies/Army_zombie/Death/death_004.png",
         "resources/Zombies/Army_zombie/Death/death_005.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Walk": {
       "anchor_x": 243,
@@ -49,7 +49,7 @@
         "resources/Zombies/Army_zombie/Walk/walk_007.png",
         "resources/Zombies/Army_zombie/Walk/walk_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Movement"
     }
   },
   "Cop_Zombie": {
@@ -69,7 +69,7 @@
         "resources/Zombies/Cop_Zombie/Attack/attack_007.png",
         "resources/Zombies/Cop_Zombie/Attack/attack_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Death": {
       "anchor_x": 313,
@@ -84,7 +84,7 @@
         "resources/Zombies/Cop_Zombie/Death/daeth_004.png",
         "resources/Zombies/Cop_Zombie/Death/daeth_005.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Walk": {
       "anchor_x": 250,
@@ -102,7 +102,7 @@
         "resources/Zombies/Cop_Zombie/Walk/walk_007.png",
         "resources/Zombies/Cop_Zombie/Walk/walk_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Movement"
     }
   },
   "Zombie1_female": {
@@ -122,7 +122,7 @@
         "resources/Zombies/Zombie1_female/Attack/Attack_007.png",
         "resources/Zombies/Zombie1_female/Attack/Attack_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Death": {
       "anchor_x": 287,
@@ -137,7 +137,7 @@
         "resources/Zombies/Zombie1_female/Death/Death_004.png",
         "resources/Zombies/Zombie1_female/Death/Death_005.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Walk": {
       "anchor_x": 192,
@@ -155,7 +155,7 @@
         "resources/Zombies/Zombie1_female/Walk/Walk_007.png",
         "resources/Zombies/Zombie1_female/Walk/Walk_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Movement"
     }
   },
   "Zombie2_female": {
@@ -175,7 +175,7 @@
         "resources/Zombies/Zombie2_female/Attack/Attack_007.png",
         "resources/Zombies/Zombie2_female/Attack/Attack_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Death": {
       "anchor_x": 299,
@@ -190,7 +190,7 @@
         "resources/Zombies/Zombie2_female/Death/Death_004.png",
         "resources/Zombies/Zombie2_female/Death/Death_005.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Walk": {
       "anchor_x": 192,
@@ -208,7 +208,7 @@
         "resources/Zombies/Zombie2_female/Walk/Walk_007.png",
         "resources/Zombies/Zombie2_female/Walk/Walk_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Movement"
     }
   },
   "Zombie3_male": {
@@ -228,7 +228,7 @@
         "resources/Zombies/Zombie3_male/Attack/Attack_007.png",
         "resources/Zombies/Zombie3_male/Attack/Attack_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Death": {
       "anchor_x": 352,
@@ -243,7 +243,7 @@
         "resources/Zombies/Zombie3_male/Death/Death_004.png",
         "resources/Zombies/Zombie3_male/Death/Death_005.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Walk": {
       "anchor_x": 255,
@@ -261,7 +261,7 @@
         "resources/Zombies/Zombie3_male/Walk/walk_007.png",
         "resources/Zombies/Zombie3_male/Walk/walk_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Movement"
     }
   },
   "Zombie4_male": {
@@ -281,7 +281,7 @@
         "resources/Zombies/Zombie4_male/Attack/Attack_007.png",
         "resources/Zombies/Zombie4_male/Attack/Attack_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Death": {
       "anchor_x": 351,
@@ -296,7 +296,7 @@
         "resources/Zombies/Zombie4_male/Death/Death_004.png",
         "resources/Zombies/Zombie4_male/Death/Death_005.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Action"
     },
     "Walk": {
       "anchor_x": 247,
@@ -314,7 +314,7 @@
         "resources/Zombies/Zombie4_male/Walk/Walk_007.png",
         "resources/Zombies/Zombie4_male/Walk/Walk_008.png"
       ],
-      "notes": "Adjust anchor_x and anchor_y to match character's center of mass for this animation"
+      "animation_type": "Movement"
     }
   }
 }

@@ -10,6 +10,7 @@
         "resources/Players/Girl/Walk_gun/Walk_gun_001.png",
         "resources/Players/Girl/Walk_gun/Walk_gun_002.png"
       ],
+      "animation_type": "Movement",
       "notes": "Set anchor_x and anchor_y to the character's center of mass for proper rotation"
     },
     "Riffle": {
@@ -22,6 +23,7 @@
         "resources/Players/Girl/Riffle/Riffle_001.png",
         "resources/Players/Girl/Riffle/Riffle_002.png"
       ],
+      "animation_type": "Action",
       "notes": "Each animation folder has its own anchor point settings"
     }
   }

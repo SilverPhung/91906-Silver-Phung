@@ -6,13 +6,7 @@ import os
 from src.entities.entity import Entity, EntityState
 from src.entities.player import Player
 from src.debug import Debug
-from src.constants import (
-    PLAYER_MOVEMENT_SPEED,
-    PLAYER_FRICTION,
-    DEAD_ZONE,
-    ZOMBIE_ASSETS_DIR,
-    ZOMBIE_CONFIG_FILE,
-)
+from src.constants import *
 from src.entities.entity import (
     load_texture_with_anchor,
     process_loaded_texture_data,

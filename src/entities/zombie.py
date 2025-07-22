@@ -1,6 +1,6 @@
 from src.entities.enemy import Enemy
 from src.entities.player import Player
-from src.constants import CHARACTER_SCALING, PLAYER_FRICTION, PLAYER_MOVEMENT_SPEED
+from src.constants import *
 
 
 class Zombie(Enemy):
