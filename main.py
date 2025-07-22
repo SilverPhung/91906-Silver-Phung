@@ -17,9 +17,10 @@ import concurrent.futures
 
 # Import refactored classes
 from src.debug import Debug
+from src.entities.entity import EntityState
 from src.sprites.bullet import Bullet
 from src.sprites.indicator_bar import IndicatorBar
-from src.entities.player import Player, PlayerState, WeaponType
+from src.entities.player import Player, WeaponType
 from src.entities.zombie import Zombie
 
 # Import constants
@@ -53,10 +54,9 @@ class GameView(arcade.View):
 
         # Set up the player info
         self.player = Player(
-            ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png",
             scale=CHARACTER_SCALING,
             speed=PLAYER_MOVEMENT_SPEED,
-            bar_list=self.bar_list,
+            show_health_indicator=self.bar_list,
         )
         self.player.load_animations()
 
@@ -127,7 +127,6 @@ class GameView(arcade.View):
 
         # Clear and re-add loading futures on reset
         self.loading_futures = []
-        self.player._is_loading = False
         self.player_loading_future = self.loading_executor.submit(self.player.load_animations)
         self.loading_futures.append((self.player_loading_future, self.player))
         
@@ -155,17 +154,10 @@ class GameView(arcade.View):
         player_ref: Player | None = None,
     ):
         """Spawn a zombie at the specified position"""
-        placeholder_image = os.path.join(
-            ZOMBIE_ASSETS_DIR, zombie_type, "Walk", "walk_000.png"
-        )
-        if not os.path.exists(placeholder_image):
-            print(f"ERROR: Placeholder image path does not exist: {placeholder_image}")
-            placeholder_image = (
-                ":resources:images/animated_characters/zombie/zombie_idle.png"
-            )
+
 
         zombie = Zombie(
-            placeholder_image, zombie_type=zombie_type, player_ref=self.player
+            zombie_type=zombie_type, player_ref=self.player
         )
         zombie.position = (float(x), float(y))
         zombie.load_animations()
@@ -453,7 +445,6 @@ class GameView(arcade.View):
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
 
-        Debug.update("Current Animation", f"{self.player.current_animation}")
         Debug.update("Player State", f"{self.player.state.value}")
         Debug.update("Player Position", f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}")
         Debug.update("Player Velocity", f"{self.player.velocity[0]:.2f}, {self.player.velocity[1]:.2f}")
@@ -469,9 +460,12 @@ class GameView(arcade.View):
         self.update_player_speed()
         self.physics_engine.update()
 
-        self.player.update_state(delta_time)
+        if self.player.state == EntityState.ATTACKING:
+            print("player state", self.player.state, self.player.current_animation_type, self.player.animation_allow_overwrite)
 
+        self.player.update_state(delta_time)
         self.player.animate(delta_time)
+
 
         if self.player.health_bar:
             self.player.health_bar.position = (

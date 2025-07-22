@@ -118,18 +118,18 @@
       ],
       "animation_type": "Movement"
     },
-    "Walk_FireThrhrower": {
+    "Walk_firethrower": {
       "anchor_x": 143,
       "anchor_y": 211,
       "width": 287,
       "height": 422,
       "frames": [
-        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_000.png",
-        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_001.png",
-        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_002.png",
-        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_003.png",
-        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_004.png",
-        "resources/Players/Girl/Walk_FireThrhrower/walk_firethrower_005.png"
+        "resources/Players/Girl/Walk_firethrower/walk_firethrower_000.png",
+        "resources/Players/Girl/Walk_firethrower/walk_firethrower_001.png",
+        "resources/Players/Girl/Walk_firethrower/walk_firethrower_002.png",
+        "resources/Players/Girl/Walk_firethrower/walk_firethrower_003.png",
+        "resources/Players/Girl/Walk_firethrower/walk_firethrower_004.png",
+        "resources/Players/Girl/Walk_firethrower/walk_firethrower_005.png"
       ],
       "animation_type": "Movement"
     },

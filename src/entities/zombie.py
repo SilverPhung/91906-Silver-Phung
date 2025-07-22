@@ -8,7 +8,6 @@ class Zombie(Enemy):
 
     def __init__(
         self,
-        image_path,
         zombie_type="Army_zombie",
         scale=CHARACTER_SCALING,
         friction=PLAYER_FRICTION,
@@ -16,7 +15,6 @@ class Zombie(Enemy):
         player_ref: Player | None = None,
     ):
         super().__init__(
-            image_path,
             scale=scale,
             friction=friction,
             speed=speed,

@@ -8,9 +8,13 @@ import os
 from enum import Enum
 from src.sprites.indicator_bar import IndicatorBar
 from src.constants import *
+from src.debug import Debug
 
 # path, width, height, anchor_x, anchor_y
-ImageData = tuple[str, float, float, float, float]  # Define the type alias
+RawTextureData = tuple[str, tuple[float, float], tuple[float, float]]  # Define the type alias
+
+# texture, offset
+TextureData = tuple[arcade.Texture, tuple[float, float]]  # Define the type alias
 
 
 class EntityState(Enum):
@@ -20,7 +24,8 @@ class EntityState(Enum):
     DYING = "dying"
 
 
-class AnimationData(Enum):
+class AnimationType(Enum):
+    IDLE = "Idle"
     MOVEMENT = "Movement"
     ACTION = "Action"
 
@@ -30,14 +35,14 @@ class Entity(arcade.Sprite):
 
     def __init__(
         self,
-        image_path,
         scale,
         friction=PLAYER_FRICTION,
         speed=PLAYER_MOVEMENT_SPEED,
         character_config: dict = None,
         character_preset: str = None,
+        show_health_indicator: arcade.SpriteList = None,
     ):
-        super().__init__(image_path, scale=scale)
+        super().__init__(scale=scale)
 
         self.speed = speed
         self.position: tuple[float, float] = (0, 0)
@@ -47,12 +52,11 @@ class Entity(arcade.Sprite):
 
         # Animation properties moved from Character_Display_Sprite
         self.animations = {}
-        self.processed_textures = (
-            {}
-        )  # New dictionary to hold processed arcade.Texture objects
         self.current_animation = None
+        self.current_animation_type = None
         self.current_animation_frame = 0
         self.current_animation_time = 0
+        self.animation_allow_overwrite = True
         self.animation_fps = 10
         self.frame_duration = 1.0 / self.animation_fps
 
@@ -62,9 +66,17 @@ class Entity(arcade.Sprite):
         self._is_loading = False  # New attribute to track loading status
 
         # Health attributes
-        self.max_health = 100
-        self.current_health = 100
-        self.health_bar = None  # Will hold an instance of IndicatorBar
+        self.max_health = MAX_HEALTH
+        self.current_health = self.max_health
+        self.health_bar = None
+        if show_health_indicator:
+            self.health_bar = IndicatorBar(
+                self,
+                show_health_indicator,
+                (self.center_x, self.center_y),
+                width=HEALTHBAR_WIDTH,
+                height=HEALTHBAR_HEIGHT,
+            )
 
         self.character_config = character_config
         self.character_preset = character_preset
@@ -82,47 +94,38 @@ class Entity(arcade.Sprite):
         if self.health_bar:
             self.health_bar.fullness = self.current_health / self.max_health
 
-    class AnimationType(Enum):
-        MOVEMENT = "Movement"
-        ATTACK = "Attack"
-        DEATH = "Death"
-
-    def _apply_texture_and_offset(
-        self, texture: arcade.Texture, offset: tuple[float, float]
-    ):
+    def _apply_texture_and_offset(self, texture: TextureData):
         """Helper to set texture and apply offset to center_x, center_y"""
-        self.texture = texture
+        self.texture = texture[0]
         self.sync_hit_box_to_texture()
 
     def load_animation_sequence(
-        self, name: str, animation_data: dict, animation_type: AnimationType
+        self, name: str, animation_data: dict
     ):
+
         self.animations[name] = {
-            "type": animation_data["type"],
+            "type": animation_data["animation_type"],
             "width": animation_data["width"],
             "height": animation_data["height"],
             "anchor_x": animation_data["anchor_x"],
             "anchor_y": animation_data["anchor_y"],
-            "sequence": [],
-            "idle": arcade.Texture,
+            "frames": [],
         }
 
         # Process the raw animation sequence
         processed_sequence = []
         for frame_path in animation_data["frames"]:
             processed_frame = process_loaded_texture_data(
-                ImageData(
+                RawTextureData((
                     frame_path,
-                    animation_data["width"],
-                    animation_data["height"],
-                    animation_data["anchor_x"],
-                    animation_data["anchor_y"],
+                    (animation_data["width"],
+                    animation_data["height"]),
+                    (animation_data["anchor_x"], animation_data["anchor_y"]))
                 )
             )
             processed_sequence.append(processed_frame)
 
-        self.animations[name]["sequence"] = processed_sequence
-        self.animations[name]["idle"] = processed_sequence[0]
+        self.animations[name]["frames"] = processed_sequence
 
     def load_animations(self):
         """Synchronous method to load player animations from configuration file"""
@@ -137,101 +140,26 @@ class Entity(arcade.Sprite):
             return
 
         character_data = self.character_config[self.character_preset]
-        animation_dict = {}
-        total_frames = 0
 
         # Load animations from configuration
         for animation_name, animation_config in character_data.items():
-
             self.load_animation_sequence(animation_name, animation_config)
 
-            # Create idle animations from first frame of walk animations
-            if animation_name.startswith("Walk_"):
-                weapon_type = animation_name[5:]
-                idle_key = f"Idle_{weapon_type}"
-                if textures:
-                    # Pass the name, type, sequence, and idle texture to the Entity's animation system
-                    self.load_animation_sequence(
-                        animation_name,
-                        Entity.AnimationType.MOVEMENT,
-                        textures,
-                        textures[0],
-                    )
-
-                    # Store a specific idle animation as well
-                    self.load_animation_sequence(
-                        idle_key,
-                        Entity.AnimationType.MOVEMENT,
-                        [textures[0]],
-                        textures[0],
-                    )
-                total_frames += 1
-            else:
-                # Load other animations (Attack, Death) directly into the Entity's animation system
-                if animation_name == "Death":
-                    self.load_animation_sequence(
-                        animation_name,
-                        Entity.AnimationType.DEATH,
-                        textures,
-                        textures[0] if textures else None,
-                    )
-                elif animation_name in [
-                    "Bat",
-                    "FlameThrower",
-                    "Gun_Shot",
-                    "Knife",
-                    "Riffle",
-                ]:
-                    self.load_animation_sequence(
-                        animation_name,
-                        Entity.AnimationType.ATTACK,
-                        textures,
-                        textures[0] if textures else None,
-                    )
-                else:
-                    self.load_animation_sequence(
-                        animation_name,
-                        Entity.AnimationType.MOVEMENT,
-                        textures,
-                        textures[0] if textures else None,
-                    )
-
-        # Process loaded textures into arcade.Texture objects
-        for anim_name, animation_info in self.animations.items():
-            if "sequence" in animation_info and animation_info["sequence"]:
-                for raw_frame_data in animation_info["sequence"]:
-                    frame_path = raw_frame_data[0]
-                    if frame_path not in self.processed_textures:
-                        try:
-                            (
-                                texture,
-                                offset,
-                            ) = super().process_loaded_texture_data(
-                                raw_frame_data
-                            )
-                            self.processed_textures[frame_path] = (
-                                texture,
-                                offset,
-                            )
-                        except Exception as e:
-                            print(
-                                f"Error processing and storing texture {frame_path}: {e}"
-                            )
-            if "idle" in animation_info and animation_info["idle"]:
-                raw_frame_data = animation_info["idle"]
-                frame_path = raw_frame_data[0]
-                if frame_path not in self.processed_textures:
-                    try:
-                        texture, offset = super().process_loaded_texture_data(
-                            raw_frame_data
-                        )
-                        self.processed_textures[frame_path] = (texture, offset)
-                    except Exception as e:
-                        print(
-                            f"Error processing and storing idle texture {frame_path}: {e}"
-                        )
 
         self._is_loading = False
+
+    def _animation_exists_and_has_frames(self, anim_name: str) -> bool:
+        """Helper to check if an animation exists and has a sequence or idle texture."""
+        return anim_name in self.animations and (
+            self.animations[anim_name].get("frames")
+        )
+
+    def _try_set_animation(self, anim_name: str) -> bool:
+        """Helper to attempt setting an animation if it exists and has frames. Returns True if set, False otherwise."""
+        if self._animation_exists_and_has_frames(anim_name):
+            self.set_animation(anim_name)
+            return True
+        return False
 
     def animate(self, delta_time: float):
         """Update animation based on delta time"""
@@ -239,6 +167,9 @@ class Entity(arcade.Sprite):
             return
 
         self.current_animation_time += delta_time
+        animation_frames = None
+
+        Debug.update("Current Animation frame", self.current_animation_frame)
 
         # Check if it's time to advance to the next frame
         if self.current_animation_time >= self.frame_duration:
@@ -247,111 +178,59 @@ class Entity(arcade.Sprite):
             # Get the current animation frames
             if self.current_animation in self.animations:
                 animation_data = self.animations[self.current_animation]
-                animation_frames = animation_data.get("sequence", [])
+                animation_frames = animation_data["frames"]
+            else:
+                print(
+                    f"Warning: Animation '{self.current_animation}' not found."
+                )
+                return
+            
 
-                if animation_frames:
-                    # Advance to next frame
-                    self.current_animation_frame = (
-                        self.current_animation_frame + 1
-                    ) % len(animation_frames)
+            if animation_frames:
+                if self.state == EntityState.IDLE:
+                    self.current_animation_frame = 0
+                    self.animation_allow_overwrite = True
+                else:
+                    self.current_animation_type = AnimationType(animation_data["type"])
+                    print("process Current Animation Type", self.current_animation_type)
+                    Debug.update("Current Animation type", self.current_animation_type)
+                    match self.current_animation_type:
+                        case AnimationType.MOVEMENT:
+                            self.current_animation_frame = (
+                                self.current_animation_frame + 1
+                            ) % len(animation_frames)
+                            self.animation_allow_overwrite = True
+                        case AnimationType.ACTION:
+                            self.animation_allow_overwrite = self.current_animation_frame == len(animation_frames) - 1
+                            if not self.animation_allow_overwrite:
+                                self.current_animation_frame += 1
 
-                    # Update the sprite's texture and apply offset
-                    # Lookup processed texture
-                    current_frame_raw_data = animation_frames[
-                        self.current_animation_frame
-                    ]
-                    current_frame_key = current_frame_raw_data[
-                        0
-                    ]  # Use path as key
-                    if current_frame_key in self.processed_textures:
-                        texture, offset = self.processed_textures[
-                            current_frame_key
-                        ]
-                        self._apply_texture_and_offset(texture, offset)
-                    else:
-                        # Use a fallback texture if the processed texture is not yet available
-                        print(
-                            f"DEBUG: {self.__class__.__name__} processed_textures keys: {self.processed_textures.keys()}"
-                        )
-                        fallback_texture = arcade.make_soft_square_texture(
-                            32,
-                            arcade.color.MAGENTA,
-                            name="fallback_anim",
-                        )
-                        self._apply_texture_and_offset(
-                            fallback_texture, (0, 0)
-                        )
-                        print(
-                            f"Warning: Processed texture for {current_frame_key} not found during animation. Using fallback."
-                        )
+                    self._apply_texture_and_offset(animation_frames[self.current_animation_frame])
+
 
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
-        if animation_name in self.animations and self.animations[
-            animation_name
-        ].get("sequence"):
+        if animation_name in self.animations:
             self.current_animation = animation_name
             self.current_animation_frame = 0
             self.current_animation_time = 0
-            # Set the first frame immediately
             animation_data = self.animations[animation_name]
-            # Lookup processed texture
-            first_frame_raw_data = animation_data["sequence"][0]
-            first_frame_key = first_frame_raw_data[0]  # Use path as key
-            if first_frame_key in self.processed_textures:
-                first_frame_texture, first_frame_offset = (
-                    self.processed_textures[first_frame_key]
-                )
-                self._apply_texture_and_offset(
-                    first_frame_texture, first_frame_offset
-                )
-            else:
-                # Use a fallback texture if the processed texture is not yet available
-                print(
-                    f"DEBUG: {self.__class__.__name__} processed_textures keys in set_animation: {self.processed_textures.keys()}"
-                )
-                fallback_texture = arcade.make_soft_square_texture(
-                    32,
-                    arcade.color.MAGENTA,
-                    name="fallback_setanim",
-                )
-                self._apply_texture_and_offset(fallback_texture, (0, 0))
-                print(
-                    f"Warning: Processed texture for {first_frame_key} not found. Using fallback."
-                )
-        elif animation_name in self.animations and self.animations[
-            animation_name
-        ].get("idle"):
-            # If it's an idle animation, it might only have an "idle" texture and no sequence
-            self.current_animation = animation_name
-            self.current_animation_frame = 0
-            self.current_animation_time = 0
-            # Lookup processed idle texture
-            idle_raw_data = self.animations[animation_name]["idle"]
-            idle_key = idle_raw_data[0]  # Use path as key
-            if idle_key in self.processed_textures:
-                idle_texture, idle_offset = self.processed_textures[idle_key]
-                self._apply_texture_and_offset(idle_texture, idle_offset)
-            else:
-                # Use a fallback texture if the processed texture is not yet available
-                fallback_texture = arcade.make_soft_square_texture(
-                    32, arcade.color.BLUE, name="fallback_setanim_idle"
-                )
-                self._apply_texture_and_offset(fallback_texture, (0, 0))
-                print(
-                    f"Warning: Processed idle texture for {idle_key} not found. Using fallback."
-                )
-        else:
-            print(
-                f"Warning: Animation '{animation_name}' not found or has no frames."
-            )
+            self.current_animation_type = AnimationType(animation_data["type"])
+            self._apply_texture_and_offset(animation_data["frames"][0])
+            
+            if self.current_animation_type == AnimationType.ACTION:
+                self.animation_allow_overwrite = False
 
-    def move(self, direction: Vec2):
-        """Move the entity in the given direction"""
-        if direction.length() > 0:
-            self.velocity = direction * self.speed * self.delta_time
+    def change_state(self, new_state: EntityState, set_animation) -> bool:
+        if self.state != new_state:
+            self.state = new_state
+            set_animation()
+            return True
+        return False
 
-        self.update_physics()
+    def set_animation_for_state(self):
+        """Set the appropriate animation based on current state"""
+        pass
 
     def look_at(self, target_pos: Vec2):
         """Update facing direction to look at target"""
@@ -363,6 +242,13 @@ class Entity(arcade.Sprite):
 
         # Set facing based on angle
         self.facing_direction = angle
+
+    def move(self, direction: Vec2):
+        """Move the entity in the given direction"""
+        if direction.length() > 0:
+            self.velocity = direction * self.speed * self.delta_time
+
+        self.update_physics()
 
     def update_physics(self):
         """Update physics calculations"""
@@ -383,35 +269,21 @@ class Entity(arcade.Sprite):
 
     def update_state(self, delta_time: float):
         """Update entity state based on velocity and other factors - to be overridden by child classes"""
-        pass
+        if self.velocity.length() > DEAD_ZONE:
+            self.state = EntityState.WALKING
+        else:
+            self.state = EntityState.IDLE
 
     def die(self):
         """Trigger death animation"""
         self.state = EntityState.DYING
 
 
-def load_texture_with_anchor(
-    frame_path: str, animation_config: dict
-) -> ImageData:  # Use the type alias for return
-    """Load raw image data and return properties from animation configuration."""
-    try:
-        image_width = animation_config.get("width", 128)
-        image_height = animation_config.get("height", 128)
-        anchor_x = animation_config.get("anchor_x", image_width / 2)
-        anchor_y = animation_config.get("anchor_y", image_height / 2)
-
-        return frame_path, image_width, image_height, anchor_x, anchor_y
-
-    except Exception as e:
-        print(f"Error processing image path {frame_path}: {e}")
-        return "", 0, 0, 0, 0  # Return empty data on error
-
-
 def process_loaded_texture_data(
-    raw_texture_data: ImageData,  # Use the type alias
-) -> tuple[arcade.Texture, tuple[float, float]]:
+    raw_texture_data: RawTextureData,  # Use the type alias
+) -> TextureData:
     """Loads arcade.Texture from raw image data on the main thread."""
-    frame_path, image_width, image_height, anchor_x, anchor_y = (
+    frame_path, (image_width, image_height), (anchor_x, anchor_y) = (
         raw_texture_data
     )
 
@@ -419,17 +291,14 @@ def process_loaded_texture_data(
         fallback_texture = arcade.make_soft_square_texture(
             64, arcade.color.RED, name="fallback"
         )
-        return fallback_texture, (0, 0)
+        return TextureData(fallback_texture, (0, 0))
 
     if not frame_path:
-        # Handle the error case from load_texture_with_anchor
         return return_fallback_texture()
     else:
         try:
             texture = arcade.load_texture(frame_path)
-            texture = (
-                texture.flip_vertically()
-            )  # Flip vertically since the characters are pointed down
+            texture = texture.flip_vertically()
         except Exception as e:
             print(
                 f"ERROR: Failed to load arcade.Texture for {frame_path}: {e}"
@@ -444,4 +313,25 @@ def process_loaded_texture_data(
     offset_x = image_center_x - anchor_x
     offset_y = image_center_y - anchor_y
 
-    return texture, (offset_x, offset_y)
+    return TextureData((texture, (offset_x, offset_y)))
+
+def process_raw_texture_data(
+    raw_texture_data: RawTextureData,
+) -> TextureData:
+    return process_loaded_texture_data(raw_texture_data)
+
+def load_character_config(config_file: str) -> dict:
+    """Load character configuration from JSON file."""
+    try:
+        with open(config_file, "r") as f:
+            config_data = json.load(f)
+            return config_data
+    except FileNotFoundError:
+        print(f"Configuration file not found: {config_file}")
+        print(
+            "Please run character_analyzer.py first to generate configuration files"
+        )
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON file {config_file}: {e}")
+        return {}

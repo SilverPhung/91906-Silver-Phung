@@ -1,5 +1,23 @@
 import arcade
 
+# Window settings
+WINDOW_TITLE = "Starting Template"
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 720
+WINDOW_RATE = 1 / 144
+
+# Player constants
+PLAYER_MOVEMENT_SPEED = 500
+PLAYER_FRICTION = 0.9999
+PLAYER_ASSETS_DIR = "resources/Players"
+PLAYER_CONFIG_FILE = "resources/animation_config/players_config.json"
+DEAD_ZONE = 0.1
+MAX_HEALTH = 100
+
+# Enemy constants
+ZOMBIE_MOVEMENT_SPEED = 100
+ENEMY_CONFIG_FILE = "resources/animation_config/enemies_config.json"
+
 # Health bar constants
 HEALTHBAR_WIDTH = 75
 HEALTHBAR_HEIGHT = 10
@@ -9,29 +27,23 @@ INDICATOR_BAR_OFFSET = 32
 BULLET_SPEED = 100
 BULLET_LIFE = 0.5
 
-# Window settings
-WINDOW_TITLE = "Starting Template"
-WINDOW_WIDTH = 1280
-WINDOW_HEIGHT = 720
-WINDOW_RATE = 1 / 144
-
-# Constants
+# Scaling constants
 CHARACTER_SCALING = 0.3
 TILE_SCALING = 2
 COLLECTABLE_SCALING = 0.5
 SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = SPRITE_PIXEL_SIZE * TILE_SCALING
 
-# Player Movement
-PLAYER_MOVEMENT_SPEED = 500
-PLAYER_FRICTION = 0.9999
-
 # Camera constants
 FOLLOW_DECAY_CONST = 0.3
-
 VIEWPORT_MARGIN = 250
 HORIZONTAL_BOUNDARY = WINDOW_WIDTH / 2.0 - VIEWPORT_MARGIN
 VERTICAL_BOUNDARY = WINDOW_HEIGHT / 2.0 - VIEWPORT_MARGIN
+
+# Camera zoom constants
+ZOOM_STEP = 0.1
+MAX_ZOOM = 2.0
+MIN_ZOOM = 0.5
 
 # Key constants
 LEFT_KEY = arcade.key.LEFT
@@ -45,17 +57,6 @@ D_KEY = arcade.key.D
 ZOOM_KEY = arcade.key.LCTRL
 FULLSCREEN_KEY = arcade.key.F11
 
-# Camera zoom constants
-ZOOM_STEP = 0.1
-MAX_ZOOM = 2.0
-MIN_ZOOM = 0.5
-
-# Asset directories
-PLAYER_ASSETS_DIR = "resources/Players"
+# Asset directories and configuration files
 ZOMBIE_ASSETS_DIR = "resources/Zombies"
-
-# Configuration files
-PLAYER_CONFIG_FILE = "resources/animation_config/players_config.json"
 ZOMBIE_CONFIG_FILE = "resources/animation_config/zombies_config.json"
-
-DEAD_ZONE = 0.1 
