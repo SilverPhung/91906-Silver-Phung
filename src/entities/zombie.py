@@ -13,12 +13,14 @@ class Zombie(Enemy):
         friction=PLAYER_FRICTION,
         speed=int(PLAYER_MOVEMENT_SPEED * 0.4),
         player_ref: Player | None = None,
+        config_file=ZOMBIE_CONFIG_FILE,
     ):
         super().__init__(
             scale=scale,
             friction=friction,
             speed=speed,
-            enemy_type=zombie_type,
+            character_config=config_file,
+            character_preset=zombie_type,
             player_ref=player_ref,
         )
 
@@ -28,3 +30,5 @@ class Zombie(Enemy):
         self.detection_range = 300
         self.attack_range = 50
         self.damage = 10 
+    
+    

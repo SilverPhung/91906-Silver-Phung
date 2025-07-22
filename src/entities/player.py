@@ -25,13 +25,14 @@ class Player(Entity):
         friction=PLAYER_FRICTION,
         speed=PLAYER_MOVEMENT_SPEED,
         player_preset="Man",
+        config_file=PLAYER_CONFIG_FILE,
         show_health_indicator: arcade.SpriteList = None,
     ):
         super().__init__(
             scale=scale,
             friction=friction,
             speed=speed,
-            character_config=load_character_config(PLAYER_CONFIG_FILE),
+            character_config=config_file,
             character_preset=player_preset,
         )
         # Player-specific properties
@@ -117,19 +118,19 @@ class Player(Entity):
                                         break
 
             case EntityState.DYING:
-                if self._animation_exists_and_has_frames("Death"):
-                    self.set_animation("Death")
+                if self._try_set_animation("Death"):
+                    return
 
-        Debug.update(
-            "Selected Animation",
-            str(self.current_animation) if self.current_animation else "None",
-        )
+        # Debug.update(
+        #     "Selected Animation",
+        #     str(self.current_animation) if self.current_animation else "None",
+        # )
 
     def update_state(self, delta_time: float):
         """Update player state based on velocity and other factors"""
-        Debug.update(
-            "Animation allow overwrite", self.animation_allow_overwrite
-        )
+        # Debug.update(
+        #     "Animation allow overwrite", self.animation_allow_overwrite
+        # )
         # print("player state", self.state, self.current_animation_type)
 
         # Allow shooting/attacking animation to finish before switching state
@@ -150,7 +151,7 @@ class Player(Entity):
         """Update facing direction based on mouse position"""
         self.mouse_position = mouse_pos
         super().look_at(mouse_pos)
-        Debug.update("Player Angle (internal)", f"{self.angle:.2f}")
+        # Debug.update("Player Angle (internal)", f"{self.angle:.2f}")
 
     def attack(self):
         """Trigger an attack animation based on current weapon"""

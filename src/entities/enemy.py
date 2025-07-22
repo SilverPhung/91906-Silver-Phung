@@ -17,21 +17,20 @@ class Enemy(Entity):
         scale,
         friction=PLAYER_FRICTION,
         speed=ZOMBIE_MOVEMENT_SPEED,
-        enemy_type="Army_zombie",
+        character_preset="Army_zombie",
+        character_config=ZOMBIE_CONFIG_FILE,
         player_ref: Player | None = None,
     ):
         super().__init__(
             scale=scale,
             friction=friction,
             speed=speed,
-            character_config=load_character_config(ENEMY_CONFIG_FILE),
-            character_preset=enemy_type,
+            character_config=character_config,
+            character_preset=character_preset,
         )
-
-        self.state = EntityState.IDLE
-        self.enemy_type = enemy_type
         self.player = player_ref
         self.attack_range = 50
+        self.change_state(EntityState.IDLE)
 
     def change_state(self, new_state: EntityState):
         super().change_state(new_state, self.set_animation_for_state)
@@ -54,15 +53,22 @@ class Enemy(Entity):
             case EntityState.DYING:
                 if self._try_set_animation("Death"):
                     return
+        Debug.update(
+            "Selected Enemy Animation",
+            str(self.current_animation) if self.current_animation else "None",
+        )
 
     def update_state(self, delta_time: float):
         """Update enemy state based on velocity and other factors"""
+        Debug.update(
+            "Enemy Animation allow overwrite", self.animation_allow_overwrite
+        )
         # Allow action animation (e.g., attacking, dying) to finish before switching state
-        if (
-            self.current_animation_type == AnimationType.ACTION
-            and not self.animation_allow_overwrite
-        ):
-            return
+        # if (
+        #     self.current_animation_type == AnimationType.ACTION
+        #     and not self.animation_allow_overwrite
+        # ):
+        #     return
 
         if self.state == EntityState.ATTACKING:
             if self.player:
@@ -71,8 +77,7 @@ class Enemy(Entity):
                 distance = math.sqrt(dx * dx + dy * dy)
 
                 if distance > self.attack_range + 20:
-                    self.state = EntityState.IDLE
-                    self.set_animation_for_state()
+                    self.change_state(EntityState.IDLE)
                     return
 
         velocity_magnitude = to_vector((self.change_x, self.change_y)).length()

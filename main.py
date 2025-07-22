@@ -496,6 +496,15 @@ class GameView(arcade.View):
         )
         self.player.look_at(self.mouse_position)
 
+        if self.player.health_bar:
+            self.player.health_bar.position = (
+                self.player.center_x,
+                self.player.center_y + INDICATOR_BAR_OFFSET,
+            )
+            
+        self.player.update_state(delta_time)
+        self.player.animate(delta_time)
+
         if abs(self.camera.zoom - self.target_zoom) > 0.001:
             self.camera.zoom = arcade.math.lerp(
                 self.camera.zoom, self.target_zoom, 5 * delta_time
@@ -506,18 +515,7 @@ class GameView(arcade.View):
         self.update_player_speed()
         self.physics_engine.update()
 
-        if self.player.state == EntityState.ATTACKING:
-            # print("player state", self.player.state, self.player.current_animation_type, self.player.animation_allow_overwrite)
-            pass
 
-        self.player.update_state(delta_time)
-        self.player.animate(delta_time)
-
-        if self.player.health_bar:
-            self.player.health_bar.position = (
-                self.player.center_x,
-                self.player.center_y + INDICATOR_BAR_OFFSET,
-            )
 
         self.update_enemies(delta_time)
 

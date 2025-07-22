@@ -42,7 +42,7 @@ class Entity(arcade.Sprite):
         scale,
         friction=PLAYER_FRICTION,
         speed=PLAYER_MOVEMENT_SPEED,
-        character_config: dict = None,
+        character_config: str = None,
         character_preset: str = None,
         show_health_indicator: arcade.SpriteList = None,
     ):
@@ -82,7 +82,7 @@ class Entity(arcade.Sprite):
                 height=HEALTHBAR_HEIGHT,
             )
 
-        self.character_config = character_config
+        self.character_config = load_character_config(character_config)
         self.character_preset = character_preset
 
     def draw(self):
