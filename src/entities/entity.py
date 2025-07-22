@@ -11,10 +11,14 @@ from src.constants import *
 from src.debug import Debug
 
 # path, width, height, anchor_x, anchor_y
-RawTextureData = tuple[str, tuple[float, float], tuple[float, float]]  # Define the type alias
+RawTextureData = tuple[
+    str, tuple[float, float], tuple[float, float]
+]  # Define the type alias
 
 # texture, offset
-TextureData = tuple[arcade.Texture, tuple[float, float]]  # Define the type alias
+TextureData = tuple[
+    arcade.Texture, tuple[float, float]
+]  # Define the type alias
 
 
 class EntityState(Enum):
@@ -57,7 +61,7 @@ class Entity(arcade.Sprite):
         self.current_animation_frame = 0
         self.current_animation_time = 0
         self.animation_allow_overwrite = True
-        self.animation_fps = 10
+        self.animation_fps = 17
         self.frame_duration = 1.0 / self.animation_fps
 
         # Base state
@@ -99,9 +103,7 @@ class Entity(arcade.Sprite):
         self.texture = texture[0]
         self.sync_hit_box_to_texture()
 
-    def load_animation_sequence(
-        self, name: str, animation_data: dict
-    ):
+    def load_animation_sequence(self, name: str, animation_data: dict):
 
         self.animations[name] = {
             "type": animation_data["animation_type"],
@@ -116,11 +118,15 @@ class Entity(arcade.Sprite):
         processed_sequence = []
         for frame_path in animation_data["frames"]:
             processed_frame = process_loaded_texture_data(
-                RawTextureData((
-                    frame_path,
-                    (animation_data["width"],
-                    animation_data["height"]),
-                    (animation_data["anchor_x"], animation_data["anchor_y"]))
+                RawTextureData(
+                    (
+                        frame_path,
+                        (animation_data["width"], animation_data["height"]),
+                        (
+                            animation_data["anchor_x"],
+                            animation_data["anchor_y"],
+                        ),
+                    )
                 )
             )
             processed_sequence.append(processed_frame)
@@ -144,7 +150,6 @@ class Entity(arcade.Sprite):
         # Load animations from configuration
         for animation_name, animation_config in character_data.items():
             self.load_animation_sequence(animation_name, animation_config)
-
 
         self._is_loading = False
 
@@ -185,28 +190,36 @@ class Entity(arcade.Sprite):
                     f"Warning: Animation '{self.current_animation}' not found."
                 )
                 return
-            
 
             if animation_frames:
-                if self.current_animation_type == AnimationType.IDLE:
+                if (
+                    self.current_animation_type == AnimationType.MOVEMENT
+                    and self.state == EntityState.IDLE
+                ):
                     self.current_animation_frame = 0
                     self.animation_allow_overwrite = True
                 else:
-                    self.current_animation_type = AnimationType(animation_data["type"])
+                    self.current_animation_type = AnimationType(
+                        animation_data["type"]
+                    )
                     # print("process Current Animation Type", self.current_animation_type)
                     match self.current_animation_type:
                         case AnimationType.MOVEMENT:
                             self.current_animation_frame = (
                                 self.current_animation_frame + 1
                             ) % len(animation_frames)
-                            self.animation_allow_overwrite = True
+                            self.animation_allow_overwritew = True
                         case AnimationType.ACTION:
-                            self.animation_allow_overwrite = self.current_animation_frame == len(animation_frames) - 1
+                            self.animation_allow_overwrite = (
+                                self.current_animation_frame
+                                == len(animation_frames) - 1
+                            )
                             if not self.animation_allow_overwrite:
                                 self.current_animation_frame += 1
 
-                    self._apply_texture_and_offset(animation_frames[self.current_animation_frame])
-
+                    self._apply_texture_and_offset(
+                        animation_frames[self.current_animation_frame]
+                    )
 
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
@@ -217,14 +230,14 @@ class Entity(arcade.Sprite):
             animation_data = self.animations[animation_name]
             self.current_animation_type = AnimationType(animation_data["type"])
             self._apply_texture_and_offset(animation_data["frames"][0])
-            
+
             if self.current_animation_type == AnimationType.ACTION:
                 self.animation_allow_overwrite = False
 
     def change_state(self, new_state: EntityState, set_animation) -> bool:
+        set_animation()
         if self.state != new_state:
             self.state = new_state
-            set_animation()
             return True
         return False
 
@@ -315,10 +328,12 @@ def process_loaded_texture_data(
 
     return TextureData((texture, (offset_x, offset_y)))
 
+
 def process_raw_texture_data(
     raw_texture_data: RawTextureData,
 ) -> TextureData:
     return process_loaded_texture_data(raw_texture_data)
+
 
 def load_character_config(config_file: str) -> dict:
     """Load character configuration from JSON file."""

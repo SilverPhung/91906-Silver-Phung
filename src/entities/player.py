@@ -51,7 +51,7 @@ class Player(Entity):
     def _find_and_set_prefixed_animation(
         self, prefix: str, weapon_name: str, fallback_prefix: str
     ):
-        """Helper to find and set animations with a given prefix, with specific and generic fallbacks."""
+        """Find and set animations with prefix and fallbacks."""
         # Try specific weapon animation
         specific_anim = f"{prefix}{weapon_name.lower()}"
         if self._try_set_animation(specific_anim):
@@ -101,13 +101,8 @@ class Player(Entity):
                         shoot_anim = "Gun_Shot"
                         self._try_set_animation(shoot_anim)
                     else:
-                        if (
-                            self.current_animation != weapon_name
-                            or self.current_animation == weapon_name
-                            and self.current_animation_frame
-                            == len(self.animations[weapon_name]["frames"]) - 1
-                        ):
-                            self._try_set_animation(weapon_name)
+                        if (self._try_set_animation(weapon_name)):
+                            pass
                         else:
                             print("Cannot find attack animation, using fallback")
                             # Fallback to any attack animation (if not weapon_name specific)
