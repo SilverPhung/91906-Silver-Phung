@@ -170,6 +170,7 @@ class Entity(arcade.Sprite):
         animation_frames = None
 
         Debug.update("Current Animation frame", self.current_animation_frame)
+        Debug.update("Current Animation type", self.current_animation_type)
 
         # Check if it's time to advance to the next frame
         if self.current_animation_time >= self.frame_duration:
@@ -187,13 +188,12 @@ class Entity(arcade.Sprite):
             
 
             if animation_frames:
-                if self.state == EntityState.IDLE:
+                if self.current_animation_type == AnimationType.IDLE:
                     self.current_animation_frame = 0
                     self.animation_allow_overwrite = True
                 else:
                     self.current_animation_type = AnimationType(animation_data["type"])
-                    print("process Current Animation Type", self.current_animation_type)
-                    Debug.update("Current Animation type", self.current_animation_type)
+                    # print("process Current Animation Type", self.current_animation_type)
                     match self.current_animation_type:
                         case AnimationType.MOVEMENT:
                             self.current_animation_frame = (

@@ -80,7 +80,8 @@ class Player(Entity):
 
     def change_state(self, new_state: EntityState):
         if super().change_state(new_state, self.set_animation_for_state):
-            print("change state", new_state)
+            # print("change state", new_state)
+            pass
 
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state and weapon"""
@@ -88,35 +89,37 @@ class Player(Entity):
 
         match self.state:
             case EntityState.WALKING | EntityState.IDLE:
-                self._find_and_set_prefixed_animation(
-                    "Walk_", weapon_name, "Walk_"
-                )
+                if self.animation_allow_overwrite:
+
+                    self._find_and_set_prefixed_animation(
+                        "Walk_", weapon_name, "Walk_"
+                    )
 
             case EntityState.ATTACKING:
-
-                if self.current_weapon == WeaponType.GUN:
-                    shoot_anim = "Gun_Shot"
-                    self._try_set_animation(shoot_anim)
-                else:
-                    if (
-                        self.current_animation != weapon_name
-                        or self.current_animation == weapon_name
-                        and self.current_animation_frame
-                        == len(self.animations[weapon_name]["frames"]) - 1
-                    ):
-                        self._try_set_animation(weapon_name)
+                if self.animation_allow_overwrite or self.state == EntityState.ATTACKING:
+                    if self.current_weapon == WeaponType.GUN:
+                        shoot_anim = "Gun_Shot"
+                        self._try_set_animation(shoot_anim)
                     else:
-                        print("Cannot find attack animation, using fallback")
-                        # Fallback to any attack animation (if not weapon_name specific)
-                        for anim_name in self.animations:
-                            if anim_name in [
-                                "Bat",
-                                "FlameThrower",
-                                "Knife",
-                                "Riffle",
-                            ]:
-                                if self._try_set_animation(anim_name):
-                                    break
+                        if (
+                            self.current_animation != weapon_name
+                            or self.current_animation == weapon_name
+                            and self.current_animation_frame
+                            == len(self.animations[weapon_name]["frames"]) - 1
+                        ):
+                            self._try_set_animation(weapon_name)
+                        else:
+                            print("Cannot find attack animation, using fallback")
+                            # Fallback to any attack animation (if not weapon_name specific)
+                            for anim_name in self.animations:
+                                if anim_name in [
+                                    "Bat",
+                                    "FlameThrower",
+                                    "Knife",
+                                    "Riffle",
+                                ]:
+                                    if self._try_set_animation(anim_name):
+                                        break
 
             case EntityState.DYING:
                 if self._animation_exists_and_has_frames("Death"):

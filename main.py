@@ -311,16 +311,17 @@ class GameView(arcade.View):
             self.on_resize(self.window.width, self.window.height)
 
         # Weapon switching with number keys
-        if key == arcade.key.KEY_1:
-            self.player.set_weapon(WeaponType.GUN)
-        elif key == arcade.key.KEY_2:
-            self.player.set_weapon(WeaponType.BAT)
-        elif key == arcade.key.KEY_3:
-            self.player.set_weapon(WeaponType.KNIFE)
-        elif key == arcade.key.KEY_4:
-            self.player.set_weapon(WeaponType.RIFLE)
-        elif key == arcade.key.KEY_5:
-            self.player.set_weapon(WeaponType.FLAMETHROWER)
+        match key:
+            case arcade.key.KEY_1:
+                self.player.set_weapon(WeaponType.GUN)
+            case arcade.key.KEY_2:
+                self.player.set_weapon(WeaponType.BAT)
+            case arcade.key.KEY_3:
+                self.player.set_weapon(WeaponType.KNIFE)
+            case arcade.key.KEY_4:
+                self.player.set_weapon(WeaponType.RIFLE)
+            case arcade.key.KEY_5:
+                self.player.set_weapon(WeaponType.FLAMETHROWER)
 
         # Attack with space
         if key == arcade.key.SPACE:
@@ -355,8 +356,8 @@ class GameView(arcade.View):
         if button == arcade.MOUSE_BUTTON_LEFT:
             self.left_mouse_pressed = True
             self.player.attack()
-            if self.player.current_weapon == WeaponType.GUN:
-                self.shoot_ray()
+            # if self.player.current_weapon == WeaponType.GUN:
+            #     self.shoot_ray()
 
     def on_mouse_release(self, x, y, button, modifiers):
         """Handle mouse clicks"""
@@ -461,8 +462,9 @@ class GameView(arcade.View):
         self.physics_engine.update()
 
         if self.player.state == EntityState.ATTACKING:
-            print("player state", self.player.state, self.player.current_animation_type, self.player.animation_allow_overwrite)
-
+            # print("player state", self.player.state, self.player.current_animation_type, self.player.animation_allow_overwrite)
+            pass
+        
         self.player.update_state(delta_time)
         self.player.animate(delta_time)
 
