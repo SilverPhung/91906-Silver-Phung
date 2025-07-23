@@ -14,6 +14,7 @@ class Enemy(Entity):
 
     def __init__(
         self,
+        game_view: arcade.View,
         scale,
         friction=PLAYER_FRICTION,
         speed=ZOMBIE_MOVEMENT_SPEED,
@@ -22,15 +23,29 @@ class Enemy(Entity):
         player_ref: Player | None = None,
     ):
         super().__init__(
+            game_view=game_view,
             scale=scale,
             friction=friction,
             speed=speed,
             character_config=character_config,
             character_preset=character_preset,
         )
+
+        self.load_animations(character_preset, character_config)
+
         self.player = player_ref
         self.attack_range = 50
         self.change_state(EntityState.IDLE)
+
+        self.health_bar = IndicatorBar(
+            self,
+            game_view.bar_list,
+            (self.center_x, self.center_y),
+            width=HEALTHBAR_WIDTH,
+            height=HEALTHBAR_HEIGHT,
+        )
+        self.current_health = self.max_health
+        self.health_bar.fullness = 1.0
 
     def change_state(self, new_state: EntityState):
         super().change_state(new_state, self.set_animation_for_state)
@@ -97,6 +112,5 @@ class Enemy(Entity):
         self.change_state(EntityState.DYING)
 
     def update(self, delta_time: float):
-        self.update_state(delta_time)
-        self.animate(delta_time)
+        super().update(delta_time)
         

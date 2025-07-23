@@ -34,10 +34,6 @@ class GameView(arcade.View):
         super().__init__()
 
         Debug._initialize()
-        self.loading_executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=4
-        )
-        self.loading_futures = []
 
         self.window.background_color = arcade.color.AMAZON
 
@@ -56,18 +52,17 @@ class GameView(arcade.View):
 
         # Set up the player info
         self.player = Player(
+            game_view=self,
             scale=CHARACTER_SCALING,
             speed=PLAYER_MOVEMENT_SPEED,
-            show_health_indicator=self.bar_list,
         )
-        self.player.load_animations()
 
         # Enemy list and physics engines - initialize before spawning enemies
-        self.enemies = []
+        self.enemies = arcade.SpriteList()
         self.enemy_physics_engines = []
 
         # Add a test zombie
-        self.spawn_zombie("Army_zombie", x=400, y=350, player_ref=self.player)
+        # self.spawn_zombie("Army_zombie", x=400, y=350, player_ref=self.player)
 
         # Physics engines - one for player and one for each enemy
         self.physics_engine = arcade.PhysicsEngineSimple(
@@ -102,16 +97,21 @@ class GameView(arcade.View):
     def reset(self):
         self.scene = self.create_scene()
 
+        self.enemies.clear()
+        self.bullet_list.clear()
+        self.scene.add_sprite_list("Enemies", self.enemies)
+
         self.player.position = Vec2(50, 350)
         self.scene.add_sprite("Player", self.player)
 
         # Clear and recreate enemy lists
-        self.enemies = []
         self.enemy_physics_engines = []
 
         # Add a test zombie
-        zombie = self.spawn_zombie(
-            "Army_zombie", x=400, y=350, player_ref=self.player
+        zombie = Zombie(
+            game_view=self,
+            zombie_type="Army_zombie",
+            player_ref=self.player,
         )
 
         # Physics engine for player
@@ -121,34 +121,12 @@ class GameView(arcade.View):
         )
 
         # Create physics engine for this enemy (after adding to scene)
-        enemy_physics_engine = arcade.PhysicsEngineSimple(
-            zombie,
-            self.scene.get_sprite_list("Walls"),
-        )
-        self.enemy_physics_engines.append(enemy_physics_engine)
+        # enemy_physics_engine = arcade.PhysicsEngineSimple(
+        #     zombie,
+        #     self.scene.get_sprite_list("Walls"),
+        # )
+        # self.enemy_physics_engines.append(enemy_physics_engine)
 
-        # Clear and re-add loading futures on reset
-        self.loading_futures = []
-        self.player_loading_future = self.loading_executor.submit(
-            self.player.load_animations
-        )
-        self.loading_futures.append((self.player_loading_future, self.player))
-
-        # Add initial enemy loading futures (for the newly spawned zombie)
-        if zombie:
-            zombie._is_loading = False
-            self.loading_futures.append(
-                (self.loading_executor.submit(zombie.load_animations), zombie)
-            )
-
-        # Re-initialize player's health bar on reset
-        self.player.health_bar = IndicatorBar(
-            self.player,
-            self.bar_list,
-            (self.player.center_x, self.player.center_y),
-            width=HEALTHBAR_WIDTH,
-            height=HEALTHBAR_HEIGHT,
-        )
         self.player.current_health = self.player.max_health
         self.player.health_bar.fullness = 1.0
 
@@ -161,7 +139,7 @@ class GameView(arcade.View):
     ):
         """Spawn a zombie at the specified position"""
 
-        zombie = Zombie(zombie_type=zombie_type, player_ref=self.player)
+        zombie = Zombie(game_view=self, zombie_type=zombie_type, player_ref=self.player)
         zombie.position = (float(x), float(y))
         zombie.load_animations()
 
@@ -319,10 +297,7 @@ class GameView(arcade.View):
 
             # Update the enemy facing direction to look at player
             enemy.look_at(self.player.position)
-
-            # Update animation state
-            enemy.update_state(delta_time)
-            enemy.animate(delta_time)
+            enemy.update(delta_time)
 
             # Update physics
             if i < len(self.enemy_physics_engines):
@@ -353,8 +328,6 @@ class GameView(arcade.View):
         # Attack with space
         if key == arcade.key.SPACE:
             self.player.attack()
-            if self.player.current_weapon == WeaponType.GUN:
-                self.shoot_ray()
 
         # Death animation with K (for testing)
         if key == arcade.key.K:
@@ -382,81 +355,12 @@ class GameView(arcade.View):
         if button == arcade.MOUSE_BUTTON_LEFT:
             self.left_mouse_pressed = True
             self.player.attack()
-            if self.player.current_weapon == WeaponType.GUN:
-                self.shoot_ray()
 
     def on_mouse_release(self, x, y, button, modifiers):
         """Handle mouse clicks"""
         if button == arcade.MOUSE_BUTTON_LEFT:
             self.left_mouse_pressed = False
 
-    def shoot_ray(self):
-        """Performs ray casting for shooting."""
-        if self.player.current_weapon == WeaponType.GUN:
-            arcade.play_sound(self.gun_shot_sound)
-            start_x, start_y = self.player.position
-
-            # Calculate the direction vector from player's facing angle
-            angle_radians = math.radians(self.player.angle)
-            dir_x = math.sin(angle_radians)
-            dir_y = math.cos(angle_radians)
-
-            # Normalize direction vector
-            direction_magnitude = math.sqrt(dir_x**2 + dir_y**2)
-            if direction_magnitude > 0:
-                normalized_dir_x = dir_x / direction_magnitude
-                normalized_dir_y = dir_y / direction_magnitude
-            else:
-                normalized_dir_x = 0.0
-                normalized_dir_y = 0.0
-
-            # Define the length of the ray (e.g., screen diagonal or further)
-            ray_length = max(WINDOW_WIDTH, WINDOW_HEIGHT) * 1.5
-
-            # Calculate the end point of the ray
-            end_x = start_x + normalized_dir_x * ray_length
-            end_y = start_y + normalized_dir_y * ray_length
-
-            # Create a temporary sprite for the ray for collision detection
-            ray_sprite = arcade.SpriteSolidColor(
-                1, ray_length, arcade.color.YELLOW
-            )
-            ray_sprite.center_x = start_x + normalized_dir_x * ray_length / 2
-            ray_sprite.center_y = start_y + normalized_dir_y * ray_length / 2
-            ray_sprite.angle = math.degrees(
-                math.atan2(normalized_dir_y, normalized_dir_x)
-            )
-
-            # Perform collision check
-            hit_sprites = arcade.check_for_collision_with_list(
-                ray_sprite, self.scene.get_sprite_list("Enemies")
-            )
-
-            if hit_sprites:
-                # Find the closest hit enemy
-                closest_enemy = None
-                min_distance = float("inf")
-                for enemy in hit_sprites:
-                    distance = arcade.math.get_distance(
-                        start_x, start_y, enemy.center_x, enemy.center_y
-                    )
-                    if distance < min_distance:
-                        min_distance = distance
-                        closest_enemy = enemy
-
-                if closest_enemy:
-                    closest_enemy.take_damage(10)
-                    Debug.update("Hit Enemy", closest_enemy.enemy_type)
-                    # Adjust end_x, end_y to the hit point for the bullet visual
-                    end_x, end_y = closest_enemy.position
-                else:
-                    Debug.update("Hit Enemy", "None")
-            else:
-                Debug.update("Hit Enemy", "None")
-
-            # Create a bullet sprite to visualize the ray
-            bullet = Bullet((start_x, start_y), (end_x, end_y))
-            self.bullet_list.append(bullet)
 
     def center_camera_to_player(self, delta_time):
         current_camera_position = Vec2(
@@ -497,8 +401,7 @@ class GameView(arcade.View):
         self.player.mouse_position = self.mouse_position
         self.player.update(delta_time)
 
-        for enemy in self.enemies:
-            enemy.update(delta_time)
+        self.enemies.update(delta_time)
 
         if abs(self.camera.zoom - self.target_zoom) > 0.001:
             self.camera.zoom = arcade.math.lerp(
@@ -514,7 +417,7 @@ class GameView(arcade.View):
 
         self.update_enemies(delta_time)
 
-        self.bullet_list.update(delta_time)
+        self.bullet_list.update(delta_time, [self.scene.get_sprite_list("Enemies")])
 
     def on_resize(self, width: int, height: int):
         """Resize window"""

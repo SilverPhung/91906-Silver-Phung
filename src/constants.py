@@ -26,6 +26,7 @@ INDICATOR_BAR_OFFSET = 32
 # Constants for bullet properties
 BULLET_SPEED = 100
 BULLET_LIFE = 0.5
+BULLET_DAMAGE = 10
 
 # Scaling constants
 CHARACTER_SCALING = 0.3

@@ -6,6 +6,7 @@ from src.sprites.indicator_bar import IndicatorBar
 from src.debug import Debug
 from enum import Enum
 from src.constants import *
+from src.sprites.bullet import Bullet
 
 
 class WeaponType(Enum):
@@ -21,12 +22,14 @@ class Player(Entity):
 
     def __init__(
         self,
-        scale,
-        friction=PLAYER_FRICTION,
-        speed=PLAYER_MOVEMENT_SPEED,
+        game_view: arcade.View,
         player_preset="Man",
         config_file=PLAYER_CONFIG_FILE,
-        show_health_indicator: arcade.SpriteList = None,
+        scale=1,
+        friction=PLAYER_FRICTION,
+        speed=PLAYER_MOVEMENT_SPEED,
+        reset_on_death=True,
+        spawn_position=(50, 350),
     ):
         super().__init__(
             scale=scale,
@@ -34,7 +37,16 @@ class Player(Entity):
             speed=speed,
             character_config=config_file,
             character_preset=player_preset,
+            game_view=game_view,
         )
+
+        self.game_view = game_view
+
+        self.reset_on_death = reset_on_death
+        self.spawn_position = spawn_position
+
+        self.load_animations(player_preset, config_file)
+
         # Player-specific properties
 
         self.mouse_position = (0.0, 0.0)
@@ -43,6 +55,16 @@ class Player(Entity):
         self.current_weapon = WeaponType.GUN
 
         self.current_health = self.max_health
+
+        # Initialize player's health bar
+        self.health_bar = IndicatorBar(
+            self,
+            game_view.bar_list,
+            (self.center_x, self.center_y),
+            width=HEALTHBAR_WIDTH,
+            height=HEALTHBAR_HEIGHT,
+        )
+        self.health_bar.fullness = 1.0
 
     def set_weapon(self, weapon_type: WeaponType):
         """Set the current weapon"""
@@ -59,7 +81,7 @@ class Player(Entity):
             return
 
         # Try alternative cases for weapon name
-        for anim_name in self.animations:
+        for anim_name in Entity.loaded_animations[self.character_preset]:
             if (
                 anim_name.startswith(prefix)
                 and weapon_name.lower() in anim_name.lower()
@@ -68,13 +90,13 @@ class Player(Entity):
                     return
 
         # Fallback to any animation with the prefix
-        for anim_name in self.animations:
+        for anim_name in Entity.loaded_animations[self.character_preset]:
             if anim_name.startswith(fallback_prefix):
                 if self._try_set_animation(anim_name):
                     return
 
         # Last resort - use any available animation
-        for anim_name in self.animations:
+        for anim_name in Entity.loaded_animations[self.character_preset]:
             if self._try_set_animation(anim_name):
                 print("Cannot find animation, using fallback", anim_name)
                 return
@@ -107,7 +129,7 @@ class Player(Entity):
                         else:
                             print("Cannot find attack animation, using fallback")
                             # Fallback to any attack animation (if not weapon_name specific)
-                            for anim_name in self.animations:
+                            for anim_name in Entity.loaded_animations[self.character_preset]:
                                 if anim_name in [
                                     "Bat",
                                     "FlameThrower",
@@ -157,25 +179,48 @@ class Player(Entity):
         """Trigger an attack animation based on current weapon"""
         if self.state != EntityState.DYING:
             self.change_state(EntityState.ATTACKING)
+            if self.current_weapon == WeaponType.GUN:
+                self.shoot()
+            else:
+                self.attack_with_weapon()
 
     def shoot(self):
         """Trigger a shoot animation based on current weapon"""
-        # if self.state != EntityState.DYING:
+        if self.state != EntityState.DYING:
+            self.change_state(EntityState.ATTACKING)
+            bullet = Bullet(self.position, self.mouse_position, bullet_damage=BULLET_DAMAGE)
+            self.game_view.bullet_list.append(bullet)
+
+    def attack_with_weapon(self):
+        """Trigger an attack animation based on current weapon"""
+        if self.state != EntityState.DYING:
+            hit_list = arcade.check_for_collision_with_list(self, self.game_view.scene.get_sprite_list("Enemies"))
+            for enemy in hit_list:
+                enemy.take_damage(BULLET_DAMAGE)
 
     def die(self):
         """Trigger death animation"""
-        self.change_state(EntityState.DYING)
+        if self.reset_on_death:
+            self.reset()
+        else:
+            self.change_state(EntityState.DYING)
 
     
     def update(self, delta_time: float):
         super().update(delta_time)
         self.look_at(self.mouse_position)
 
-        if self.health_bar:
-            self.health_bar.position = (
-                self.center_x,
-                self.center_y + INDICATOR_BAR_OFFSET,
-            )
-            
-        self.update_state(delta_time)
-        self.animate(delta_time)
+        
+    def reset(self):
+        """Reset the player to initial state"""
+        self.current_health = self.max_health
+        self.change_state(EntityState.IDLE)
+        self.current_weapon = WeaponType.GUN
+        self.velocity = Vec2(0.0, 0.0)
+        self.change_x = 0.0
+        self.change_y = 0.0
+        self.position = Vec2(self.spawn_position)
+        
+        # Reset health bar if it exists
+        if hasattr(self, 'health_bar') and self.health_bar:
+            self.health_bar.fullness = 1.0

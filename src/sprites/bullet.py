@@ -1,6 +1,8 @@
+from typing import cast
 import arcade
 import math
 from pyglet.math import Vec2
+from src.entities.entity import Entity
 from src.constants import *
 
 
@@ -13,6 +15,7 @@ class Bullet(arcade.Sprite):
         end_position: tuple[float, float],
         bullet_speed: float = BULLET_SPEED,
         bullet_lifetime: float = BULLET_LIFE,
+        bullet_damage: float = BULLET_DAMAGE,
         **kwargs,
     ):
         # Create a yellow rectangle texture for the bullet
@@ -42,13 +45,23 @@ class Bullet(arcade.Sprite):
         )
 
         self.lifetime = bullet_lifetime
+        self.damage = bullet_damage
 
-    def update(self, delta_time: float):
+    def update(self, delta_time: float, sprite_lists: list[arcade.SpriteList]):
+        self._check_collision(sprite_lists)
         self.lifetime -= delta_time
         if self.lifetime <= 0:
             self.remove_from_sprite_lists()
 
         super().update(delta_time)
+    
+    def _check_collision(self, sprite_lists: list[arcade.SpriteList]):
+        for sprite_list in sprite_lists:
+            for sprite in self.collides_with_list(sprite_list):
+                cast(Entity, sprite).take_damage(self.damage)
+                self.remove_from_sprite_lists()
+                return True
+        return False
 
     def draw(self):
         # No longer drawing a line, as it's a sprite now

@@ -36,17 +36,20 @@ class AnimationType(Enum):
 
 class Entity(arcade.Sprite):
     """Base class for all entities in the game (players, enemies)"""
-
+    loaded_animations = {}
+    loaded_character_config = {}
     def __init__(
         self,
+        game_view: arcade.View,
         scale,
         friction=PLAYER_FRICTION,
         speed=PLAYER_MOVEMENT_SPEED,
         character_config: str = None,
-        character_preset: str = None,
-        show_health_indicator: arcade.SpriteList = None,
+        character_preset: str = None
     ):
         super().__init__(scale=scale)
+
+        self.game_view = game_view
 
         self.speed = speed
         self.position: tuple[float, float] = (0, 0)
@@ -55,7 +58,6 @@ class Entity(arcade.Sprite):
         self.delta_time = WINDOW_RATE
 
         # Animation properties moved from Character_Display_Sprite
-        self.animations = {}
         self.current_animation = None
         self.current_animation_type = None
         self.current_animation_frame = 0
@@ -73,16 +75,16 @@ class Entity(arcade.Sprite):
         self.max_health = MAX_HEALTH
         self.current_health = self.max_health
         self.health_bar = None
-        if show_health_indicator:
+        if self.game_view.bar_list:
             self.health_bar = IndicatorBar(
                 self,
-                show_health_indicator,
+                self.game_view.bar_list,
                 (self.center_x, self.center_y),
                 width=HEALTHBAR_WIDTH,
                 height=HEALTHBAR_HEIGHT,
             )
 
-        self.character_config = load_character_config(character_config)
+        self.character_config = add_character_config(character_config)
         self.character_preset = character_preset
 
     def draw(self):
@@ -103,9 +105,13 @@ class Entity(arcade.Sprite):
         self.texture = texture[0]
         self.sync_hit_box_to_texture()
 
-    def load_animation_sequence(self, name: str, animation_data: dict):
+    @staticmethod
+    def load_animation_sequence(character_preset: str, name: str, animation_data: dict):
 
-        self.animations[name] = {
+        if character_preset not in Entity.loaded_animations:
+            Entity.loaded_animations[character_preset] = {}
+
+        Entity.loaded_animations[character_preset][name] = {
             "type": animation_data["animation_type"],
             "width": animation_data["width"],
             "height": animation_data["height"],
@@ -131,37 +137,52 @@ class Entity(arcade.Sprite):
             )
             processed_sequence.append(processed_frame)
 
-        self.animations[name]["frames"] = processed_sequence
+        Entity.loaded_animations[character_preset][name]["frames"] = processed_sequence
 
-    def load_animations(self):
-        """Synchronous method to load player animations from configuration file"""
+    @staticmethod   
+    def load_animations(character_preset: str, character_config_path: str) -> bool:
+        """Synchronous method to load character animations from configuration file"""
+
+        if character_preset in Entity.loaded_animations:
+            return True
+
+        character_config = add_character_config(character_config_path)
+
         if (
-            not self.character_config
-            or self.character_preset not in self.character_config
+            not character_config
+            or character_preset not in character_config
         ):
             print(
-                f"No configuration found for player preset: {self.character_preset}"
+                f"No configuration found in {character_config_path} for character preset: {character_preset}"
             )
-            self._is_loading = False
-            return
+            return False
 
-        character_data = self.character_config[self.character_preset]
+        character_data = character_config[character_preset]
 
         # Load animations from configuration
-        for animation_name, animation_config in character_data.items():
-            self.load_animation_sequence(animation_name, animation_config)
+        for animation_name, animation_data in character_data.items():
+            Entity.load_animation_sequence(character_preset, animation_name, animation_data)
 
-        self._is_loading = False
+        return True
 
-    def _animation_exists_and_has_frames(self, anim_name: str) -> bool:
+    @staticmethod
+    def load_all_animations():
+        for character_preset, character_data in Entity.loaded_character_config.items():
+            for animation_name, animation_data in character_data.items():
+                Entity.load_animation_sequence(character_preset, animation_name, animation_data)
+
+    def has_animation(self, anim_name: str, character_preset: str = None) -> bool:
         """Helper to check if an animation exists and has a sequence or idle texture."""
-        return anim_name in self.animations and (
-            self.animations[anim_name].get("frames")
+        if character_preset is None:
+            character_preset = self.character_preset
+
+        return anim_name in Entity.loaded_animations[character_preset] and (
+            Entity.loaded_animations[character_preset][anim_name].get("frames")
         )
 
     def _try_set_animation(self, anim_name: str) -> bool:
         """Helper to attempt setting an animation if it exists and has frames. Returns True if set, False otherwise."""
-        if self._animation_exists_and_has_frames(anim_name):
+        if self.has_animation(anim_name):
             self.set_animation(anim_name)
             return True
         return False
@@ -182,8 +203,8 @@ class Entity(arcade.Sprite):
             self.current_animation_time = 0
 
             # Get the current animation frames
-            if self.current_animation in self.animations:
-                animation_data = self.animations[self.current_animation]
+            if self.has_animation(self.current_animation):
+                animation_data = Entity.loaded_animations[self.character_preset][self.current_animation]
                 animation_frames = animation_data["frames"]
             else:
                 print(
@@ -223,11 +244,11 @@ class Entity(arcade.Sprite):
 
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
-        if animation_name in self.animations:
+        if self.has_animation(animation_name):
             self.current_animation = animation_name
             self.current_animation_frame = 0
             self.current_animation_time = 0
-            animation_data = self.animations[animation_name]
+            animation_data = Entity.loaded_animations[self.character_preset][animation_name]
             self.current_animation_type = AnimationType(animation_data["type"])
             self._apply_texture_and_offset(animation_data["frames"][0])
 
@@ -291,6 +312,17 @@ class Entity(arcade.Sprite):
         """Trigger death animation"""
         self.state = EntityState.DYING
 
+    def update(self, delta_time: float):
+        super().update(delta_time)
+        self.update_state(delta_time)
+        self.animate(delta_time)
+
+        if self.health_bar:
+            self.health_bar.position = (
+                self.center_x,
+                self.center_y + INDICATOR_BAR_OFFSET,
+            )
+
 
 def process_loaded_texture_data(
     raw_texture_data: RawTextureData,  # Use the type alias
@@ -335,11 +367,16 @@ def process_raw_texture_data(
     return process_loaded_texture_data(raw_texture_data)
 
 
-def load_character_config(config_file: str) -> dict:
+def add_character_config(config_file: str) -> dict:
     """Load character configuration from JSON file."""
+
+    if config_file in Entity.loaded_character_config:
+        return Entity.loaded_character_config[config_file]
+
     try:
         with open(config_file, "r") as f:
             config_data = json.load(f)
+            Entity.loaded_character_config[config_file] = config_data
             return config_data
     except FileNotFoundError:
         print(f"Configuration file not found: {config_file}")
