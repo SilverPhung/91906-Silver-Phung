@@ -89,6 +89,11 @@ class Entity(arcade.Sprite):
         self.character_config = add_character_config(character_config)
         self.character_preset = character_preset
 
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self,
+            self.game_view.scene.get_sprite_list("Walls"),
+        )
+
     @staticmethod
     def load_sounds(sound_set: dict):
         for sound_path in sound_set.values():
@@ -277,7 +282,7 @@ class Entity(arcade.Sprite):
                 self.current_animation_frame = 0
                 self.current_animation_time = 0
                 self._apply_texture_and_offset(animation_data["frames"][0])
-                
+
             if self.current_animation_type == AnimationType.ACTION:
                 self.animation_allow_overwrite = False
                 
@@ -309,7 +314,7 @@ class Entity(arcade.Sprite):
 
     def move(self, direction: Vec2):
         """Move the entity in the given direction"""
-        self.velocity = direction.normalize() * self.speed * self.delta_time
+        self.velocity = direction.normalize() * self.speed
 
         self.update_physics()
 
@@ -353,6 +358,7 @@ class Entity(arcade.Sprite):
                 self.center_x,
                 self.center_y + INDICATOR_BAR_OFFSET,
             )
+        self.physics_engine.update()
 
 
 def process_loaded_texture_data(

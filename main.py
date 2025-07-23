@@ -62,16 +62,6 @@ class GameView(arcade.View):
 
         # Enemy list and physics engines - initialize before spawning enemies
         self.enemies = arcade.SpriteList()
-        self.enemy_physics_engines = []
-
-        # Add a test zombie
-        # self.spawn_zombie("Army_zombie", x=400, y=350, player_ref=self.player)
-
-        # Physics engines - one for player and one for each enemy
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player,
-            self.scene.get_sprite_list("Walls"),
-        )
 
         # Track the current state of what key is pressed
         self.key_down = {
@@ -286,7 +276,7 @@ class GameView(arcade.View):
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
 
-        
+        # debug deltatime
         self.mouse_position = (
             self.mouse_offset[0] + self.camera.position[0],
             self.mouse_offset[1] + self.camera.position[1],
@@ -296,6 +286,7 @@ class GameView(arcade.View):
         self.update_player_speed()
 
         self.player.update(delta_time)
+        Debug.update("Delta Time", f"{delta_time:.2f}")
 
         self.enemies.update(delta_time)
 
@@ -305,7 +296,6 @@ class GameView(arcade.View):
             )
             Debug.update("Camera Zoom", f"{self.camera.zoom:.2f}")
 
-        self.physics_engine.update()
 
         self.bullet_list.update(
             delta_time, [self.scene.get_sprite_list("Enemies")], [self.scene.get_sprite_list("Walls")]

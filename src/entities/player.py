@@ -207,7 +207,7 @@ class Player(Entity):
         )
         Debug.update(
             "Player Velocity",
-            f"{self.velocity[0]:.2f}, {self.velocity[1]:.2f}",
+            f"{self.velocity[0]/delta_time:.2f}, {self.velocity[1]/delta_time:.2f}",
         )
 
         Debug.update(
