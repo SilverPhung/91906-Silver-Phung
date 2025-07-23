@@ -55,6 +55,9 @@ class GameView(arcade.View):
             game_view=self,
             scale=CHARACTER_SCALING,
             speed=PLAYER_MOVEMENT_SPEED,
+            sound_set={
+                "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
+            }
         )
 
         # Enemy list and physics engines - initialize before spawning enemies
@@ -101,18 +104,21 @@ class GameView(arcade.View):
         self.bullet_list.clear()
         self.scene.add_sprite_list("Enemies", self.enemies)
 
-        self.player.position = Vec2(50, 350)
+        self.player.reset()
         self.scene.add_sprite("Player", self.player)
 
         # Clear and recreate enemy lists
         self.enemy_physics_engines = []
 
         # Add a test zombie
-        zombie = Zombie(
-            game_view=self,
-            zombie_type="Army_zombie",
-            player_ref=self.player,
-        )
+        for i in range(100):
+            zombie = Zombie(
+                game_view=self,
+                zombie_type="Army_zombie",
+                player_ref=self.player,
+            )
+
+            zombie.position = (random.randint(0, 10_000), random.randint(0, 10_000))
 
         # Physics engine for player
         self.physics_engine = arcade.PhysicsEngineSimple(
@@ -130,30 +136,6 @@ class GameView(arcade.View):
         self.player.current_health = self.player.max_health
         self.player.health_bar.fullness = 1.0
 
-    def spawn_zombie(
-        self,
-        zombie_type,
-        x,
-        y,
-        player_ref: Player | None = None,
-    ):
-        """Spawn a zombie at the specified position"""
-
-        zombie = Zombie(game_view=self, zombie_type=zombie_type, player_ref=self.player)
-        zombie.position = (float(x), float(y))
-        zombie.load_animations()
-
-        self.enemies.append(zombie)
-        self.scene.add_sprite("Enemies", zombie)
-
-        # Create physics engine for this enemy
-        physics_engine = arcade.PhysicsEngineSimple(
-            zombie,
-            self.scene.get_sprite_list("Walls"),
-        )
-        self.enemy_physics_engines.append(physics_engine)
-
-        return zombie
 
     def create_scene(self) -> arcade.Scene:
         """Set up the game and initialize the variables."""
@@ -202,117 +184,22 @@ class GameView(arcade.View):
     def update_player_speed(self):
         # Calculate speed based on the keys pressed
 
-        movement_direction_x = 0
-        movement_direction_y = 0
-        has_movement = False
-        # Handle left/right movement (Left/Right arrows or A/D)
-        if (self.key_down[LEFT_KEY] or self.key_down[A_KEY]) and not (
-            self.key_down[RIGHT_KEY] or self.key_down[D_KEY]
-        ):
-            has_movement = True
-            movement_direction_x = -1
-        elif (self.key_down[RIGHT_KEY] or self.key_down[D_KEY]) and not (
-            self.key_down[LEFT_KEY] or self.key_down[A_KEY]
-        ):
-            has_movement = True
-            movement_direction_x = 1
+        movement_x = 0
+        movement_y = 0
+        
+        if self.key_down.get(LEFT_KEY) or self.key_down.get(A_KEY):
+            movement_x += -1
+        if self.key_down.get(RIGHT_KEY) or self.key_down.get(D_KEY):
+            movement_x += 1
+            
+        if self.key_down.get(UP_KEY) or self.key_down.get(W_KEY):
+            movement_y += 1
+        if self.key_down.get(DOWN_KEY) or self.key_down.get(S_KEY):
+            movement_y += -1
 
-        # Handle up/down movement (Up/Down arrows or W/S)
-        if (self.key_down[UP_KEY] or self.key_down[W_KEY]) and not (
-            self.key_down[DOWN_KEY] or self.key_down[S_KEY]
-        ):
-            has_movement = True
-            movement_direction_y = 1
-        elif (self.key_down[DOWN_KEY] or self.key_down[S_KEY]) and not (
-            self.key_down[UP_KEY] or self.key_down[W_KEY]
-        ):
-            has_movement = True
-            movement_direction_y = -1
+        self.player.move(Vec2(movement_x, movement_y))
 
-        self.player.velocity = (
-            Vec2(movement_direction_x, movement_direction_y)
-            * self.player.speed
-            * self.player.delta_time
-        )
-
-    def update_enemies(self, delta_time):
-        """Update all enemies in the game"""
-        for i, enemy in enumerate(self.enemies):
-            # Update enemy delta time
-            enemy.delta_time = delta_time
-
-            # Simple AI: move towards player if within detection range
-            dx = self.player.position[0] - enemy.position[0]
-            dy = self.player.position[1] - enemy.position[1]
-            distance = math.sqrt(dx * dx + dy * dy)
-
-            if distance < enemy.detection_range:
-                # Move towards player
-                direction_x = dx
-                direction_y = dy
-                direction_magnitude = math.sqrt(
-                    direction_x**2 + direction_y**2
-                )
-                if direction_magnitude > 0:
-                    normalized_dir_x = direction_x / direction_magnitude
-                    normalized_dir_y = direction_y / direction_magnitude
-                    enemy.velocity = (
-                        Vec2(normalized_dir_x, normalized_dir_y)
-                        * enemy.speed
-                        * enemy.delta_time
-                    )
-                else:
-                    enemy.velocity = Vec2(0.0, 0.0)
-
-                # Attack if close enough
-                if distance < enemy.attack_range and random.random() < 0.01:
-                    enemy.attack()
-                    # Check for collision with player when attacking
-                    if arcade.check_for_collision(enemy, self.player):
-                        self.player.take_damage(enemy.damage)
-                        Debug.update(
-                            "Player Health", self.player.current_health
-                        )
-
-            else:
-                # Random movement when player not detected
-                if random.random() < 0.01:
-                    direction_x = random.uniform(-1, 1)
-                    direction_y = random.uniform(-1, 1)
-                    direction_magnitude = math.sqrt(
-                        direction_x**2 + direction_y**2
-                    )
-                    if direction_magnitude > 0:
-                        normalized_dir_x = direction_x / direction_magnitude
-                        normalized_dir_y = direction_y / direction_magnitude
-                        enemy.velocity = (
-                            Vec2(normalized_dir_x, normalized_dir_y)
-                            * enemy.speed
-                            * enemy.delta_time
-                        )
-                    else:
-                        enemy.velocity = Vec2(0.0, 0.0)
-                else:
-                    enemy.velocity = Vec2(0.0, 0.0)
-
-            # Update the enemy facing direction to look at player
-            enemy.look_at(self.player.position)
-            enemy.update(delta_time)
-
-            # Update physics
-            if i < len(self.enemy_physics_engines):
-                self.enemy_physics_engines[i].update()
-
-    def on_key_press(self, key, modifiers):
-        self.key_down[key] = True
-
-        # Toggle fullscreen with F11
-        if key == FULLSCREEN_KEY:
-            self.window.set_fullscreen(not self.window.fullscreen)
-            # Update camera when toggling fullscreen
-            self.on_resize(self.window.width, self.window.height)
-
-        # Weapon switching with number keys
+    def switch_weapon(self, key):
         match key:
             case arcade.key.KEY_1:
                 self.player.set_weapon(WeaponType.GUN)
@@ -325,6 +212,18 @@ class GameView(arcade.View):
             case arcade.key.KEY_5:
                 self.player.set_weapon(WeaponType.FLAMETHROWER)
 
+    def on_key_press(self, key, modifiers):
+        self.key_down[key] = True
+
+        # Toggle fullscreen with F11
+        if key == FULLSCREEN_KEY:
+            self.window.set_fullscreen(not self.window.fullscreen)
+            # Update camera when toggling fullscreen
+            self.on_resize(self.window.width, self.window.height)
+
+        # Weapon switching with number keys
+        self.switch_weapon(key)
+
         # Attack with space
         if key == arcade.key.SPACE:
             self.player.attack()
@@ -332,6 +231,10 @@ class GameView(arcade.View):
         # Death animation with K (for testing)
         if key == arcade.key.K:
             self.player.die()
+
+        # Reset game with R key
+        if key == arcade.key.R:
+            self.reset()
 
         # Zoom functionality with LCTRL
         if key == arcade.key.LCTRL:
@@ -361,7 +264,6 @@ class GameView(arcade.View):
         if button == arcade.MOUSE_BUTTON_LEFT:
             self.left_mouse_pressed = False
 
-
     def center_camera_to_player(self, delta_time):
         current_camera_position = Vec2(
             self.camera.position[0], self.camera.position[1]
@@ -384,21 +286,15 @@ class GameView(arcade.View):
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
 
-        Debug.update("Player State", f"{self.player.state.value}")
-        Debug.update(
-            "Player Position",
-            f"{self.player.position[0]:.0f}, {self.player.position[1]:.0f}",
-        )
-        Debug.update(
-            "Player Velocity",
-            f"{self.player.velocity[0]:.2f}, {self.player.velocity[1]:.2f}",
-        )
-
+        
         self.mouse_position = (
             self.mouse_offset[0] + self.camera.position[0],
             self.mouse_offset[1] + self.camera.position[1],
         )
         self.player.mouse_position = self.mouse_position
+
+        self.update_player_speed()
+
         self.player.update(delta_time)
 
         self.enemies.update(delta_time)
@@ -409,15 +305,11 @@ class GameView(arcade.View):
             )
             Debug.update("Camera Zoom", f"{self.camera.zoom:.2f}")
 
-        self.player.delta_time = delta_time
-        self.update_player_speed()
         self.physics_engine.update()
 
-
-
-        self.update_enemies(delta_time)
-
-        self.bullet_list.update(delta_time, [self.scene.get_sprite_list("Enemies")])
+        self.bullet_list.update(
+            delta_time, [self.scene.get_sprite_list("Enemies")], [self.scene.get_sprite_list("Walls")]
+        )
 
     def on_resize(self, width: int, height: int):
         """Resize window"""

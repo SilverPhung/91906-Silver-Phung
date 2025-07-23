@@ -35,6 +35,7 @@ class Enemy(Entity):
 
         self.player = player_ref
         self.attack_range = 50
+        self.detection_range = 300
         self.change_state(EntityState.IDLE)
 
         self.health_bar = IndicatorBar(
@@ -48,59 +49,38 @@ class Enemy(Entity):
         self.health_bar.fullness = 1.0
 
     def change_state(self, new_state: EntityState):
-        super().change_state(new_state, self.set_animation_for_state)
+        super().change_state(new_state)
 
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state"""
-        match self.state:
-            case EntityState.IDLE:
-                if self._try_set_animation("Idle"):
-                    return
+        if self.animation_allow_overwrite:
+            match self.state:
+                case EntityState.WALKING | EntityState.IDLE:
+                    if self._try_set_animation("Walk"):
+                        return
 
-            case EntityState.WALKING:
-                if self._try_set_animation("Walk"):
-                    return
+                case EntityState.ATTACKING:
+                    if self._try_set_animation("Attack"):
+                        self.current_animation_frame = 0
+                        return
 
-            case EntityState.ATTACKING:
-                if self._try_set_animation("Attack"):
-                    return
+                case EntityState.DYING:
+                    if self._try_set_animation("Death"):
+                        return
+    
 
-            case EntityState.DYING:
-                if self._try_set_animation("Death"):
-                    return
-        Debug.update(
-            "Selected Enemy Animation",
-            str(self.current_animation) if self.current_animation else "None",
-        )
 
-    def update_state(self, delta_time: float):
-        """Update enemy state based on velocity and other factors"""
-        Debug.update(
-            "Enemy Animation allow overwrite", self.animation_allow_overwrite
-        )
-        # Allow action animation (e.g., attacking, dying) to finish before switching state
-        # if (
-        #     self.current_animation_type == AnimationType.ACTION
-        #     and not self.animation_allow_overwrite
-        # ):
-        #     return
-
-        if self.state == EntityState.ATTACKING:
-            if self.player:
-                dx = self.player.position[0] - self.position[0]
-                dy = self.player.position[1] - self.position[1]
-                distance = math.sqrt(dx * dx + dy * dy)
-
-                if distance > self.attack_range + 20:
-                    self.change_state(EntityState.IDLE)
-                    return
-
-        velocity_magnitude = to_vector((self.change_x, self.change_y)).length()
-
-        if velocity_magnitude > DEAD_ZONE:
-            self.change_state(EntityState.WALKING)
-        else:
+    
+    def goto_point(self, point: Vec2):
+        enemy_pos_vec = Vec2(self.position[0], self.position[1])
+        diff = point - enemy_pos_vec
+        distance = diff.length()
+        if distance < 1:
+            self.move(Vec2(0, 0))
             self.change_state(EntityState.IDLE)
+            return
+        self.move(diff.normalize())
+        self.change_state(EntityState.WALKING)
 
     def attack(self):
         """Trigger attack animation"""
@@ -113,4 +93,3 @@ class Enemy(Entity):
 
     def update(self, delta_time: float):
         super().update(delta_time)
-        

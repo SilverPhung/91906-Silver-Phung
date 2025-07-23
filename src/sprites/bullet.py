@@ -47,8 +47,9 @@ class Bullet(arcade.Sprite):
         self.lifetime = bullet_lifetime
         self.damage = bullet_damage
 
-    def update(self, delta_time: float, sprite_lists: list[arcade.SpriteList]):
+    def update(self, delta_time: float, sprite_lists: list[arcade.SpriteList], wall_list: list[arcade.SpriteList]):
         self._check_collision(sprite_lists)
+        self._check_collision_with_walls(wall_list)
         self.lifetime -= delta_time
         if self.lifetime <= 0:
             self.remove_from_sprite_lists()
@@ -59,6 +60,13 @@ class Bullet(arcade.Sprite):
         for sprite_list in sprite_lists:
             for sprite in self.collides_with_list(sprite_list):
                 cast(Entity, sprite).take_damage(self.damage)
+                self.remove_from_sprite_lists()
+                return True
+        return False
+
+    def _check_collision_with_walls(self, wall_list: list[arcade.SpriteList]):
+        for wall in wall_list:
+            if self.collides_with_list(wall):
                 self.remove_from_sprite_lists()
                 return True
         return False

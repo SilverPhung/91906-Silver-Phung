@@ -9,6 +9,7 @@ from enum import Enum
 from src.sprites.indicator_bar import IndicatorBar
 from src.constants import *
 from src.debug import Debug
+from src.extended import *
 
 # path, width, height, anchor_x, anchor_y
 RawTextureData = tuple[
@@ -38,6 +39,7 @@ class Entity(arcade.Sprite):
     """Base class for all entities in the game (players, enemies)"""
     loaded_animations = {}
     loaded_character_config = {}
+    loaded_sounds = {}
     def __init__(
         self,
         game_view: arcade.View,
@@ -86,6 +88,26 @@ class Entity(arcade.Sprite):
 
         self.character_config = add_character_config(character_config)
         self.character_preset = character_preset
+
+    @staticmethod
+    def load_sounds(sound_set: dict):
+        for sound_path in sound_set.values():
+            Entity.load_sound(sound_path)
+    
+    @staticmethod
+    def load_sound(sound_path: str):
+        if sound_path in Entity.loaded_sounds:
+            return Entity.loaded_sounds[sound_path]
+        else:
+            Entity.loaded_sounds[sound_path] = arcade.load_sound(sound_path)
+            return Entity.loaded_sounds[sound_path]
+    
+    @staticmethod
+    def play_sound(sound_name: str, volume: float = 1.0):
+        if sound_name in Entity.loaded_sounds:
+            Entity.loaded_sounds[sound_name].play(volume=volume)
+        else:
+            print(f"Sound {sound_name} not found")
 
     def draw(self):
         """Draw the entity, including its health bar."""
@@ -195,8 +217,8 @@ class Entity(arcade.Sprite):
         self.current_animation_time += delta_time
         animation_frames = None
 
-        Debug.update("Current Animation frame", self.current_animation_frame)
-        Debug.update("Current Animation type", self.current_animation_type)
+        
+
 
         # Check if it's time to advance to the next frame
         if self.current_animation_time >= self.frame_duration:
@@ -212,6 +234,10 @@ class Entity(arcade.Sprite):
                 )
                 return
 
+            self.current_animation_type = AnimationType(
+                animation_data["type"]
+            )
+            
             if animation_frames:
                 if (
                     self.current_animation_type == AnimationType.MOVEMENT
@@ -220,16 +246,13 @@ class Entity(arcade.Sprite):
                     self.current_animation_frame = 0
                     self.animation_allow_overwrite = True
                 else:
-                    self.current_animation_type = AnimationType(
-                        animation_data["type"]
-                    )
                     # print("process Current Animation Type", self.current_animation_type)
                     match self.current_animation_type:
                         case AnimationType.MOVEMENT:
                             self.current_animation_frame = (
                                 self.current_animation_frame + 1
                             ) % len(animation_frames)
-                            self.animation_allow_overwritew = True
+                            self.animation_allow_overwrite = True
                         case AnimationType.ACTION:
                             self.animation_allow_overwrite = (
                                 self.current_animation_frame
@@ -242,21 +265,28 @@ class Entity(arcade.Sprite):
                         animation_frames[self.current_animation_frame]
                     )
 
+        Debug.update(
+            "Current Animation frame", self.current_animation_frame
+        )
+
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
         if self.has_animation(animation_name):
-            self.current_animation = animation_name
-            self.current_animation_frame = 0
-            self.current_animation_time = 0
             animation_data = Entity.loaded_animations[self.character_preset][animation_name]
-            self.current_animation_type = AnimationType(animation_data["type"])
-            self._apply_texture_and_offset(animation_data["frames"][0])
-
+            if self.current_animation != animation_name:
+                self.current_animation_frame = 0
+                self.current_animation_time = 0
+                self._apply_texture_and_offset(animation_data["frames"][0])
+                
             if self.current_animation_type == AnimationType.ACTION:
                 self.animation_allow_overwrite = False
+                
+            self.current_animation = animation_name
+            self.current_animation_type = AnimationType(animation_data["type"])
 
-    def change_state(self, new_state: EntityState, set_animation) -> bool:
-        set_animation()
+
+    def change_state(self, new_state: EntityState) -> bool:
+        self.set_animation_for_state()
         if self.state != new_state:
             self.state = new_state
             return True
@@ -279,8 +309,7 @@ class Entity(arcade.Sprite):
 
     def move(self, direction: Vec2):
         """Move the entity in the given direction"""
-        if direction.length() > 0:
-            self.velocity = direction * self.speed * self.delta_time
+        self.velocity = direction.normalize() * self.speed * self.delta_time
 
         self.update_physics()
 
@@ -289,10 +318,11 @@ class Entity(arcade.Sprite):
         # Apply friction directly to change_x and change_y
         # friction
         friction_factor = (1 - self.friction) ** (self.delta_time)
-        self.velocity *= friction_factor
+        self.change_x *= friction_factor
+        self.change_y *= friction_factor
 
         # Clamp the velocity (change_x, change_y) to the max speed
-        velocity_length = math.sqrt(self.velocity.x**2 + self.velocity.y**2)
+        velocity_length = math.sqrt(self.change_x**2 + self.change_y**2)
 
         if velocity_length > self.speed:
             normalized_x = self.velocity.x / velocity_length
@@ -303,19 +333,20 @@ class Entity(arcade.Sprite):
 
     def update_state(self, delta_time: float):
         """Update entity state based on velocity and other factors - to be overridden by child classes"""
-        if self.velocity.length() > DEAD_ZONE:
-            self.state = EntityState.WALKING
+        if to_vector(self.velocity).length() > DEAD_ZONE:
+            self.change_state(EntityState.WALKING)
         else:
-            self.state = EntityState.IDLE
+            self.change_state(EntityState.IDLE)
 
     def die(self):
         """Trigger death animation"""
-        self.state = EntityState.DYING
+        self.change_state(EntityState.DYING)
 
     def update(self, delta_time: float):
         super().update(delta_time)
         self.update_state(delta_time)
         self.animate(delta_time)
+        self.delta_time = delta_time
 
         if self.health_bar:
             self.health_bar.position = (

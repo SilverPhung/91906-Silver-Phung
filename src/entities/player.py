@@ -25,11 +25,13 @@ class Player(Entity):
         game_view: arcade.View,
         player_preset="Man",
         config_file=PLAYER_CONFIG_FILE,
-        scale=1,
+        scale=CHARACTER_SCALING,
         friction=PLAYER_FRICTION,
         speed=PLAYER_MOVEMENT_SPEED,
+        shoot_cooldown=SHOOT_COOLDOWN,
         reset_on_death=True,
-        spawn_position=(50, 350),
+        spawn_position=SPAWN_POSITION,
+        sound_set={}
     ):
         super().__init__(
             scale=scale,
@@ -65,6 +67,12 @@ class Player(Entity):
             height=HEALTHBAR_HEIGHT,
         )
         self.health_bar.fullness = 1.0
+
+        self.shoot_cooldown = shoot_cooldown
+        self.shoot_cooldown_timer = 0
+
+        self.sound_set = sound_set
+        self.load_sounds(sound_set)
 
     def set_weapon(self, weapon_type: WeaponType):
         """Set the current weapon"""
@@ -102,7 +110,7 @@ class Player(Entity):
                 return
 
     def change_state(self, new_state: EntityState):
-        if super().change_state(new_state, self.set_animation_for_state):
+        if super().change_state(new_state):
             # print("change state", new_state)
             pass
 
@@ -119,25 +127,24 @@ class Player(Entity):
                     )
 
             case EntityState.ATTACKING:
-                if self.animation_allow_overwrite or self.state == EntityState.ATTACKING:
-                    if self.current_weapon == WeaponType.GUN:
-                        shoot_anim = "Gun_Shot"
-                        self._try_set_animation(shoot_anim)
+                if self.current_weapon == WeaponType.GUN:
+                    shoot_anim = "Gun_Shot"
+                    self._try_set_animation(shoot_anim)
+                else:
+                    if (self._try_set_animation(weapon_name)):
+                        pass
                     else:
-                        if (self._try_set_animation(weapon_name)):
-                            pass
-                        else:
-                            print("Cannot find attack animation, using fallback")
-                            # Fallback to any attack animation (if not weapon_name specific)
-                            for anim_name in Entity.loaded_animations[self.character_preset]:
-                                if anim_name in [
-                                    "Bat",
-                                    "FlameThrower",
-                                    "Knife",
-                                    "Riffle",
-                                ]:
-                                    if self._try_set_animation(anim_name):
-                                        break
+                        print("Cannot find attack animation, using fallback")
+                        # Fallback to any attack animation (if not weapon_name specific)
+                        for anim_name in Entity.loaded_animations[self.character_preset]:
+                            if anim_name in [
+                                "Bat",
+                                "FlameThrower",
+                                "Knife",
+                                "Riffle",
+                            ]:
+                                if self._try_set_animation(anim_name):
+                                    break
 
             case EntityState.DYING:
                 if self._try_set_animation("Death"):
@@ -148,27 +155,6 @@ class Player(Entity):
         #     str(self.current_animation) if self.current_animation else "None",
         # )
 
-    def update_state(self, delta_time: float):
-        """Update player state based on velocity and other factors"""
-        # Debug.update(
-        #     "Animation allow overwrite", self.animation_allow_overwrite
-        # )
-        # print("player state", self.state, self.current_animation_type)
-
-        # Allow shooting/attacking animation to finish before switching state
-        # if (
-        #     self.current_animation_type == AnimationType.ACTION
-        #     and not self.animation_allow_overwrite
-        # ):
-        #     return
-
-        velocity_magnitude = to_vector((self.change_x, self.change_y)).length()
-
-        if velocity_magnitude > DEAD_ZONE:
-            self.change_state(EntityState.WALKING)
-        else:
-            self.change_state(EntityState.IDLE)
-
     def look_at(self, mouse_pos: Vec2):
         """Update facing direction based on mouse position"""
         self.mouse_position = mouse_pos
@@ -178,7 +164,6 @@ class Player(Entity):
     def attack(self):
         """Trigger an attack animation based on current weapon"""
         if self.state != EntityState.DYING:
-            self.change_state(EntityState.ATTACKING)
             if self.current_weapon == WeaponType.GUN:
                 self.shoot()
             else:
@@ -186,15 +171,19 @@ class Player(Entity):
 
     def shoot(self):
         """Trigger a shoot animation based on current weapon"""
-        if self.state != EntityState.DYING:
+        if self.state != EntityState.DYING and self.shoot_cooldown_timer >= self.shoot_cooldown:
             self.change_state(EntityState.ATTACKING)
             bullet = Bullet(self.position, self.mouse_position, bullet_damage=BULLET_DAMAGE)
             self.game_view.bullet_list.append(bullet)
+            self.shoot_cooldown_timer = 0
+            self.play_sound(self.sound_set["gun_shot"])
+
 
     def attack_with_weapon(self):
         """Trigger an attack animation based on current weapon"""
         if self.state != EntityState.DYING:
             hit_list = arcade.check_for_collision_with_list(self, self.game_view.scene.get_sprite_list("Enemies"))
+            self.change_state(EntityState.ATTACKING)
             for enemy in hit_list:
                 enemy.take_damage(BULLET_DAMAGE)
 
@@ -208,7 +197,40 @@ class Player(Entity):
     
     def update(self, delta_time: float):
         super().update(delta_time)
+        self.shoot_cooldown_timer += delta_time
         self.look_at(self.mouse_position)
+
+        Debug.update("Player State", f"{self.state.value}")
+        Debug.update(
+            "Player Position",
+            f"{self.position[0]:.0f}, {self.position[1]:.0f}",
+        )
+        Debug.update(
+            "Player Velocity",
+            f"{self.velocity[0]:.2f}, {self.velocity[1]:.2f}",
+        )
+
+        Debug.update(
+            "Player Health", self.current_health
+        )
+
+        Debug.update(
+            "Animation allow overwrite", self.animation_allow_overwrite
+        )
+
+        Debug.update(
+            "Current Animation", self.current_animation
+        )
+
+        Debug.update(
+            "Animation type", self.current_animation_type
+        )
+        
+        Debug.update(
+            "Animation state", self.state
+        )
+
+
 
         
     def reset(self):
@@ -219,7 +241,7 @@ class Player(Entity):
         self.velocity = Vec2(0.0, 0.0)
         self.change_x = 0.0
         self.change_y = 0.0
-        self.position = Vec2(self.spawn_position)
+        self.position = self.spawn_position
         
         # Reset health bar if it exists
         if hasattr(self, 'health_bar') and self.health_bar:

@@ -13,10 +13,13 @@ PLAYER_ASSETS_DIR = "resources/Players"
 PLAYER_CONFIG_FILE = "resources/animation_config/players_config.json"
 DEAD_ZONE = 0.1
 MAX_HEALTH = 100
+SHOOT_COOLDOWN = 0.1
+SPAWN_POSITION = (50, 350)
 
 # Enemy constants
 ZOMBIE_MOVEMENT_SPEED = 100
 ENEMY_CONFIG_FILE = "resources/animation_config/enemies_config.json"
+ZOMBIE_RANDOM_MOVE_INTERVAL = 4
 
 # Health bar constants
 HEALTHBAR_WIDTH = 75
@@ -24,7 +27,7 @@ HEALTHBAR_HEIGHT = 10
 INDICATOR_BAR_OFFSET = 32
 
 # Constants for bullet properties
-BULLET_SPEED = 100
+BULLET_SPEED = 300
 BULLET_LIFE = 0.5
 BULLET_DAMAGE = 10
 

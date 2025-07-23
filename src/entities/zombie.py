@@ -1,3 +1,4 @@
+import random
 from src.entities.enemy import *
 from src.entities.player import Player
 from src.constants import *
@@ -12,7 +13,7 @@ class Zombie(Enemy):
         zombie_type="Army_zombie",
         scale=CHARACTER_SCALING,
         friction=PLAYER_FRICTION,
-        speed=int(PLAYER_MOVEMENT_SPEED * 0.4),
+        speed=int(PLAYER_MOVEMENT_SPEED * 0.8),
         player_ref: Player | None = None,
         config_file=ZOMBIE_CONFIG_FILE,
     ):
@@ -28,10 +29,13 @@ class Zombie(Enemy):
         self.player = player_ref
 
         # Zombie-specific properties
-        self.detection_range = 300
-        self.attack_range = 50
+        self.detection_range = 700
+        self.attack_range = 100
         self.damage = 10 
         self.change_state(EntityState.IDLE)
+        self.random_move_timer = ZOMBIE_RANDOM_MOVE_INTERVAL
+        self.random_move_point = Vec2(0, 0)
+
 
         # Add health bar to zombie
         self.health_bar = IndicatorBar(
@@ -53,5 +57,47 @@ class Zombie(Enemy):
             game_view.scene.get_sprite_list("Walls"),
         )
         game_view.enemy_physics_engines.append(physics_engine)
-    
+
+    def hunt_player(self, delta_time: float):
+        if self.player and self.animation_allow_overwrite:
+            player_pos_vec = Vec2(self.player.position[0], self.player.position[1])
+            enemy_pos_vec = Vec2(self.position[0], self.position[1])
+            diff = player_pos_vec - enemy_pos_vec
+            distance = diff.length()
+            if distance < self.attack_range:
+                self.move(Vec2(0, 0))
+                self.attack()
+                self.look_at(player_pos_vec)
+            elif distance < self.detection_range:
+                self.goto_point(player_pos_vec)
+                self.look_at(player_pos_vec)
+            else:
+                self.goto_point(self.random_move_point)
+                self.look_at(self.random_move_point)
+                self.random_move_timer += delta_time
+                if self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL:
+                    self.random_move_timer = 0
+                    self.random_move_point = self.position + Vec2(random.randint(-1000, 1000), random.randint(-1000, 1000))
+
+    def update_state(self, delta_time: float):
+        # super().update_state(delta_time)
+        self.hunt_player(delta_time)
+
+        # animation debug
+        Debug.update(
+            "Zombie Animation type", self.current_animation_type
+        )
+        Debug.update(
+            "Zombie Animation state", self.state
+        )
+        Debug.update(
+            "Zombie Animation frame", self.current_animation_frame
+        )
+        Debug.update(
+            "Zombie Animation allow overwrite", self.animation_allow_overwrite
+        )
+
+
+
+
     
