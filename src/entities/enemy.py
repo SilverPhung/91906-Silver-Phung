@@ -95,3 +95,8 @@ class Enemy(Entity):
     def die(self):
         """Trigger death animation"""
         self.change_state(EntityState.DYING)
+
+    def update(self, delta_time: float):
+        self.update_state(delta_time)
+        self.animate(delta_time)
+        

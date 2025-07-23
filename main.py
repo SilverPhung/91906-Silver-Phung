@@ -494,16 +494,11 @@ class GameView(arcade.View):
             self.mouse_offset[0] + self.camera.position[0],
             self.mouse_offset[1] + self.camera.position[1],
         )
-        self.player.look_at(self.mouse_position)
+        self.player.mouse_position = self.mouse_position
+        self.player.update(delta_time)
 
-        if self.player.health_bar:
-            self.player.health_bar.position = (
-                self.player.center_x,
-                self.player.center_y + INDICATOR_BAR_OFFSET,
-            )
-            
-        self.player.update_state(delta_time)
-        self.player.animate(delta_time)
+        for enemy in self.enemies:
+            enemy.update(delta_time)
 
         if abs(self.camera.zoom - self.target_zoom) > 0.001:
             self.camera.zoom = arcade.math.lerp(

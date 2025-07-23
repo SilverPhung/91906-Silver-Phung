@@ -158,6 +158,24 @@ class Player(Entity):
         if self.state != EntityState.DYING:
             self.change_state(EntityState.ATTACKING)
 
+    def shoot(self):
+        """Trigger a shoot animation based on current weapon"""
+        # if self.state != EntityState.DYING:
+
     def die(self):
         """Trigger death animation"""
         self.change_state(EntityState.DYING)
+
+    
+    def update(self, delta_time: float):
+        super().update(delta_time)
+        self.look_at(self.mouse_position)
+
+        if self.health_bar:
+            self.health_bar.position = (
+                self.center_x,
+                self.center_y + INDICATOR_BAR_OFFSET,
+            )
+            
+        self.update_state(delta_time)
+        self.animate(delta_time)

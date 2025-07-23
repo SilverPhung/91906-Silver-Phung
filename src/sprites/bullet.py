@@ -43,13 +43,12 @@ class Bullet(arcade.Sprite):
 
         self.lifetime = bullet_lifetime
 
-    def on_update(self, delta_time: float):
+    def update(self, delta_time: float):
         self.lifetime -= delta_time
         if self.lifetime <= 0:
             self.remove_from_sprite_lists()
 
-        self.center_x += self.velocity[0] * delta_time
-        self.center_y += self.velocity[1] * delta_time
+        super().update(delta_time)
 
     def draw(self):
         # No longer drawing a line, as it's a sprite now
