@@ -31,6 +31,7 @@ class Zombie(Enemy):
         # Zombie-specific properties
         self.detection_range = 700
         self.attack_range = 100
+        self.physics_range = 1000
         self.damage = 10 
         self.change_state(EntityState.IDLE)
         self.random_move_timer = ZOMBIE_RANDOM_MOVE_INTERVAL
@@ -52,11 +53,6 @@ class Zombie(Enemy):
         game_view.enemies.append(self)
         game_view.scene.add_sprite("Enemies", self)
 
-        physics_engine = arcade.PhysicsEngineSimple(
-            self,
-            game_view.scene.get_sprite_list("Walls"),
-        )
-        game_view.enemy_physics_engines.append(physics_engine)
 
     def hunt_player(self, delta_time: float):
         if self.player and self.animation_allow_overwrite:
@@ -71,13 +67,15 @@ class Zombie(Enemy):
             elif distance < self.detection_range:
                 self.goto_point(player_pos_vec)
                 self.look_at(player_pos_vec)
-            else:
+            elif distance < self.physics_range:
                 self.goto_point(self.random_move_point)
                 self.look_at(self.random_move_point)
                 self.random_move_timer += delta_time
                 if self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL:
                     self.random_move_timer = 0
                     self.random_move_point = self.position + Vec2(random.randint(-1000, 1000), random.randint(-1000, 1000))
+            else:
+                self.change_state(EntityState.IDLE)
 
     def update_state(self, delta_time: float):
         # super().update_state(delta_time)

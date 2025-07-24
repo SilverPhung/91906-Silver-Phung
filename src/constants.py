@@ -7,7 +7,7 @@ WINDOW_HEIGHT = 720
 WINDOW_RATE = 1 / 144
 
 # Player constants
-PLAYER_MOVEMENT_SPEED = 20
+PLAYER_MOVEMENT_SPEED = 200
 PLAYER_FRICTION = 0.9999
 PLAYER_ASSETS_DIR = "resources/Players"
 PLAYER_CONFIG_FILE = "resources/animation_config/players_config.json"
@@ -27,7 +27,7 @@ HEALTHBAR_HEIGHT = 10
 INDICATOR_BAR_OFFSET = 32
 
 # Constants for bullet properties
-BULLET_SPEED = 300
+BULLET_SPEED = 100
 BULLET_LIFE = 0.5
 BULLET_DAMAGE = 10
 

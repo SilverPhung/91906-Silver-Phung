@@ -74,6 +74,14 @@ class Player(Entity):
         self.sound_set = sound_set
         self.load_sounds(sound_set)
 
+        
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self,
+            [self.game_view.scene.get_sprite_list("Walls"),
+                self.game_view.scene.get_sprite_list("Enemies")
+            ],
+        )
+
     def set_weapon(self, weapon_type: WeaponType):
         """Set the current weapon"""
         self.current_weapon = weapon_type
@@ -117,6 +125,10 @@ class Player(Entity):
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state and weapon"""
         weapon_name = self.current_weapon.value
+        
+        Debug.update(
+            "Animation allow overwrite", self.animation_allow_overwrite
+        )
 
         match self.state:
             case EntityState.WALKING | EntityState.IDLE:
@@ -200,6 +212,8 @@ class Player(Entity):
         self.shoot_cooldown_timer += delta_time
         self.look_at(self.mouse_position)
 
+        self.physics_engine.update()
+
         Debug.update("Player State", f"{self.state.value}")
         Debug.update(
             "Player Position",
@@ -214,9 +228,6 @@ class Player(Entity):
             "Player Health", self.current_health
         )
 
-        Debug.update(
-            "Animation allow overwrite", self.animation_allow_overwrite
-        )
 
         Debug.update(
             "Current Animation", self.current_animation

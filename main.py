@@ -60,7 +60,7 @@ class GameView(arcade.View):
             }
         )
 
-        # Enemy list and physics engines - initialize before spawning enemies
+        # Enemy list
         self.enemies = arcade.SpriteList()
 
         # Track the current state of what key is pressed
@@ -97,9 +97,6 @@ class GameView(arcade.View):
         self.player.reset()
         self.scene.add_sprite("Player", self.player)
 
-        # Clear and recreate enemy lists
-        self.enemy_physics_engines = []
-
         # Add a test zombie
         for i in range(100):
             zombie = Zombie(
@@ -109,19 +106,6 @@ class GameView(arcade.View):
             )
 
             zombie.position = (random.randint(0, 10_000), random.randint(0, 10_000))
-
-        # Physics engine for player
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player,
-            self.scene.get_sprite_list("Walls"),
-        )
-
-        # Create physics engine for this enemy (after adding to scene)
-        # enemy_physics_engine = arcade.PhysicsEngineSimple(
-        #     zombie,
-        #     self.scene.get_sprite_list("Walls"),
-        # )
-        # self.enemy_physics_engines.append(enemy_physics_engine)
 
         self.player.current_health = self.player.max_health
         self.player.health_bar.fullness = 1.0

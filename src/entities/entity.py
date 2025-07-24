@@ -91,9 +91,190 @@ class Entity(arcade.Sprite):
 
         self.physics_engine = arcade.PhysicsEngineSimple(
             self,
-            self.game_view.scene.get_sprite_list("Walls"),
+            [self.game_view.scene.get_sprite_list("Walls"),
+                self.game_view.scene.get_sprite_list("Enemies")
+            ],
         )
 
+    # --- Helper Methods for Texture and Animation ---
+    def _apply_texture_and_offset(self, texture: TextureData):
+        """Helper to set texture and apply offset to center_x, center_y"""
+        self.texture = texture[0]
+        self.sync_hit_box_to_texture()
+
+    def has_animation(self, anim_name: str, character_preset: str = None) -> bool:
+        """Helper to check if an animation exists and has a sequence or idle texture."""
+        if character_preset is None:
+            character_preset = self.character_preset
+
+        return anim_name in Entity.loaded_animations[character_preset] and (
+            Entity.loaded_animations[character_preset][anim_name].get("frames")
+        )
+
+    def _try_set_animation(self, anim_name: str) -> bool:
+        """Helper to attempt setting an animation if it exists and has frames. Returns True if set, False otherwise."""
+        if self.has_animation(anim_name):
+            self.set_animation(anim_name)
+            return True
+        return False
+
+    # --- Core Update Methods ---
+    def update(self, delta_time: float, update_physics: bool = True):
+        super().update(delta_time)
+        self.update_state(delta_time)
+        self.animate(delta_time)
+        self.delta_time = delta_time
+
+        if self.health_bar:
+            self.health_bar.position = (
+                self.center_x,
+                self.center_y + INDICATOR_BAR_OFFSET,
+            )
+
+
+    # --- State Management ---
+    def update_state(self, delta_time: float):
+        """Update entity state based on velocity and other factors - to be overridden by child classes"""
+        if to_vector(self.velocity).length() > DEAD_ZONE:
+            self.change_state(EntityState.WALKING)
+        else:
+            self.change_state(EntityState.IDLE)
+
+    def change_state(self, new_state: EntityState) -> bool:
+        self.set_animation_for_state()
+        if self.state != new_state:
+            self.state = new_state
+            return True
+        return False
+
+    def set_animation_for_state(self):
+        """Set the appropriate animation based on current state"""
+        pass
+
+    def die(self):
+        """Trigger death animation"""
+        self.change_state(EntityState.DYING)
+
+    # --- Movement ---
+    def move(self, direction: Vec2):
+        """Move the entity in the given direction"""
+        self.velocity = direction.normalize() * self.speed * self.delta_time
+
+        self.update_physics()
+
+    def update_physics(self):
+        """Update physics calculations"""
+        # Apply friction directly to change_x and change_y
+        # friction
+        friction_factor = (1 - self.friction) ** (self.delta_time)
+        self.change_x *= friction_factor
+        self.change_y *= friction_factor
+
+        # Clamp the velocity (change_x, change_y) to the max speed
+        velocity_length = math.sqrt(self.change_x**2 + self.change_y**2)
+
+        if velocity_length > self.speed:
+            normalized_x = self.velocity.x / velocity_length
+            normalized_y = self.velocity.y / velocity_length
+            self.velocity = Vec2(
+                normalized_x * self.speed, normalized_y * self.speed
+            )
+
+    def look_at(self, target_pos: Vec2):
+        """Update facing direction to look at target"""
+        # Calculate angle between enemy and target
+        dx = target_pos[0] - self.center_x
+        dy = target_pos[1] - self.center_y
+        angle = math.atan2(dx, dy) * 180 / math.pi
+        self.angle = angle
+
+        # Set facing based on angle
+        self.facing_direction = angle
+
+    # --- Health Management ---
+    def take_damage(self, damage_amount: float):
+        """Reduce entity health and handle death."""
+        self.current_health -= damage_amount
+        if self.current_health <= 0:
+            self.current_health = 0
+            self.die()  # Trigger death animation or removal
+        if self.health_bar:
+            self.health_bar.fullness = self.current_health / self.max_health
+
+    # --- Animation ---
+    def animate(self, delta_time: float):
+        """Update animation based on delta time"""
+        if self.current_animation is None:
+            return
+
+        self.current_animation_time += delta_time
+        animation_frames = None
+
+        # Check if it's time to advance to the next frame
+        if self.current_animation_time >= self.frame_duration:
+            self.current_animation_time = 0
+
+            # Get the current animation frames
+            if self.has_animation(self.current_animation):
+                animation_data = Entity.loaded_animations[self.character_preset][self.current_animation]
+                animation_frames = animation_data["frames"]
+            else:
+                print(
+                    f"Warning: Animation '{self.current_animation}' not found."
+                )
+                return
+
+            self.current_animation_type = AnimationType(
+                animation_data["type"]
+            )
+            
+            if animation_frames:
+                if (
+                    self.current_animation_type == AnimationType.MOVEMENT
+                    and self.state == EntityState.IDLE
+                ):
+                    self.current_animation_frame = 0
+                    self.animation_allow_overwrite = True
+                else:
+                    # print("process Current Animation Type", self.current_animation_type)
+                    match self.current_animation_type:
+                        case AnimationType.MOVEMENT:
+                            self.current_animation_frame = (
+                                self.current_animation_frame + 1
+                            ) % len(animation_frames)
+                            self.animation_allow_overwrite = True
+                        case AnimationType.ACTION:
+                            self.animation_allow_overwrite = (
+                                self.current_animation_frame
+                                == len(animation_frames) - 1
+                            )
+                            if not self.animation_allow_overwrite:
+                                self.current_animation_frame += 1
+
+                    self._apply_texture_and_offset(
+                        animation_frames[self.current_animation_frame]
+                    )
+
+        Debug.update(
+            "Current Animation frame", self.current_animation_frame
+        )
+
+    def set_animation(self, animation_name: str):
+        """Set the current animation by name"""
+        if self.has_animation(animation_name):
+            animation_data = Entity.loaded_animations[self.character_preset][animation_name]
+            if self.current_animation != animation_name:
+                self.current_animation_frame = 0
+                self.current_animation_time = 0
+                self._apply_texture_and_offset(animation_data["frames"][0])
+
+            if self.current_animation_type == AnimationType.ACTION:
+                self.animation_allow_overwrite = False
+                
+            self.current_animation = animation_name
+            self.current_animation_type = AnimationType(animation_data["type"])
+
+    # --- Static Methods ---
     @staticmethod
     def load_sounds(sound_set: dict):
         for sound_path in sound_set.values():
@@ -113,24 +294,6 @@ class Entity(arcade.Sprite):
             Entity.loaded_sounds[sound_name].play(volume=volume)
         else:
             print(f"Sound {sound_name} not found")
-
-    def draw(self):
-        """Draw the entity, including its health bar."""
-        super().draw()
-
-    def take_damage(self, damage_amount: float):
-        """Reduce entity health and handle death."""
-        self.current_health -= damage_amount
-        if self.current_health <= 0:
-            self.current_health = 0
-            self.die()  # Trigger death animation or removal
-        if self.health_bar:
-            self.health_bar.fullness = self.current_health / self.max_health
-
-    def _apply_texture_and_offset(self, texture: TextureData):
-        """Helper to set texture and apply offset to center_x, center_y"""
-        self.texture = texture[0]
-        self.sync_hit_box_to_texture()
 
     @staticmethod
     def load_animation_sequence(character_preset: str, name: str, animation_data: dict):
@@ -198,167 +361,27 @@ class Entity(arcade.Sprite):
             for animation_name, animation_data in character_data.items():
                 Entity.load_animation_sequence(character_preset, animation_name, animation_data)
 
-    def has_animation(self, anim_name: str, character_preset: str = None) -> bool:
-        """Helper to check if an animation exists and has a sequence or idle texture."""
-        if character_preset is None:
-            character_preset = self.character_preset
 
-        return anim_name in Entity.loaded_animations[character_preset] and (
-            Entity.loaded_animations[character_preset][anim_name].get("frames")
+def add_character_config(config_file: str) -> dict:
+    """Load character configuration from JSON file."""
+
+    if config_file in Entity.loaded_character_config:
+        return Entity.loaded_character_config[config_file]
+
+    try:
+        with open(config_file, "r") as f:
+            config_data = json.load(f)
+            Entity.loaded_character_config[config_file] = config_data
+            return config_data
+    except FileNotFoundError:
+        print(f"Configuration file not found: {config_file}")
+        print(
+            "Please run character_analyzer.py first to generate configuration files"
         )
-
-    def _try_set_animation(self, anim_name: str) -> bool:
-        """Helper to attempt setting an animation if it exists and has frames. Returns True if set, False otherwise."""
-        if self.has_animation(anim_name):
-            self.set_animation(anim_name)
-            return True
-        return False
-
-    def animate(self, delta_time: float):
-        """Update animation based on delta time"""
-        if self.current_animation is None:
-            return
-
-        self.current_animation_time += delta_time
-        animation_frames = None
-
-        
-
-
-        # Check if it's time to advance to the next frame
-        if self.current_animation_time >= self.frame_duration:
-            self.current_animation_time = 0
-
-            # Get the current animation frames
-            if self.has_animation(self.current_animation):
-                animation_data = Entity.loaded_animations[self.character_preset][self.current_animation]
-                animation_frames = animation_data["frames"]
-            else:
-                print(
-                    f"Warning: Animation '{self.current_animation}' not found."
-                )
-                return
-
-            self.current_animation_type = AnimationType(
-                animation_data["type"]
-            )
-            
-            if animation_frames:
-                if (
-                    self.current_animation_type == AnimationType.MOVEMENT
-                    and self.state == EntityState.IDLE
-                ):
-                    self.current_animation_frame = 0
-                    self.animation_allow_overwrite = True
-                else:
-                    # print("process Current Animation Type", self.current_animation_type)
-                    match self.current_animation_type:
-                        case AnimationType.MOVEMENT:
-                            self.current_animation_frame = (
-                                self.current_animation_frame + 1
-                            ) % len(animation_frames)
-                            self.animation_allow_overwrite = True
-                        case AnimationType.ACTION:
-                            self.animation_allow_overwrite = (
-                                self.current_animation_frame
-                                == len(animation_frames) - 1
-                            )
-                            if not self.animation_allow_overwrite:
-                                self.current_animation_frame += 1
-
-                    self._apply_texture_and_offset(
-                        animation_frames[self.current_animation_frame]
-                    )
-
-        Debug.update(
-            "Current Animation frame", self.current_animation_frame
-        )
-
-    def set_animation(self, animation_name: str):
-        """Set the current animation by name"""
-        if self.has_animation(animation_name):
-            animation_data = Entity.loaded_animations[self.character_preset][animation_name]
-            if self.current_animation != animation_name:
-                self.current_animation_frame = 0
-                self.current_animation_time = 0
-                self._apply_texture_and_offset(animation_data["frames"][0])
-
-            if self.current_animation_type == AnimationType.ACTION:
-                self.animation_allow_overwrite = False
-                
-            self.current_animation = animation_name
-            self.current_animation_type = AnimationType(animation_data["type"])
-
-
-    def change_state(self, new_state: EntityState) -> bool:
-        self.set_animation_for_state()
-        if self.state != new_state:
-            self.state = new_state
-            return True
-        return False
-
-    def set_animation_for_state(self):
-        """Set the appropriate animation based on current state"""
-        pass
-
-    def look_at(self, target_pos: Vec2):
-        """Update facing direction to look at target"""
-        # Calculate angle between enemy and target
-        dx = target_pos[0] - self.center_x
-        dy = target_pos[1] - self.center_y
-        angle = math.atan2(dx, dy) * 180 / math.pi
-        self.angle = angle
-
-        # Set facing based on angle
-        self.facing_direction = angle
-
-    def move(self, direction: Vec2):
-        """Move the entity in the given direction"""
-        self.velocity = direction.normalize() * self.speed
-
-        self.update_physics()
-
-    def update_physics(self):
-        """Update physics calculations"""
-        # Apply friction directly to change_x and change_y
-        # friction
-        friction_factor = (1 - self.friction) ** (self.delta_time)
-        self.change_x *= friction_factor
-        self.change_y *= friction_factor
-
-        # Clamp the velocity (change_x, change_y) to the max speed
-        velocity_length = math.sqrt(self.change_x**2 + self.change_y**2)
-
-        if velocity_length > self.speed:
-            normalized_x = self.velocity.x / velocity_length
-            normalized_y = self.velocity.y / velocity_length
-            self.velocity = Vec2(
-                normalized_x * self.speed, normalized_y * self.speed
-            )
-
-    def update_state(self, delta_time: float):
-        """Update entity state based on velocity and other factors - to be overridden by child classes"""
-        if to_vector(self.velocity).length() > DEAD_ZONE:
-            self.change_state(EntityState.WALKING)
-        else:
-            self.change_state(EntityState.IDLE)
-
-    def die(self):
-        """Trigger death animation"""
-        self.change_state(EntityState.DYING)
-
-    def update(self, delta_time: float):
-        super().update(delta_time)
-        self.update_state(delta_time)
-        self.animate(delta_time)
-        self.delta_time = delta_time
-
-        if self.health_bar:
-            self.health_bar.position = (
-                self.center_x,
-                self.center_y + INDICATOR_BAR_OFFSET,
-            )
-        self.physics_engine.update()
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON file {config_file}: {e}")
+        return {}
 
 
 def process_loaded_texture_data(
@@ -404,23 +427,3 @@ def process_raw_texture_data(
     return process_loaded_texture_data(raw_texture_data)
 
 
-def add_character_config(config_file: str) -> dict:
-    """Load character configuration from JSON file."""
-
-    if config_file in Entity.loaded_character_config:
-        return Entity.loaded_character_config[config_file]
-
-    try:
-        with open(config_file, "r") as f:
-            config_data = json.load(f)
-            Entity.loaded_character_config[config_file] = config_data
-            return config_data
-    except FileNotFoundError:
-        print(f"Configuration file not found: {config_file}")
-        print(
-            "Please run character_analyzer.py first to generate configuration files"
-        )
-        return {}
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON file {config_file}: {e}")
-        return {}

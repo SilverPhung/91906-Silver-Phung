@@ -68,9 +68,6 @@ class Enemy(Entity):
                     if self._try_set_animation("Death"):
                         return
     
-
-
-    
     def goto_point(self, point: Vec2):
         enemy_pos_vec = Vec2(self.position[0], self.position[1])
         diff = point - enemy_pos_vec
@@ -92,4 +89,7 @@ class Enemy(Entity):
         self.change_state(EntityState.DYING)
 
     def update(self, delta_time: float):
-        super().update(delta_time)
+        update_physics = True
+        if self.state == EntityState.IDLE:
+            update_physics = False
+        super().update(delta_time, update_physics=update_physics)
