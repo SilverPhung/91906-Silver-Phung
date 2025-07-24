@@ -1,5 +1,5 @@
 import arcade
-
+from src.constants import ENABLE_DEBUG
 
 class Debug:
     debug_dict = {}
@@ -30,6 +30,9 @@ class Debug:
 
     @staticmethod
     def render(x: float, y: float):
+        if not ENABLE_DEBUG:
+            return
+
         if not Debug.initialized:
             print("Debug.render called before Debug._initialize. Skipping render.")
             return

@@ -68,7 +68,7 @@ class Zombie(Enemy):
                 self.goto_point(player_pos_vec)
                 self.look_at(player_pos_vec)
             elif distance < self.physics_range:
-                self.goto_point(self.random_move_point)
+                self.goto_point(Vec2(self.random_move_point[0], self.random_move_point[1]))
                 self.look_at(self.random_move_point)
                 self.random_move_timer += delta_time
                 if self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL:

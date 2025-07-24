@@ -1,13 +1,15 @@
 import arcade
 
+ENABLE_DEBUG = True
+
 # Window settings
 WINDOW_TITLE = "Starting Template"
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
-WINDOW_RATE = 1 / 144
+WINDOW_RATE = 1 / 60
 
 # Player constants
-PLAYER_MOVEMENT_SPEED = 200
+PLAYER_MOVEMENT_SPEED = 20
 PLAYER_FRICTION = 0.9999
 PLAYER_ASSETS_DIR = "resources/Players"
 PLAYER_CONFIG_FILE = "resources/animation_config/players_config.json"

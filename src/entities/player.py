@@ -40,6 +40,7 @@ class Player(Entity):
             character_config=config_file,
             character_preset=player_preset,
             game_view=game_view,
+            is_kinematic=True,
         )
 
         self.game_view = game_view
@@ -74,8 +75,7 @@ class Player(Entity):
         self.sound_set = sound_set
         self.load_sounds(sound_set)
 
-        
-        self.physics_engine = arcade.PhysicsEngineSimple(
+        self.own_physics_engine = arcade.PhysicsEngineSimple(
             self,
             [self.game_view.scene.get_sprite_list("Walls"),
                 self.game_view.scene.get_sprite_list("Enemies")
@@ -121,7 +121,12 @@ class Player(Entity):
         if super().change_state(new_state):
             # print("change state", new_state)
             pass
-
+    def move(self, direction: Vec2):
+            """Move the entity in the given direction"""
+            self.velocity = direction.normalize() * self.speed
+            self.update_physics()
+            
+            
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state and weapon"""
         weapon_name = self.current_weapon.value
@@ -211,8 +216,8 @@ class Player(Entity):
         super().update(delta_time)
         self.shoot_cooldown_timer += delta_time
         self.look_at(self.mouse_position)
-
-        self.physics_engine.update()
+        self.own_physics_engine.update()
+        self.set_position(self.position)
 
         Debug.update("Player State", f"{self.state.value}")
         Debug.update(

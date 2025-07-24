@@ -1,5 +1,4 @@
 import arcade
-from pyglet.math import Vec2
 from src.entities.entity import *
 from src.entities.player import Player
 from src.extended import to_vector
@@ -7,10 +6,12 @@ from src.sprites.indicator_bar import IndicatorBar
 from src.debug import Debug
 import math
 from src.constants import *
-
+from pyglet.math import Vec2
+import random
 
 class Enemy(Entity):
     """Base class for all enemies (zombies, monsters)"""
+
 
     def __init__(
         self,
@@ -29,6 +30,7 @@ class Enemy(Entity):
             speed=speed,
             character_config=character_config,
             character_preset=character_preset,
+            is_kinematic=False,
         )
 
         self.load_animations(character_preset, character_config)
@@ -47,6 +49,9 @@ class Enemy(Entity):
         )
         self.current_health = self.max_health
         self.health_bar.fullness = 1.0
+        map_size = game_view.map_size
+        self.position = (Vec2(random.randint(0, map_size.x), random.randint(0, map_size.y)))
+
 
     def change_state(self, new_state: EntityState):
         super().change_state(new_state)
@@ -89,8 +94,5 @@ class Enemy(Entity):
         self.change_state(EntityState.DYING)
 
     def update(self, delta_time: float):
-        check_physics = True
-        if self.state == EntityState.IDLE or self.state == EntityState.DYING:
-            check_physics = False
 
-        super().update(delta_time, check_physics)
+        super().update(delta_time)
