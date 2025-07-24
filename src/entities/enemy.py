@@ -89,7 +89,8 @@ class Enemy(Entity):
         self.change_state(EntityState.DYING)
 
     def update(self, delta_time: float):
-        update_physics = True
-        if self.state == EntityState.IDLE:
-            update_physics = False
-        super().update(delta_time, update_physics=update_physics)
+        check_physics = True
+        if self.state == EntityState.IDLE or self.state == EntityState.DYING:
+            check_physics = False
+
+        super().update(delta_time, check_physics)
