@@ -89,12 +89,6 @@ class Entity(arcade.Sprite):
         self.character_config = add_character_config(character_config)
         self.character_preset = character_preset
 
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self,
-            [self.game_view.scene.get_sprite_list("Walls"),
-                self.game_view.scene.get_sprite_list("Enemies")
-            ],
-        )
 
     # --- Helper Methods for Texture and Animation ---
     def _apply_texture_and_offset(self, texture: TextureData):
@@ -158,7 +152,7 @@ class Entity(arcade.Sprite):
     # --- Movement ---
     def move(self, direction: Vec2):
         """Move the entity in the given direction"""
-        self.velocity = direction.normalize() * self.speed * self.delta_time
+        self.velocity = direction.normalize() * self.speed
 
         self.update_physics()
 

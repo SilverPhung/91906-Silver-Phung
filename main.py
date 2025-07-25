@@ -98,14 +98,15 @@ class GameView(arcade.View):
         self.scene.add_sprite("Player", self.player)
 
         # Add a test zombie
-        for i in range(100):
+        for i in range(20):
             zombie = Zombie(
                 game_view=self,
                 zombie_type="Army_zombie",
                 player_ref=self.player,
             )
 
-            zombie.position = (random.randint(0, 10_000), random.randint(0, 10_000))
+            zombie.position = (random.randint(0, MAP_WIDTH_PIXEL), random.randint(0, MAP_HEIGHT_PIXEL))
+            # zombie.position = (1000, 500)
 
         self.player.current_health = self.player.max_health
         self.player.health_bar.fullness = 1.0
@@ -129,10 +130,10 @@ class GameView(arcade.View):
         scene.add_sprite_list(
             "Road", sprite_list=self.tile_map.sprite_lists["Road"]
         )
-
+        self.wall_list = self.tile_map.sprite_lists["Walls"]
         # Add the walls layer to the scene for collision
         scene.add_sprite_list(
-            "Walls", sprite_list=self.tile_map.sprite_lists["Walls"]
+            "Walls", sprite_list=self.wall_list
         )
 
         # Add sprite lists for Player and Enemies (drawn on top)
@@ -154,6 +155,9 @@ class GameView(arcade.View):
 
         with self.camera_gui.activate():
             Debug.render(10, 10)
+
+        for enemy in self.enemies:
+            enemy.draw()
 
     def update_player_speed(self):
         # Calculate speed based on the keys pressed
@@ -282,7 +286,7 @@ class GameView(arcade.View):
 
 
         self.bullet_list.update(
-            delta_time, [self.scene.get_sprite_list("Enemies")], [self.scene.get_sprite_list("Walls")]
+            delta_time, [self.scene.get_sprite_list("Enemies")], [self.wall_list]
         )
 
     def on_resize(self, width: int, height: int):

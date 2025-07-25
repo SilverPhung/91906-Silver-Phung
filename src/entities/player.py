@@ -77,8 +77,7 @@ class Player(Entity):
         
         self.physics_engine = arcade.PhysicsEngineSimple(
             self,
-            [self.game_view.scene.get_sprite_list("Walls"),
-                self.game_view.scene.get_sprite_list("Enemies")
+            [self.game_view.wall_list
             ],
         )
 
@@ -209,10 +208,9 @@ class Player(Entity):
     
     def update(self, delta_time: float):
         super().update(delta_time)
+        self.physics_engine.update()
         self.shoot_cooldown_timer += delta_time
         self.look_at(self.mouse_position)
-
-        self.physics_engine.update()
 
         Debug.update("Player State", f"{self.state.value}")
         Debug.update(
