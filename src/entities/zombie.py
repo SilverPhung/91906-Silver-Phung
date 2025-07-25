@@ -30,7 +30,7 @@ class Zombie(Enemy):
 
         # Zombie-specific properties
         self.detection_range = 700
-        self.attack_range = 100
+        self.attack_range = 50
         self.physics_range = 1000
         self.damage = 10 
         self.change_state(EntityState.IDLE)
@@ -60,21 +60,32 @@ class Zombie(Enemy):
             enemy_pos_vec = Vec2(self.position[0], self.position[1])
             diff = player_pos_vec - enemy_pos_vec
             distance = diff.length()
+            walk_random = False
             if distance < self.attack_range:
                 self.move(Vec2(0, 0))
                 self.attack()
                 self.look_at(player_pos_vec)
+                return
             elif distance < self.detection_range:
                 self.goto_point(player_pos_vec)
                 self.look_at(player_pos_vec)
+                if self.path and len(self.path) > 1:
+                    return
+                else:
+                    walk_random = True
+
             elif distance < self.physics_range:
-                self.goto_point(Vec2(self.random_move_point[0], self.random_move_point[1]))
+                walk_random = True
+            
+            if walk_random:
+                self.goto_point(self.random_move_point)
                 self.look_at(self.random_move_point)
                 self.random_move_timer += delta_time
                 if self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL:
                     self.random_move_timer = 0
                     self.random_move_point = self.position + Vec2(random.randint(-1000, 1000), random.randint(-1000, 1000))
             else:
+                self.move(Vec2(0, 0))
                 self.change_state(EntityState.IDLE)
 
     def update_state(self, delta_time: float):
