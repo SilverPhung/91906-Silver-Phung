@@ -92,13 +92,14 @@ class Enemy(Entity):
         self.pathfind_delay_timer += self.delta_time
         if self.pathfind_delay_timer >= self.pathfind_delay:
             self.pathfind_delay_timer = 0
-
-            self.path = arcade.astar_calculate_path(
+            new_path = arcade.astar_calculate_path(
                 enemy_pos_vec, point, self.pathfind_barrier, diagonal_movement=True
-            ) or self.path
-            if self.path and len(self.path) > 1:
-                self.path.append(point) 
+            )
+            if new_path and len(new_path) > 1:
+                self.path = new_path
+                self.path.append(point)
             
+            # print(self.path)
 
         if self.path and len(self.path) > 1:
             # goto_point = point if arcade.has_line_of_sight(self.position, point, self.game_view.wall_list, check_resolution=30) else self.path[0]
@@ -114,22 +115,23 @@ class Enemy(Entity):
         else:
             self.move(Vec2(0, 0))
             self.change_state(EntityState.IDLE)
-
+    def transform_path(self, path: list[Vec2]):
+        return list(map(
+            lambda point: (
+                (point[0] - self.game_view.camera.position[0]) * self.game_view.camera.zoom
+                + WINDOW_WIDTH / 2,
+                (point[1] - self.game_view.camera.position[1]) * self.game_view.camera.zoom
+                + WINDOW_HEIGHT / 2,
+            ),
+            path
+        ))
     def draw(self):
-        # if self.path:
-        #     arcade.draw_line_strip(
-        #         map(
-        #             lambda point: (
-        #                 (point[0] - self.game_view.camera.position[0]) * self.game_view.camera.zoom
-        #                 + WINDOW_WIDTH / 2,
-        #                 (point[1] - self.game_view.camera.position[1]) * self.game_view.camera.zoom
-        #                 + WINDOW_HEIGHT / 2,
-        #             ),
-        #             self.path,
-        #         ),
-        #         arcade.color.BLUE,
-        #         2,
-        #     )
+        if self.path:
+            arcade.draw_line_strip(
+                self.transform_path(self.path),
+                arcade.color.BLUE,
+                2,
+            )
         pass
 
     def attack(self):

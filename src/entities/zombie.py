@@ -29,12 +29,13 @@ class Zombie(Enemy):
         self.player = player_ref
 
         # Zombie-specific properties
-        self.detection_range = 700
+        self.detection_range = 500
+        self.engage_range = 150
         self.attack_range = 50
-        self.physics_range = 1000
+        self.physics_range = 10000
         self.damage = 10 
         self.change_state(EntityState.IDLE)
-        self.random_move_timer = ZOMBIE_RANDOM_MOVE_INTERVAL
+        self.random_move_timer = random.random() * ZOMBIE_RANDOM_MOVE_INTERVAL
         self.random_move_point = Vec2(0, 0)
 
 
@@ -61,18 +62,27 @@ class Zombie(Enemy):
             diff = player_pos_vec - enemy_pos_vec
             distance = diff.length()
             walk_random = False
+
+            def engage_player(offset: True):
+                self.goto_point(player_pos_vec + offset * Vec2(random.randint(-200, 200), random.randint(-200, 200)))
+                look_at_point = self.path[0] if self.path else player_pos_vec
+                self.look_at(look_at_point)
+                
             if distance < self.attack_range:
                 self.move(Vec2(0, 0))
                 self.attack()
                 self.look_at(player_pos_vec)
                 return
             elif distance < self.detection_range:
-                self.goto_point(player_pos_vec)
-                self.look_at(player_pos_vec)
+                self.random_move_point = player_pos_vec
+                engage_player(False)
+                
                 if self.path and len(self.path) > 1:
                     return
                 else:
-                    walk_random = True
+                    engage_player(True)
+                    if not(self.path and len(self.path) > 1):
+                        walk_random = True
 
             elif distance < self.physics_range:
                 walk_random = True
@@ -81,12 +91,24 @@ class Zombie(Enemy):
                 self.goto_point(self.random_move_point)
                 self.look_at(self.random_move_point)
                 self.random_move_timer += delta_time
-                if self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL:
-                    self.random_move_timer = 0
-                    self.random_move_point = self.position + Vec2(random.randint(-1000, 1000), random.randint(-1000, 1000))
+                diff = self.random_move_point - enemy_pos_vec
+                if self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL or diff.length() < 50:
+                    self.pathfind_delay_timer = 0
+                    self.random_move_timer = 0 
+                    diff = player_pos_vec - enemy_pos_vec
+                    self.random_move_point = enemy_pos_vec+diff.normalize()*150 + Vec2(random.randint(-100, 100), random.randint(-100, 100))
             else:
                 self.move(Vec2(0, 0))
                 self.change_state(EntityState.IDLE)
+
+    def draw(self):
+        super().draw()
+        if self.random_move_point:
+            arcade.draw_line_strip(
+                self.transform_path([self.position, self.random_move_point]),
+                arcade.color.RED,
+                2,
+            )
 
     def update_state(self, delta_time: float):
         # super().update_state(delta_time)

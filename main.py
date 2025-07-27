@@ -98,7 +98,7 @@ class GameView(arcade.View):
         self.scene.add_sprite("Player", self.player)
 
         # Add a test zombie
-        for i in range(20):
+        for i in range(25):
             zombie = Zombie(
                 game_view=self,
                 zombie_type="Army_zombie",
@@ -158,6 +158,8 @@ class GameView(arcade.View):
 
         for enemy in self.enemies:
             enemy.draw()
+        diff = Vec2(self.player.position[0] - self.enemies[0].position[0], self.player.position[1] - self.enemies[0].position[1])
+        Debug.update("Player distance", f"{diff.length():.2f}")
 
     def update_player_speed(self):
         # Calculate speed based on the keys pressed

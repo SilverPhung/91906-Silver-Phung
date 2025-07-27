@@ -3,6 +3,7 @@ import arcade
 MAP_WIDTH = 39
 MAP_HEIGHT = 57
 
+ENABLE_DEBUG = True
 
 # Window settings
 WINDOW_TITLE = "Starting Template"
@@ -23,7 +24,7 @@ SPAWN_POSITION = (50, 350)
 # Enemy constants
 ZOMBIE_MOVEMENT_SPEED = 2
 ENEMY_CONFIG_FILE = "resources/animation_config/enemies_config.json"
-ZOMBIE_RANDOM_MOVE_INTERVAL = 4
+ZOMBIE_RANDOM_MOVE_INTERVAL = 1
 
 # Health bar constants
 HEALTHBAR_WIDTH = 75
