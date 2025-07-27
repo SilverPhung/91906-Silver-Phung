@@ -3,6 +3,7 @@ import arcade
 MAP_WIDTH = 39
 MAP_HEIGHT = 57
 
+ENABLE_DEBUG = True
 
 # Window settings
 WINDOW_TITLE = "Starting Template"
