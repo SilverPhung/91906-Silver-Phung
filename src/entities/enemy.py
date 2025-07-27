@@ -128,7 +128,15 @@ class Enemy(Entity):
     def draw(self):
         if self.path:
             arcade.draw_line_strip(
-                self.transform_path(self.path),
+                map(
+                    lambda point: (
+                        (point[0] - self.game_view.camera.position[0]) * self.game_view.camera.zoom
+                        + WINDOW_WIDTH / 2,
+                        (point[1] - self.game_view.camera.position[1]) * self.game_view.camera.zoom
+                        + WINDOW_HEIGHT / 2,
+                    ),
+                    self.path,
+                ),
                 arcade.color.BLUE,
                 2,
             )
