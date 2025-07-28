@@ -141,6 +141,7 @@ class Player(Entity):
                 if self.current_weapon == WeaponType.GUN:
                     shoot_anim = "Gun_Shot"
                     self._try_set_animation(shoot_anim)
+                    self.restart_animation()
                 else:
                     if (self._try_set_animation(weapon_name)):
                         pass
@@ -178,12 +179,12 @@ class Player(Entity):
             if self.current_weapon == WeaponType.GUN:
                 self.shoot()
             else:
-                self.attack_with_weapon()
+                self.attack_with_weapon() 
 
     def shoot(self):
         """Trigger a shoot animation based on current weapon"""
         if self.state != EntityState.DYING and self.shoot_cooldown_timer >= self.shoot_cooldown:
-            self.change_state(EntityState.ATTACKING)
+            self.change_state(EntityState.ATTACKING)    
             bullet = Bullet(self.position, self.mouse_position, bullet_damage=BULLET_DAMAGE)
             self.game_view.bullet_list.append(bullet)
             self.shoot_cooldown_timer = 0

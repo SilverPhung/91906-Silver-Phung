@@ -253,20 +253,25 @@ class Entity(arcade.Sprite):
             "Current Animation frame", self.current_animation_frame
         )
 
+    def restart_animation(self):
+        self.current_animation_frame = 0
+        self.current_animation_time = 0
+
     def set_animation(self, animation_name: str):
         """Set the current animation by name"""
         if self.has_animation(animation_name):
             animation_data = Entity.loaded_animations[self.character_preset][animation_name]
             if self.current_animation != animation_name:
-                self.current_animation_frame = 0
-                self.current_animation_time = 0
+                self.restart_animation()
                 self._apply_texture_and_offset(animation_data["frames"][0])
+
+
+            self.current_animation = animation_name
+            self.current_animation_type = AnimationType(animation_data["type"])
 
             if self.current_animation_type == AnimationType.ACTION:
                 self.animation_allow_overwrite = False
                 
-            self.current_animation = animation_name
-            self.current_animation_type = AnimationType(animation_data["type"])
 
     # --- Static Methods ---
     @staticmethod

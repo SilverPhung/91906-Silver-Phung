@@ -31,7 +31,7 @@ class Zombie(Enemy):
         # Zombie-specific properties
         self.detection_range = 500
         self.engage_range = 150
-        self.attack_range = 50
+        self.attack_range = 20
         self.physics_range = 10000
         self.damage = 10 
         self.change_state(EntityState.IDLE)
