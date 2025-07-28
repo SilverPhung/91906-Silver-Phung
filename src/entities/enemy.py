@@ -39,6 +39,8 @@ class Enemy(Entity):
         self.player = player_ref
         self.attack_range = 50
         self.detection_range = 300
+        self.death_delay = 5
+        self.death_delay_timer = 0
         self.change_state(EntityState.IDLE)
 
         self.health_bar = IndicatorBar(
@@ -66,6 +68,12 @@ class Enemy(Entity):
         self.pathfind_delay_timer = random.random()
         self.path = None
 
+        self.reset()
+    
+    def spawn_random_position(self):
+        self.center_x = random.randint(0, MAP_WIDTH_PIXEL)
+        self.center_y = random.randint(0, MAP_HEIGHT_PIXEL)
+
     def change_state(self, new_state: EntityState):
         super().change_state(new_state)
 
@@ -83,6 +91,7 @@ class Enemy(Entity):
                         return
 
                 case EntityState.DYING:
+                    self.move(Vec2(0, 0))
                     if self._try_set_animation("Death"):
                         return
 
@@ -119,24 +128,16 @@ class Enemy(Entity):
         return list(map(
             lambda point: (
                 (point[0] - self.game_view.camera.position[0]) * self.game_view.camera.zoom
-                + WINDOW_WIDTH / 2,
+                + self.game_view.window_width / 2,
                 (point[1] - self.game_view.camera.position[1]) * self.game_view.camera.zoom
-                + WINDOW_HEIGHT / 2,
+                + self.game_view.window_height / 2,
             ),
             path
         ))
     def draw(self):
-        if self.path:
+        if self.path and ENABLE_DEBUG:
             arcade.draw_line_strip(
-                map(
-                    lambda point: (
-                        (point[0] - self.game_view.camera.position[0]) * self.game_view.camera.zoom
-                        + WINDOW_WIDTH / 2,
-                        (point[1] - self.game_view.camera.position[1]) * self.game_view.camera.zoom
-                        + WINDOW_HEIGHT / 2,
-                    ),
-                    self.path,
-                ),
+                self.transform_path(self.path),
                 arcade.color.BLUE,
                 2,
             )
@@ -152,8 +153,25 @@ class Enemy(Entity):
         """Trigger death animation"""
         self.change_state(EntityState.DYING)
 
+    def reset(self):
+        self.current_health = self.max_health
+        self.health_bar.fullness = 1.0
+        self.change_state(EntityState.IDLE)
+        self.path = None
+        self.pathfind_delay_timer = 0
+        self.pathfind_delay = 1
+        self.death_delay_timer = 0
+
     def update(self, delta_time: float):
         update_physics = True
         if self.state == EntityState.IDLE:
             update_physics = False
+
         super().update(delta_time, update_physics=update_physics)
+
+        if self.state == EntityState.DYING:
+            self.death_delay_timer += self.delta_time
+            if self.death_delay_timer >= self.death_delay:
+                self.spawn_random_position()
+                self.reset()
+                return

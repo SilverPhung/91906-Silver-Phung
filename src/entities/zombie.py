@@ -103,7 +103,7 @@ class Zombie(Enemy):
 
     def draw(self):
         super().draw()
-        if self.random_move_point:
+        if self.random_move_point and ENABLE_DEBUG:
             arcade.draw_line_strip(
                 self.transform_path([self.position, self.random_move_point]),
                 arcade.color.RED,
@@ -112,7 +112,8 @@ class Zombie(Enemy):
 
     def update_state(self, delta_time: float):
         # super().update_state(delta_time)
-        self.hunt_player(delta_time)
+        if not self.state == EntityState.DYING:
+            self.hunt_player(delta_time)
 
         # animation debug
         Debug.update(

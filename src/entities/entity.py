@@ -129,6 +129,9 @@ class Entity(arcade.Sprite):
     # --- State Management ---
     def update_state(self, delta_time: float):
         """Update entity state based on velocity and other factors - to be overridden by child classes"""
+        if self.state == EntityState.DYING:
+            return
+        
         if to_vector(self.velocity).length() > DEAD_ZONE:
             self.change_state(EntityState.WALKING)
         else:

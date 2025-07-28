@@ -84,6 +84,8 @@ class GameView(arcade.View):
             "resources/sound/weapon/Desert Eagle/gun_rifle_pistol.wav"
         )
         self.bullet_list = arcade.SpriteList()
+        self.window_width = WINDOW_WIDTH
+        self.window_height = WINDOW_HEIGHT
 
         self.reset()
 
@@ -97,6 +99,8 @@ class GameView(arcade.View):
         self.player.reset()
         self.scene.add_sprite("Player", self.player)
 
+        
+
         # Add a test zombie
         for i in range(10):
             zombie = Zombie(
@@ -105,7 +109,7 @@ class GameView(arcade.View):
                 player_ref=self.player,
             )
 
-            zombie.position = (random.randint(0, MAP_WIDTH_PIXEL), random.randint(0, MAP_HEIGHT_PIXEL))
+            zombie.spawn_random_position()
             # zombie.position = (1000, 500)
 
         self.player.current_health = self.player.max_health
@@ -134,6 +138,13 @@ class GameView(arcade.View):
         # Add the walls layer to the scene for collision
         scene.add_sprite_list(
             "Walls", sprite_list=self.wall_list
+        )
+
+        self.camera_bounds = arcade.LRBT(
+            self.window.width/2.0,
+            self.tile_map.width * TILE_SIZE * TILE_SCALING - self.window.width/2.0,
+            self.window.height/2.0,
+            self.tile_map.height * TILE_SIZE * TILE_SCALING
         )
 
         # Add sprite lists for Player and Enemies (drawn on top)
@@ -262,8 +273,14 @@ class GameView(arcade.View):
             new_camera_position_vec.y,
         )
 
+        # Constrain the camera's position to the camera bounds.
+        self.camera.view_data.position = arcade.camera.grips.constrain_xy(
+            self.camera.view_data, self.camera_bounds
+        )
+
     def on_update(self, delta_time):
         self.center_camera_to_player(delta_time)
+        
 
         # debug deltatime
         self.mouse_position = (
@@ -306,9 +323,18 @@ class GameView(arcade.View):
             self.window.set_fullscreen(False)
 
 
+class Window(arcade.Window):
+
+    def on_resize(self, width: int, height: int):
+        """Resize window"""
+        super().on_resize(width, height)
+        self.camera.match_window()
+        self.camera_gui.match_window(position=True)
+        print(f"Window resized to {width}x{height}")
+
 def main():
     """Main function"""
-    window = arcade.Window(
+    window = Window(
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_TITLE,
@@ -317,6 +343,8 @@ def main():
         resizable=True,
     )
     game = GameView()
+    window.camera = game.camera
+    window.camera_gui = game.camera_gui
 
     window.show_view(game)
     arcade.run()
