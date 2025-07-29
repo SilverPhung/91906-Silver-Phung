@@ -26,13 +26,13 @@ from src.entities.zombie import Zombie
 # Import constants
 from src.constants import *
 
-from src.ui_constants import HEIGHT, WIDTH
+from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH
 from src.views.menu_view import MenuView
 from src.views.game_view import GameView
 
 def main():
     """Startup"""
-    window = arcade.Window(WIDTH, HEIGHT, "Different Views Minimal Example")
+    window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, "Different Views Minimal Example")
     menu_view = MenuView()
     window.show_view(menu_view)
     arcade.run()

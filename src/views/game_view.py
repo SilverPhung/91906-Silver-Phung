@@ -17,7 +17,7 @@ import concurrent.futures
 
 # Import refactored classes
 from src.debug import Debug
-from src.entities.entity import EntityState
+from src.entities.entity import Entity, EntityState
 from src.sprites.bullet import Bullet
 from src.sprites.indicator_bar import IndicatorBar
 from src.entities.player import Player, WeaponType
@@ -26,9 +26,8 @@ from src.entities.zombie import Zombie
 # Import constants
 from src.constants import *
 
-from src.ui_constants import HEIGHT, WIDTH
-from views.fading_view import FadingView
-from views.game_over_view import GameOverView
+from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH
+from src.views.fading_view import FadingView
 
 
 class GameView(FadingView):
@@ -118,6 +117,11 @@ class GameView(FadingView):
 
         self.player.current_health = self.player.max_health
         self.player.health_bar.fullness = 1.0
+
+    def setup(self):
+
+        for thread in Entity.threads:
+            thread.join()
 
 
     def create_scene(self) -> arcade.Scene:

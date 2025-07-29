@@ -1,8 +1,8 @@
 import arcade
 
-from ui_constants import WIDTH, HEIGHT
-from views.fading_view import FadingView
-from views.game_view import GameView
+from src.constants import WINDOW_WIDTH, WINDOW_HEIGHT
+from src.views.fading_view import FadingView
+from src.views.game_view import GameView
 
 
 class MenuView(FadingView):
@@ -18,7 +18,7 @@ class MenuView(FadingView):
     def on_draw(self):
         """ Draw the menu """
         self.clear()
-        arcade.draw_text("Menu Screen - press space to advance", WIDTH / 2, HEIGHT / 2,
+        arcade.draw_text("Menu Screen - press space to advance", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
                          arcade.color.BLACK, font_size=30, anchor_x="center")
         self.draw_fading()
 
@@ -30,5 +30,5 @@ class MenuView(FadingView):
 
     def setup(self):
         """ This should set up your game and get it ready to play """
-        # Replace 'pass' with the code to set up your game
+        
         pass 
