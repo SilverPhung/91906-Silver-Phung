@@ -34,14 +34,13 @@ class Enemy(Entity):
             character_preset=character_preset,
         )
 
-        self.load_animations(character_preset, character_config)
+        self.load_animations(character_preset, character_config, game_view)
 
         self.player = player_ref
         self.attack_range = 50
         self.detection_range = 300
-        self.death_delay = 5
+        self.death_delay = 20
         self.death_delay_timer = 0
-        self.change_state(EntityState.IDLE)
 
         self.health_bar = IndicatorBar(
             self,

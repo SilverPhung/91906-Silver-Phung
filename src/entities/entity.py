@@ -42,7 +42,6 @@ class Entity(arcade.Sprite):
     loaded_character_config = {}
     loaded_sounds = {}
 
-    threads = []
 
     def __init__(
         self,
@@ -121,11 +120,6 @@ class Entity(arcade.Sprite):
         self.animate(delta_time)
         self.delta_time = delta_time
 
-        for thread in Entity.threads:
-            if not thread.is_alive():
-                thread.join()
-                Entity.threads.remove(thread)
-
         if self.health_bar:
             self.health_bar.position = (
                 self.center_x,
@@ -145,11 +139,9 @@ class Entity(arcade.Sprite):
             self.change_state(EntityState.IDLE)
 
     def change_state(self, new_state: EntityState) -> bool:
-        self.set_animation_for_state()
         if self.state != new_state:
             self.state = new_state
-            return True
-        return False
+        self.set_animation_for_state()
 
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state"""
@@ -338,42 +330,40 @@ class Entity(arcade.Sprite):
 
         Entity.loaded_animations[character_preset][name]["frames"] = processed_sequence
 
+    
     animation_thread_lock = threading.Lock()
-    @staticmethod   
-    def load_animations(character_preset: str, character_config_path: str) -> bool:
+
+    @staticmethod
+    def load_animations(character_preset: str, character_config_path: str, game_view: arcade.View) -> bool:
         """Synchronous method to load character animations from configuration file"""
         
         def load_animations_thread():
-            if character_preset in Entity.loaded_animations:
+            with Entity.animation_thread_lock:
+                if character_preset in Entity.loaded_animations:
+                    return True
+
+                character_config = add_character_config(character_config_path)
+
+                if (
+                    not character_config
+                    or character_preset not in character_config
+                ):
+                    print(
+                        f"No configuration found in {character_config_path} for character preset: {character_preset}"
+                    )
+                    return False
+
+                character_data = character_config[character_preset]
+
+                # Load animations from configuration
+                for animation_name, animation_data in character_data.items():
+                    Entity.load_animation_sequence(character_preset, animation_name, animation_data)
+
                 return True
 
-            Entity.animation_thread_lock.acquire()
-            character_config = add_character_config(character_config_path)
-
-            if (
-                not character_config
-                or character_preset not in character_config
-            ):
-                print(
-                    f"No configuration found in {character_config_path} for character preset: {character_preset}"
-                )
-                Entity.animation_thread_lock.release()
-                return False
-
-            character_data = character_config[character_preset]
-
-            # Load animations from configuration
-            for animation_name, animation_data in character_data.items():
-                Entity.load_animation_sequence(character_preset, animation_name, animation_data)
-
-            Entity.animation_thread_lock.release()
-
-            return True
-
-        with Entity.animation_thread_lock:
-            thread = threading.Thread(target=load_animations_thread)
-            thread.start()
-            Entity.threads.append(thread)
+        thread = threading.Thread(target=load_animations_thread)
+        thread.start()
+        game_view.threads.append(thread)
 
     @staticmethod
     def load_all_animations():

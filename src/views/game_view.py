@@ -22,12 +22,14 @@ from src.sprites.bullet import Bullet
 from src.sprites.indicator_bar import IndicatorBar
 from src.entities.player import Player, WeaponType
 from src.entities.zombie import Zombie
-
+import threading
 # Import constants
 from src.constants import *
 
 from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH
 from src.views.fading_view import FadingView
+
+
 
 
 class GameView(FadingView):
@@ -39,6 +41,8 @@ class GameView(FadingView):
         Debug._initialize()
 
         self.window.background_color = arcade.color.AMAZON
+        self.threads = []
+
 
         # Camera for scrolling
         self.camera = arcade.Camera2D()
@@ -47,21 +51,11 @@ class GameView(FadingView):
 
         # A non-scrolling camera that can be used to draw GUI elements
         self.camera_gui = arcade.Camera2D()
-
-        self.scene = self.create_scene()
+        self.scene = arcade.Scene()
 
         # Create a sprite list for health bars
         self.bar_list = arcade.SpriteList()
 
-        # Set up the player info
-        self.player = Player(
-            game_view=self,
-            scale=CHARACTER_SCALING,
-            speed=PLAYER_MOVEMENT_SPEED,
-            sound_set={
-                "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
-            }
-        )
 
         # Enemy list
         self.enemies = arcade.SpriteList()
@@ -90,15 +84,24 @@ class GameView(FadingView):
         self.window_width = WINDOW_WIDTH
         self.window_height = WINDOW_HEIGHT
 
-        self.reset()
+        self.game_paused = True
+
+        self.preload_resources()
+        self.create_scene(self.scene)
+
+    def preload_resources(self):
+        Entity.load_animations(character_preset="Man", character_config_path=PLAYER_CONFIG_FILE, game_view=self)
+        Entity.load_animations(character_preset="Army_zombie", character_config_path=ZOMBIE_CONFIG_FILE, game_view=self)
 
     def reset(self):
-        self.scene = self.create_scene()
+        # thread = self.create_scene(self.scene)
 
         self.enemies.clear()
         self.bullet_list.clear()
         self.scene.add_sprite_list("Enemies", self.enemies)
+        
 
+        # thread.join()
         self.player.reset()
         self.scene.add_sprite("Player", self.player)
 
@@ -119,17 +122,18 @@ class GameView(FadingView):
         self.player.health_bar.fullness = 1.0
 
     def setup(self):
-
-        for thread in Entity.threads:
+        self.reset()
+        for thread in self.threads:
             thread.join()
 
+        self.game_paused = False
 
-    def create_scene(self) -> arcade.Scene:
+    def create_scene(self, scene: arcade.Scene):
         """Set up the game and initialize the variables."""
-        scene = arcade.Scene()
 
         # Load the Tiled map
         map_name = "resources/maps/Map1.tmx"
+
         self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
 
         # Add the ground layers to the scene (in drawing order from bottom to top)
@@ -147,7 +151,7 @@ class GameView(FadingView):
         scene.add_sprite_list(
             "Walls", sprite_list=self.wall_list
         )
-
+        
         self.camera_bounds = arcade.LRBT(
             self.window.width/2.0,
             self.tile_map.width * TILE_SIZE * TILE_SCALING - self.window.width/2.0,
@@ -155,11 +159,21 @@ class GameView(FadingView):
             self.tile_map.height * TILE_SIZE * TILE_SCALING
         )
 
+        
+        # Set up the player info
+        self.player = Player(
+            game_view=self,
+            scale=CHARACTER_SCALING,
+            speed=PLAYER_MOVEMENT_SPEED,
+            sound_set={
+                "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
+            }
+        )
+
         # Add sprite lists for Player and Enemies (drawn on top)
         scene.add_sprite_list("Enemies")
         scene.add_sprite_list("Player")
-
-        return scene
+        
 
     def on_draw(self):
         """Render the screen."""
@@ -287,6 +301,9 @@ class GameView(FadingView):
         )
 
     def on_update(self, delta_time):
+        if self.game_paused:
+            return
+
         super().on_update(delta_time) # Call FadingView's on_update
 
         self.center_camera_to_player(delta_time)

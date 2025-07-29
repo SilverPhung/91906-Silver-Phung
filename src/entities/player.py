@@ -47,7 +47,7 @@ class Player(Entity):
         self.reset_on_death = reset_on_death
         self.spawn_position = spawn_position
 
-        self.load_animations(player_preset, config_file)
+        self.load_animations(player_preset, config_file, game_view)
 
         # Player-specific properties
 
@@ -246,7 +246,8 @@ class Player(Entity):
     def reset(self):
         """Reset the player to initial state"""
         self.current_health = self.max_health
-        self.change_state(EntityState.IDLE)
+        # self.change_state(EntityState.IDLE)
+        self.state = EntityState.IDLE
         self.current_weapon = WeaponType.GUN
         self.velocity = Vec2(0.0, 0.0)
         self.change_x = 0.0

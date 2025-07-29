@@ -61,9 +61,11 @@ class Bullet(arcade.Sprite):
     def _check_collision(self, sprite_lists: list[arcade.SpriteList]):
         for sprite_list in sprite_lists:
             for sprite in self.collides_with_list(sprite_list):
-                cast(Entity, sprite).take_damage(self.damage)
-                self.remove_from_sprite_lists()
-                return True
+                entity = cast(Entity, sprite)
+                if entity.current_health > 0:
+                    entity.take_damage(self.damage)
+                    self.remove_from_sprite_lists()
+                    return True
         return False
 
     def _check_collision_with_walls(self, wall_list: list[arcade.SpriteList]):
