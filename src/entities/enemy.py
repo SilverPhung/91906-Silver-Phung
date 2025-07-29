@@ -13,7 +13,6 @@ from src.constants import *
 class Enemy(Entity):
     """Base class for all enemies (zombies, monsters)"""
 
-    pathfind_barrier = None
 
     def __init__(
         self,
@@ -51,17 +50,6 @@ class Enemy(Entity):
         )
         self.current_health = self.max_health
         self.health_bar.fullness = 1.0
-
-        if Enemy.pathfind_barrier is None:
-            Enemy.pathfind_barrier = arcade.AStarBarrierList(
-                moving_sprite=self,
-                blocking_sprites=self.game_view.wall_list,
-                grid_size=30,
-                left=0,
-                right=MAP_WIDTH_PIXEL,
-                bottom=0,
-                top=MAP_HEIGHT_PIXEL,
-            )
 
         self.pathfind_delay = 1
         self.pathfind_delay_timer = random.random()
@@ -101,7 +89,7 @@ class Enemy(Entity):
         if self.pathfind_delay_timer >= self.pathfind_delay:
             self.pathfind_delay_timer = 0
             new_path = arcade.astar_calculate_path(
-                enemy_pos_vec, point, self.pathfind_barrier, diagonal_movement=True
+                enemy_pos_vec, point, self.game_view.pathfind_barrier, diagonal_movement=True
             )
             if new_path and len(new_path) > 1:
                 self.path = new_path
@@ -115,7 +103,7 @@ class Enemy(Entity):
             goto_point = self.path[0]
             diff = goto_point - enemy_pos_vec
             distance = diff.length()
-            if distance < Enemy.pathfind_barrier.grid_size:
+            if distance < self.game_view.pathfind_barrier.grid_size:
                 self.path.pop(0)
                 return
             self.move(diff.normalize())

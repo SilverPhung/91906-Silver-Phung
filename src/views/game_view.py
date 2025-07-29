@@ -86,6 +86,9 @@ class GameView(FadingView):
 
         self.game_paused = True
 
+        self.pathfind_barrier = None
+        self.pathfind_barrier_thread_lock = threading.Lock()
+
         self.preload_resources()
         self.create_scene(self.scene)
 
@@ -108,7 +111,7 @@ class GameView(FadingView):
         
 
         # Add a test zombie
-        for i in range(10):
+        for i in range(100):
             zombie = Zombie(
                 game_view=self,
                 zombie_type="Army_zombie",
@@ -169,6 +172,22 @@ class GameView(FadingView):
                 "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
             }
         )
+
+        def create_pathfind_barrier():
+            with self.pathfind_barrier_thread_lock:
+                if self.pathfind_barrier is None:
+                    self.pathfind_barrier = arcade.AStarBarrierList(
+                        moving_sprite=self.player,
+                        blocking_sprites=self.wall_list,
+                        grid_size=30,
+                        left=0,
+                        right=MAP_WIDTH_PIXEL,
+                        bottom=0,
+                        top=MAP_HEIGHT_PIXEL,
+                    )
+        thread = threading.Thread(target=create_pathfind_barrier)
+        thread.start()
+        self.threads.append(thread)
 
         # Add sprite lists for Player and Enemies (drawn on top)
         scene.add_sprite_list("Enemies")
