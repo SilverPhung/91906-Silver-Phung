@@ -6,3 +6,5 @@ alwaysApply: false
 attempt to find the error first. If you are certain you've found the error, fix it. If this is proven difficult or the error persist for too long, or you are uncertain,
 
 Please add comprehensive logs to the code to get better visibility into what is going on so we can find the fix. I'll run the code and feed you the logs results.
+
+Once the error is confirmed to be resolved completely, remove debug loggings. 

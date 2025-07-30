@@ -4,4 +4,4 @@ globs:
 alwaysApply: false
 ---
 
-Refactor this code by separating it into individual component files. Ensure adherence to clean code practices, the DRY (Don't Repeat Yourself) principle, and component-based design principles. Avoid Premature Optimization: Focus on correctness and clarity first; optimize later. Abstraction: Hide the internal complexity behind simple, well-defined interfaces that expose only what's necessary for the users or other systems.
+Refactor this code by separating it into individual component files. Ensure adherence to clean code practices, the DRY (Don't Repeat Yourself) principle, and component-based design principles. Avoid Premature Optimization: Focus on correctness and clarity first; optimize later. Abstraction: Hide the internal complexity behind simple, well-defined interfaces that expose only what's necessary for the users or other systems. Primary objective is to make sure it works first before attempting to optimize it. 

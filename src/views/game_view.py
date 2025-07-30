@@ -23,17 +23,13 @@ from src.sprites.bullet import Bullet
 from src.sprites.indicator_bar import IndicatorBar
 from src.entities.player import Player, WeaponType
 from src.entities.zombie import Zombie
-from src.managers.input_manager import InputManager
-from src.managers.ui_manager import UIManager
-from src.managers.car_manager import CarManager
+from src.managers.manager_factory import ManagerFactory
 import threading
 # Import constants
 from src.constants import *
 
 from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH
 from src.views.fading_view import FadingView
-
-
 
 
 class GameView(FadingView):
@@ -48,12 +44,7 @@ class GameView(FadingView):
         self.window.background_color = arcade.color.AMAZON
         self.threads = []
 
-
-        # Camera for scrolling
-        self.camera = arcade.Camera2D()
-        self.camera_bounds = self.window.rect
-        self.target_zoom = 1.0
-
+        # Camera is now managed by CameraManager
         # A non-scrolling camera that can be used to draw GUI elements
         self.camera_gui = arcade.Camera2D()
         self.scene = arcade.Scene()
@@ -61,18 +52,14 @@ class GameView(FadingView):
         # Create a sprite list for health bars
         self.bar_list = arcade.SpriteList()
 
-
         # Enemy list
         self.enemies = arcade.SpriteList()
 
         self.current_map_index = 1
-        
 
-
-        # Initialize managers
-        self.input_manager = InputManager(self)
-        self.ui_manager = UIManager(self)
-        self.car_manager = CarManager(self)
+        # Initialize managers using factory
+        managers = ManagerFactory.create_managers(self)
+        ManagerFactory.setup_managers(managers, self)
 
         self.gun_shot_sound = arcade.load_sound(
             "resources/sound/weapon/Desert Eagle/gun_rifle_pistol.wav"
@@ -100,8 +87,6 @@ class GameView(FadingView):
         Entity.load_animations(character_preset="Army_zombie", character_config_path=ZOMBIE_CONFIG_FILE, game_view=self)
 
     def reset(self):
-        # thread = self.create_scene(self.scene)
-
         self.enemies.clear()
         self.bullet_list.clear()
         if "Enemies" not in self.scene._name_mapping:
@@ -110,12 +95,8 @@ class GameView(FadingView):
             self.scene.get_sprite_list("Enemies").clear()
             self.scene.get_sprite_list("Enemies").extend(self.enemies)
         
-
-        # thread.join()
         self.player.reset()
         self.scene.add_sprite("Player", self.player)
-
-        
 
         # Spawn zombies
         for _ in range(10):
@@ -161,14 +142,8 @@ class GameView(FadingView):
         )
         print(f"[SCENE] Added tile layers to scene")
         
-        self.camera_bounds = arcade.LRBT(
-            self.window.width/2.0,
-            self.tile_map.width * TILE_SIZE * TILE_SCALING - self.window.width/2.0,
-            self.window.height/2.0,
-            self.tile_map.height * TILE_SIZE * TILE_SCALING
-        )
+        self.camera_manager.setup_camera_bounds(self.tile_map)
 
-        
         # Set up the player info
         self.player = Player(
             game_view=self,
@@ -194,20 +169,18 @@ class GameView(FadingView):
         
         self._start_thread(create_pathfind_barrier)
 
-    def _start_thread(self, target_func):
-        """Start a thread and add it to the threads list."""
-        thread = threading.Thread(target=target_func)
-        thread.start()
-        self.threads.append(thread)
-
         # Add sprite lists for Player and Enemies (drawn on top)
         self.scene.add_sprite_list("Player")
         self.scene.add_sprite_list("CarsLayer")
         
         # Load car positions from Tiled map
         self.car_manager.load_cars_from_map()
-        
 
+    def _start_thread(self, target_func):
+        """Start a thread and add it to the threads list."""
+        thread = threading.Thread(target=target_func)
+        thread.start()
+        self.threads.append(thread)
 
     def check_car_interactions(self):
         """Check if player is near any car and update interaction state"""
@@ -262,7 +235,6 @@ class GameView(FadingView):
         self.player.reset()
         print(f"[MAP] Player reset")
         
-        
         # Clear and respawn enemies
         print(f"[MAP] Clearing {len(self.enemies)} enemies")
         for enemy in self.enemies:
@@ -270,7 +242,6 @@ class GameView(FadingView):
         self.enemies.clear()
         self.reset()
 
-        
         # Reset player position to old car position
         self.car_manager.position_player_at_old_car()
         print(f"[MAP] Enemies cleared and respawned")
@@ -296,7 +267,7 @@ class GameView(FadingView):
         # Disable CRT filter - render directly to window
         self.clear()
 
-        with self.camera.activate():
+        with self.camera_manager.activate():
             self.scene.draw()
             self.bullet_list.draw()
             self.bar_list.draw()
@@ -307,7 +278,6 @@ class GameView(FadingView):
 
         for enemy in self.enemies:
             enemy.draw()
-        
 
     def update_player_speed(self):
         """Calculate movement based on pressed keys."""
@@ -337,28 +307,8 @@ class GameView(FadingView):
         self.input_manager.on_mouse_release(x, y, button, modifiers)
 
     def center_camera_to_player(self, delta_time):
-        current_camera_position = Vec2(
-            self.camera.position[0], self.camera.position[1]
-        )
-        player_position_vec = Vec2(
-            self.player.position[0], self.player.position[1]
-        )
-
-        new_camera_position_vec = arcade.math.smerp_2d(
-            current_camera_position,
-            player_position_vec,
-            delta_time,
-            FOLLOW_DECAY_CONST,
-        )
-        self.camera.position = (
-            new_camera_position_vec.x,
-            new_camera_position_vec.y,
-        )
-
-        # Constrain the camera's position to the camera bounds.
-        self.camera.view_data.position = arcade.camera.grips.constrain_xy(
-            self.camera.view_data, self.camera_bounds
-        )
+        """Center camera on player - delegated to CameraManager."""
+        self.camera_manager.center_camera_to_player(delta_time)
 
     def on_update(self, delta_time):
         if self.game_paused:
@@ -367,7 +317,6 @@ class GameView(FadingView):
         super().on_update(delta_time) # Call FadingView's on_update
 
         self.center_camera_to_player(delta_time)
-        
 
         # Update mouse position
         self.input_manager.update_mouse_position()
@@ -382,12 +331,8 @@ class GameView(FadingView):
         # Check car interactions
         self.check_car_interactions()
 
-        if abs(self.camera.zoom - self.target_zoom) > 0.001:
-            self.camera.zoom = arcade.math.lerp(
-                self.camera.zoom, self.target_zoom, 5 * delta_time
-            )
-            Debug.update("Camera Zoom", f"{self.camera.zoom:.2f}")
-
+        self.camera_manager.update_zoom(delta_time)
+        Debug.update("Camera Zoom", f"{self.camera_manager.get_camera().zoom:.2f}")
 
         self.bullet_list.update(
             delta_time, [self.scene.get_sprite_list("Enemies")], [self.wall_list]
@@ -396,7 +341,7 @@ class GameView(FadingView):
     def on_resize(self, width: int, height: int):
         """Resize window"""
         super().on_resize(width, height)
-        self.camera.match_window()
+        self.camera_manager.match_window()
         self.camera_gui.match_window(position=True)
 
         display_width, display_height = arcade.get_display_size()

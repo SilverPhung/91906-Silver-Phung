@@ -1,61 +1,50 @@
 import arcade
-from src.constants import WINDOW_WIDTH, WINDOW_HEIGHT
-from src.views.fading_view import FadingView
+from src.views.base_view import BaseView
 
 
-class TransitionView(FadingView):
+class TransitionView(BaseView):
     """Transition screen shown when moving to the next map"""
     
     def __init__(self, next_map_index: int, total_maps: int = 3, previous_game_view=None):
+        print(f"[TRANSITION_VIEW] Initializing TransitionView with map_index: {next_map_index}")
         super().__init__()
         self.next_map_index = next_map_index
         self.total_maps = total_maps
         self.previous_game_view = previous_game_view
-        self.transition_text = arcade.Text(
+        
+        # Set background color for better visibility
+        self.background_color = arcade.color.DARK_BLUE
+        print(f"[TRANSITION_VIEW] Set background_color to: {self.background_color}")
+        
+        # Create text objects using the factory with better colors
+        print(f"[TRANSITION_VIEW] Creating text objects...")
+        self.transition_text = self.add_centered_text(
             f"Moving to Map {next_map_index}",
-            WINDOW_WIDTH // 2,
-            WINDOW_HEIGHT // 2 + 50,
-            arcade.color.WHITE,
-            32,
-            anchor_x="center",
-            anchor_y="center"
+            y_offset=50,
+            color=arcade.color.WHITE,
+            font_size=32
         )
-        self.instruction_text = arcade.Text(
+        self.instruction_text = self.add_centered_text(
             "Press SPACE to continue",
-            WINDOW_WIDTH // 2,
-            WINDOW_HEIGHT // 2 - 50,
-            arcade.color.YELLOW,
-            24,
-            anchor_x="center",
-            anchor_y="center"
+            y_offset=-50,
+            color=arcade.color.YELLOW,
+            font_size=24
         )
-        self.progress_text = arcade.Text(
+        self.progress_text = self.add_centered_text(
             f"Progress: {next_map_index - 1}/{total_maps} → {next_map_index}/{total_maps}",
-            WINDOW_WIDTH // 2,
-            WINDOW_HEIGHT // 2 - 100,
-            arcade.color.CYAN,
-            18,
-            anchor_x="center",
-            anchor_y="center"
+            y_offset=-100,
+            color=arcade.color.LIGHT_CYAN,
+            font_size=18
         )
+        print(f"[TRANSITION_VIEW] TransitionView initialization complete")
 
     def on_draw(self):
-        """Render the transition screen"""
-        self.clear()
-        
-        # Draw background
-        arcade.draw_lrbt_rectangle_filled(
-            0,
-            WINDOW_WIDTH,
-            0,
-            WINDOW_HEIGHT,
-            arcade.color.BLACK
-        )
-        
-        # Draw texts
-        self.transition_text.draw()
-        self.instruction_text.draw()
-        self.progress_text.draw()
+        """Override on_draw to add specific logging"""
+        print(f"[TRANSITION_VIEW] on_draw called for TransitionView")
+        print(f"[TRANSITION_VIEW] Background color: {self.background_color}")
+        print(f"[TRANSITION_VIEW] Number of text objects: {len(self.text_objects)}")
+        super().on_draw()
+        print(f"[TRANSITION_VIEW] on_draw completed for TransitionView")
 
     def on_key_press(self, key, modifiers):
         """Handle key presses"""
@@ -69,7 +58,7 @@ class TransitionView(FadingView):
                 print(f"[TRANSITION] load_map complete, showing existing GameView")
                 self.window.show_view(self.previous_game_view)
             else:
-                # Fallback: create new GameView (shouldn't happen)
+                # Fallback: create new GameView using direct import
                 print(f"[TRANSITION] No previous GameView, creating new one")
                 from src.views.game_view import GameView
                 game_view = GameView()

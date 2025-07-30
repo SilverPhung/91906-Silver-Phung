@@ -112,11 +112,12 @@ class Enemy(Entity):
             self.move(Vec2(0, 0))
             self.change_state(EntityState.IDLE)
     def transform_path(self, path: list[Vec2]):
+        camera = self.game_view.camera_manager.get_camera()
         return list(map(
             lambda point: (
-                (point[0] - self.game_view.camera.position[0]) * self.game_view.camera.zoom
+                (point[0] - camera.position[0]) * camera.zoom
                 + self.game_view.window_width / 2,
-                (point[1] - self.game_view.camera.position[1]) * self.game_view.camera.zoom
+                (point[1] - camera.position[1]) * camera.zoom
                 + self.game_view.window_height / 2,
             ),
             path

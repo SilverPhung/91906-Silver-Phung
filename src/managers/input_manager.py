@@ -72,15 +72,16 @@ class InputManager:
         self.key_down[key] = False
         
         if key == arcade.key.Z:
-            self.game_view.target_zoom = 1.0
+            self.game_view.camera_manager.set_target_zoom(1.0)
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Handle mouse movement."""
         from src.constants import WINDOW_WIDTH, WINDOW_HEIGHT
         
         # Convert screen coordinates to world coordinates
-        offset_x = (x - WINDOW_WIDTH / 2) / self.game_view.camera.zoom
-        offset_y = (y - WINDOW_HEIGHT / 2) / self.game_view.camera.zoom
+        camera = self.game_view.camera_manager.get_camera()
+        offset_x = (x - WINDOW_WIDTH / 2) / camera.zoom
+        offset_y = (y - WINDOW_HEIGHT / 2) / camera.zoom
         self.mouse_offset = (offset_x, offset_y)
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -126,13 +127,14 @@ class InputManager:
 
     def _zoom_in(self):
         """Zoom in with left control."""
-        self.game_view.target_zoom = MIN_ZOOM
+        self.game_view.camera_manager.set_target_zoom(MIN_ZOOM)
 
     def update_mouse_position(self):
         """Update mouse position for the game view."""
+        camera = self.game_view.camera_manager.get_camera()
         self.game_view.mouse_position = (
-            self.mouse_offset[0] + self.game_view.camera.position[0],
-            self.mouse_offset[1] + self.game_view.camera.position[1],
+            self.mouse_offset[0] + camera.position[0],
+            self.mouse_offset[1] + camera.position[1],
         )
         self.game_view.player.mouse_position = self.game_view.mouse_position
 

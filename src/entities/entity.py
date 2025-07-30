@@ -268,21 +268,41 @@ class Entity(arcade.Sprite):
         self.current_animation_frame = 0
         self.current_animation_time = 0
 
-    def set_animation(self, animation_name: str):
-        """Set the current animation by name"""
-        if self.has_animation(animation_name):
-            animation_data = Entity.loaded_animations[self.character_preset][animation_name]
-            if self.current_animation != animation_name:
-                self.restart_animation()
-                self._apply_texture_and_offset(animation_data["frames"][0])
-
-
-            self.current_animation = animation_name
-            self.current_animation_type = AnimationType(animation_data["type"])
-
-            if self.current_animation_type == AnimationType.ACTION:
-                self.animation_allow_overwrite = False
-                
+    def set_animation(self, anim_name: str):
+        """Set the current animation"""
+        try:
+            if self.has_animation(anim_name):
+                animation_data = Entity.loaded_animations[self.character_preset][anim_name]
+                if animation_data and "frames" in animation_data and len(animation_data["frames"]) > 0:
+                    self._apply_texture_and_offset(animation_data["frames"][0])
+                    self.current_animation = anim_name
+                    self.current_animation_frame = 0
+                    self.animation_frames = animation_data["frames"]
+                    self.animation_frame_duration = animation_data.get("frame_duration", 0.1)
+                    print(f"[ENTITY] Set animation: {anim_name} with {len(self.animation_frames)} frames")
+                else:
+                    print(f"[ENTITY] Warning: Animation '{anim_name}' has no frames or is empty")
+                    # Set a fallback texture
+                    self._set_fallback_texture()
+            else:
+                print(f"[ENTITY] Warning: Animation '{anim_name}' not found in {list(Entity.loaded_animations.get(self.character_preset, {}).keys())}")
+                # Set a fallback texture
+                self._set_fallback_texture()
+        except Exception as e:
+            print(f"[ENTITY] Error setting animation '{anim_name}': {e}")
+            # Set a fallback texture
+            self._set_fallback_texture()
+    
+    def _set_fallback_texture(self):
+        """Set a fallback texture when animation fails"""
+        try:
+            fallback_texture = arcade.make_soft_square_texture(
+                64, arcade.color.RED, name="fallback"
+            )
+            self.texture = fallback_texture
+            print(f"[ENTITY] Set fallback texture")
+        except Exception as e:
+            print(f"[ENTITY] Error setting fallback texture: {e}")
 
     # --- Static Methods ---
     @staticmethod
