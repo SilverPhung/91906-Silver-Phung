@@ -93,12 +93,12 @@ class ChestManager:
         # Check all chests (with and without parts)
         all_chests = self.chests_with_parts + self.chests_without_parts
         
-        # Track testing data
-        if ENABLE_TESTING:
-            Debug.track_event("chest_proximity_check", {
-                'total_chests': len(all_chests),
-                'player_position': (self.game_view.player.center_x, self.game_view.player.center_y) if hasattr(self.game_view, 'player') else None
-            })
+        # # Track testing data
+        # if ENABLE_TESTING:
+        #     Debug.track_event("chest_proximity_check", {
+        #         'total_chests': len(all_chests),
+        #         'player_position': (self.game_view.player.center_x, self.game_view.player.center_y) if hasattr(self.game_view, 'player') else None
+        #     })
         
         for i, chest in enumerate(all_chests):
             if not self.near_chest:

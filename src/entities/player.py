@@ -243,7 +243,7 @@ class Player(Entity):
         self.change_x = 0.0
         self.change_y = 0.0
         # Don't reset position here - let the car manager position the player
-        # self.position = self.spawn_position  # <-- REMOVED THIS LINE
+        self.position = self.spawn_position
         print(f"[PLAYER] Reset complete. Position: ({self.center_x:.1f}, {self.center_y:.1f})")
         # Reset health bar if it exists
         if hasattr(self, 'health_bar') and self.health_bar:
