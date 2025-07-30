@@ -94,14 +94,24 @@ class GameView(FadingView):
         self.player.reset()
         self.scene.add_sprite("Player", self.player)
 
-        # Spawn zombies
-        for _ in range(10):
+        # Set up spawn manager for initial scene
+        print(f"[RESET] Setting up spawn manager for initial scene...")
+        self.spawn_manager.setup_for_map(self.tile_map, self.wall_list)
+        
+        # Spawn zombies using spawn manager
+        zombie_count = 25  # Increased from 10 to 25
+        current_time = time.time()
+        spawn_positions = self.spawn_manager.get_spawn_positions(zombie_count, current_time)
+        
+        for x, y in spawn_positions:
             zombie = Zombie(
                 game_view=self,
                 zombie_type="Army_zombie",
                 player_ref=self.player,
             )
-            zombie.spawn_random_position()
+            zombie.spawn_at_position(x, y)
+        
+        print(f"[RESET] {len(self.enemies)} enemies spawned using spawn manager")
 
         self.player.current_health = self.player.max_health
         if self.player.health_bar:
@@ -125,18 +135,21 @@ class GameView(FadingView):
         print(f"[GAME_VIEW] Tilemap loaded successfully")
 
         # Add the ground layers to the scene (in drawing order from bottom to top)
-        
+        print(f"[GAME_VIEW] Adding ground layers to scene...")
         for layer_name in ("Dirt", "Grass", "Road"):
             scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
+            print(f"[GAME_VIEW] Added {layer_name} layer with {len(self.tile_map.sprite_lists[layer_name])} sprites")
+        
         self.wall_list = self.tile_map.sprite_lists["Walls"]
         # Add the walls layer to the scene for collision
-        scene.add_sprite_list(
-            "Walls", sprite_list=self.wall_list
-        )
+        scene.add_sprite_list("Walls", sprite_list=self.wall_list)
+        print(f"[GAME_VIEW] Added Walls layer with {len(self.wall_list)} sprites")
         
         self.camera_manager.setup_camera_bounds(self.tile_map)
+        print(f"[GAME_VIEW] Camera bounds set up")
 
         # Set up the player info
+        print(f"[GAME_VIEW] Creating player...")
         self.player = Player(
             game_view=self,
             scale=CHARACTER_SCALING,
@@ -145,6 +158,7 @@ class GameView(FadingView):
                 "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
             }
         )
+        print(f"[GAME_VIEW] Player created at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
 
         def create_pathfind_barrier():
             with self.pathfind_barrier_thread_lock:
@@ -160,6 +174,7 @@ class GameView(FadingView):
                     )
         
         self._start_thread(create_pathfind_barrier)
+        print(f"[GAME_VIEW] Pathfinding barrier thread started")
 
         # Add sprite lists for Player, Enemies, Cars, and Chests (drawn on top)
         print("[GAME_VIEW] Adding sprite layers to scene")
@@ -237,63 +252,67 @@ class GameView(FadingView):
         self.scene = arcade.Scene()
         print(f"[MAP] New scene created")
         
-        # Recreate scene with new map
-        for layer_name in ("Dirt", "Grass", "Road"):
-            self.scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
-        
-        self.wall_list = self.tile_map.sprite_lists["Walls"]
-        self.scene.add_sprite_list("Walls", sprite_list=self.wall_list)
-        
-        # Reset camera bounds for new map
-        self.camera_manager.setup_camera_bounds(self.tile_map)
-        print(f"[MAP] Scene recreated with new map")
+        # Use create_scene to properly set up the scene
+        print(f"[MAP] Calling create_scene to set up scene properly")
+        self.create_scene(self.scene)
+        print(f"[MAP] Scene created successfully")
         
         # Reset player for new map
+        print(f"[MAP] Resetting player...")
         self.player.reset()
         print(f"[MAP] Player reset at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
         
         # Clear enemies from previous map
         print(f"[MAP] Clearing {len(self.enemies)} enemies")
+        for enemy in self.enemies:
+            enemy.cleanup()
         self.enemies.clear()
-        
-        # Add sprite lists for new map
-        print("[MAP] Adding sprite layers for new map")
-        self.scene.add_sprite_list("Player")
-        self.scene.add_sprite_list("CarsLayer")
-        self.scene.add_sprite_list("ChestsLayer")
-        print("[MAP] Sprite layers added")
         
         # CRITICAL: Re-add player to the new scene
         print(f"[MAP] Re-adding player to scene at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
         self.scene.add_sprite("Player", self.player)
         print(f"[MAP] Player added to scene. Scene Player layer count: {len(self.scene.get_sprite_list('Player'))}")
         
-        # Load cars and chests for new map
-        print("[MAP] Loading cars for new map")
-        self.car_manager.load_cars_from_map()
-        print("[MAP] Loading chests for new map")
-        self.chest_manager.load_chests_from_map()
-        
         # Position player at old car
+        print(f"[MAP] Positioning player at old car...")
         self.car_manager.position_player_at_old_car()
+        print(f"[MAP] Player positioned at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
         
-        # Spawn enemies for new map
-        for _ in range(10):
+        # Set up spawn manager for new map
+        print(f"[MAP] Setting up spawn manager for new map...")
+        self.spawn_manager.setup_for_map(self.tile_map, self.wall_list)
+        
+        # Spawn enemies for new map using spawn manager
+        print(f"[MAP] Spawning enemies for new map...")
+        zombie_count = 25  # Increased from 10 to 25
+        current_time = time.time()
+        spawn_positions = self.spawn_manager.get_spawn_positions(zombie_count, current_time)
+        
+        for x, y in spawn_positions:
             zombie = Zombie(
                 game_view=self,
                 scale=CHARACTER_SCALING,
                 speed=ZOMBIE_MOVEMENT_SPEED
             )
+            zombie.spawn_at_position(x, y)
             # Note: Zombie is already added to enemies list and scene in its constructor
-        print(f"[MAP] Enemies cleared and respawned")
+        
+        print(f"[MAP] {len(self.enemies)} enemies spawned using spawn manager")
+        
+        # Log spawn statistics
+        spawn_stats = self.spawn_manager.get_spawn_stats()
+        print(f"[MAP] Spawn stats: {spawn_stats}")
         
         # Reset car parts for new level
+        print(f"[MAP] Resetting car parts...")
         self.car_manager.reset_car_parts()
         
         # Reset input keys for new map
+        print(f"[MAP] Resetting input keys...")
         self.input_manager.reset_keys()
         
         # Reset UI elements for new map
+        print(f"[MAP] Resetting UI elements...")
         self.ui_manager.reset_ui()
         
         print(f"[MAP] Map {map_index} loaded successfully")
@@ -323,6 +342,13 @@ class GameView(FadingView):
                     print(f"[DRAW] Player position: ({player_layer[0].center_x:.1f}, {player_layer[0].center_y:.1f})")
                 else:
                     print(f"[DRAW] WARNING: No player in scene!")
+                
+                # Log all scene layers
+                print(f"[DRAW] Scene layers:")
+                for layer_name in self.scene._name_mapping.keys():
+                    sprite_list = self.scene._name_mapping[layer_name]
+                    print(f"[DRAW]   {layer_name}: {len(sprite_list)} sprites")
+                
                 self._last_draw_log = time.time()
             
             self.scene.draw()
@@ -411,4 +437,4 @@ class GameView(FadingView):
         elif self.window.fullscreen and (
             width < display_width or height < display_height
         ):
-            self.window.set_fullscreen(False) 
+            self.window.set_fullscreen(False)

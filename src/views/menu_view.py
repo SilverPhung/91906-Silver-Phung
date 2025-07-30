@@ -20,7 +20,7 @@ class MenuView(BaseView):
         
         # Create menu text using the factory with better contrast
         self.menu_text = self.add_centered_text(
-            "Chest System Testing - Press SPACE to start game, T to cycle objectives, R to run tests",
+            "Zombie Spawn System Testing - Press SPACE to start game, T to cycle objectives, R to run tests",
             y_offset=0,
             color=arcade.color.WHITE,
             font_size=24

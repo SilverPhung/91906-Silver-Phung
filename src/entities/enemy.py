@@ -58,8 +58,28 @@ class Enemy(Entity):
         self.reset()
     
     def spawn_random_position(self):
+        """Spawn at a random position within map bounds."""
         self.center_x = random.randint(0, MAP_WIDTH_PIXEL)
         self.center_y = random.randint(0, MAP_HEIGHT_PIXEL)
+    
+    def spawn_at_position(self, x: float, y: float):
+        """
+        Spawn at a specific position.
+        
+        Args:
+            x: X coordinate for spawning
+            y: Y coordinate for spawning
+        """
+        self.center_x = x
+        self.center_y = y
+        print(f"[ENEMY] Spawned at position ({x:.1f}, {y:.1f})")
+        
+        if ENABLE_TESTING:
+            Debug.track_event("enemy_spawned_at_position", {
+                'x': x,
+                'y': y,
+                'enemy_type': self.character_preset
+            })
 
     def change_state(self, new_state: EntityState):
         super().change_state(new_state)

@@ -3,6 +3,7 @@ from src.managers.ui_manager import UIManager
 from src.managers.car_manager import CarManager
 from src.managers.camera_manager import CameraManager
 from src.managers.chest_manager import ChestManager
+from src.managers.spawn_manager import SpawnManager
 
 
 class ManagerFactory:
@@ -17,7 +18,8 @@ class ManagerFactory:
                 'ui_manager': UIManager(game_view),
                 'car_manager': CarManager(game_view),
                 'camera_manager': CameraManager(game_view),
-                'chest_manager': ChestManager(game_view)
+                'chest_manager': ChestManager(game_view),
+                'spawn_manager': SpawnManager(game_view)
             }
         except Exception as e:
             print(f"Error creating managers: {e}")
