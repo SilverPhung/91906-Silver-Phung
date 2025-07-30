@@ -4,7 +4,11 @@ from src.constants import TILE_SCALING, INTERACTION_DISTANCE
 
 
 class CarManager:
-    """Manages all car-related functionality including loading, interaction, and state."""
+    """
+    Manages all car-related functionality including loading, interaction, and state.
+    
+    Uses the new Interactable-based Car class for consistent interaction behavior.
+    """
     
     def __init__(self, game_view):
         self.game_view = game_view
@@ -43,37 +47,75 @@ class CarManager:
             traceback.print_exc()
 
     def check_car_interactions(self):
-        """Check if player is near any car and update interaction state."""
+        """
+        Check if player is near any car and update interaction state.
+        
+        Uses the new Interactable proximity checking system.
+        """
         self.near_car = None
+        
+        print(f"[CARS] Checking car interactions:")
+        print(f"[CARS]   Old car: {self.old_car}")
+        print(f"[CARS]   New car: {self.new_car}")
+        print(f"[CARS]   Player position: ({self.game_view.player.center_x}, {self.game_view.player.center_y})")
         
         for car in (self.old_car, self.new_car):
             if car and not self.near_car:
-                distance = arcade.get_distance_between_sprites(self.game_view.player, car)
-                if distance <= INTERACTION_DISTANCE:
+                # Use the new Interactable proximity checking
+                car_type = "Old" if car.is_starting_car else "New"
+                print(f"[CARS]   Checking {car_type} car at ({car.center_x}, {car.center_y})")
+                
+                if car.check_proximity(self.game_view.player):
                     self.near_car = car
+                    print(f"[CARS] Player near {car_type} car")
                     break
+                else:
+                    print(f"[CARS] Player not near {car_type} car")
+        
+        print(f"[CARS] Final near_car: {self.near_car}")
+        
+        # Reset interaction state for cars not near player
+        for car in (self.old_car, self.new_car):
+            if car and car != self.near_car:
+                car.reset_interaction_state()
 
     def handle_car_interaction(self):
-        """Handle car interaction when E key is pressed."""
+        """
+        Handle car interaction when E key is pressed.
+        
+        Uses the new Interactable interaction system.
+        """
         if not self.near_car:
             print("[INTERACTION] No car nearby")
+            return
+        
+        print(f"[INTERACTION] Car interaction debug:")
+        print(f"[INTERACTION]   Car type: {'Old' if self.near_car.is_starting_car else 'New'}")
+        print(f"[INTERACTION]   Can interact: {self.near_car.can_interact()}")
+        print(f"[INTERACTION]   Can use: {self.near_car.can_use()}")
+        print(f"[INTERACTION]   Parts status: {self.near_car.get_parts_status()}")
+        print(f"[INTERACTION]   Required parts: {self.near_car.required_parts}")
+        print(f"[INTERACTION]   Collected parts: {self.near_car.collected_parts}")
+        
+        if not self.near_car.can_interact():
+            print("[INTERACTION] Car cannot be interacted with")
             return
             
         print(f"[INTERACTION] Interacting with car: {'Old' if self.near_car.is_starting_car else 'New'}")
         
-        # Only allow interaction with New-car when it can be used
-        if not self.near_car.is_starting_car:
-            if self.near_car.can_use():
-                print("[INTERACTION] New car can be used, transitioning to next map")
-                # Use the car to progress to next level
-                self.game_view.key_down = {}
-                self.game_view.player.move(arcade.math.Vec2(0, 0))
-                self.game_view.transition_to_next_map()
-            else:
-                print(f"[INTERACTION] Cannot use car yet. Need {self.near_car.required_parts - self.near_car.collected_parts} more parts")
+        # Use the new Interactable interaction handling
+        should_transition = self.near_car.handle_interaction()
+        
+        print(f"[INTERACTION] Should transition: {should_transition}")
+        
+        if should_transition:
+            print("[INTERACTION] Transitioning to next map")
+            # Use the car to progress to next level
+            self.game_view.key_down = {}
+            self.game_view.player.move(arcade.math.Vec2(0, 0))
+            self.game_view.transition_to_next_map()
         else:
-            # Old car - no interaction allowed
-            print("[INTERACTION] This car is broken and cannot be used")
+            print("[INTERACTION] No transition - car interaction completed without transition")
 
     def position_player_at_old_car(self):
         """Position the player at the old car location."""
@@ -105,4 +147,15 @@ class CarManager:
         self.new_car = None
         self.near_car = None
         self.car_parts_collected = 0
-        print("[CARS] Car state reset") 
+        print("[CARS] Car state reset")
+    
+    def get_near_car_interaction_text(self):
+        """
+        Get the interaction text for the car the player is near.
+        
+        Returns:
+            str: Interaction text or None if no car nearby
+        """
+        if self.near_car:
+            return self.near_car.get_interaction_text()
+        return None 

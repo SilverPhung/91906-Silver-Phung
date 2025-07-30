@@ -684,8 +684,8 @@
 192,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,197,199
 </data>
  </layer>
- <objectgroup id="8" name="Chest-nokeys"/>
- <objectgroup id="9" name="Chest-keys"/>
+ <objectgroup id="8" name="Chest-noparts"/>
+ <objectgroup id="9" name="Chest-parts"/>
  <objectgroup id="10" name="Old-car">
   <object id="37" x="1000" y="4918">
    <point/>

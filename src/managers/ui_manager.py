@@ -22,13 +22,56 @@ class UIManager:
             self.map_text = arcade.Text("", 10, WINDOW_HEIGHT - 110, arcade.color.CYAN, 14)
 
     def draw_ui(self):
-        """Draw all UI elements including car interaction prompts."""
-        try:
-            self._draw_interaction_text()
-            self._draw_parts_status()
-            self._draw_map_info()
-        except Exception as e:
-            print(f"Error drawing UI: {e}")
+        """Draw UI elements including car and chest interaction prompts."""
+        # Draw car interaction text
+        if self.game_view.car_manager.near_car:
+            interaction_text = self.game_view.car_manager.get_near_car_interaction_text()
+            if interaction_text:
+                arcade.draw_text(
+                    interaction_text,
+                    self.game_view.camera_gui.viewport_width // 2,
+                    self.game_view.camera_gui.viewport_height - 50,
+                    arcade.color.WHITE,
+                    18,
+                    anchor_x="center",
+                    anchor_y="center",
+                )
+        
+        # Draw chest interaction text (prioritize chest over car)
+        elif self.game_view.chest_manager.near_chest:
+            interaction_text = self.game_view.chest_manager.get_near_chest_interaction_text()
+            if interaction_text:
+                arcade.draw_text(
+                    interaction_text,
+                    self.game_view.camera_gui.viewport_width // 2,
+                    self.game_view.camera_gui.viewport_height - 50,
+                    arcade.color.WHITE,
+                    18,
+                    anchor_x="center",
+                    anchor_y="center",
+                )
+        
+        # Draw car parts status
+        if self.game_view.car_manager.new_car:
+            parts_text = self.game_view.car_manager.new_car.get_parts_status()
+            arcade.draw_text(
+                f"Car Parts: {parts_text}",
+                10,
+                self.game_view.camera_gui.viewport_height - 30,
+                arcade.color.WHITE,
+                14,
+            )
+        
+        # Draw chest stats for debugging
+        chest_stats = self.game_view.chest_manager.get_chest_stats()
+        if chest_stats["total_chests"] > 0:
+            arcade.draw_text(
+                f"Chests: {chest_stats['total_chests']} (Parts: {chest_stats['parts_collected']}/{chest_stats['chests_with_parts']})",
+                10,
+                self.game_view.camera_gui.viewport_height - 50,
+                arcade.color.YELLOW,
+                12,
+            )
 
     def _draw_interaction_text(self):
         """Draw car interaction text based on proximity and car state."""

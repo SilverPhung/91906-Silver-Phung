@@ -4,6 +4,23 @@ MAP_WIDTH = 39
 MAP_HEIGHT = 57
 
 ENABLE_DEBUG = True
+ENABLE_TESTING = True
+
+# Testing constants
+TESTING_OBJECTIVES = {
+    "movement": "Test player movement controls (WASD/Arrow keys)",
+    "combat": "Test shooting mechanics and enemy interaction",
+    "car_interaction": "Test car part collection and car usage",
+    "chest_interaction": "Test chest opening, part collection, and state management",
+    "map_progression": "Test map transitions and level completion",
+    "health_system": "Test health bar and damage mechanics"
+}
+
+# Testing validation thresholds
+MOVEMENT_SPEED_THRESHOLD = 0.1
+COLLISION_DISTANCE_THRESHOLD = 50
+SHOOTING_ACCURACY_THRESHOLD = 0.3
+HEALTH_CHANGE_THRESHOLD = 1
 
 # Window settings
 WINDOW_TITLE = "Starting Template"
@@ -24,7 +41,7 @@ SPAWN_POSITION = (500, 350)
 
 # Enemy constants
 ZOMBIE_MOVEMENT_SPEED = 2
-ENEMY_CONFIG_FILE = "resources/animation_config/enemies_config.json"
+ENEMY_CONFIG_FILE = "resources/animation_config/zombies_config.json"
 ZOMBIE_RANDOM_MOVE_INTERVAL = 1
 
 # Health bar constants
@@ -83,3 +100,9 @@ CAR_SCALING = 1.0
 INTERACTION_DISTANCE = 100
 REQUIRED_CAR_PARTS = 5
 CAR_SPRITE_PATH = "resources/Car/sprite/Viper.png"
+
+# Chest constants
+CHEST_SCALING = 1.0
+CHEST_CLOSED_SPRITE = "resources/Chest/closed.png"
+CHEST_OPEN_EMPTY_SPRITE = "resources/Chest/open-empty.png"
+CHEST_OPEN_WITH_PART_SPRITE = "resources/Chest/open-glow1.png"

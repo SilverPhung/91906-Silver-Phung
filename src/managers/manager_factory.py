@@ -2,6 +2,7 @@ from src.managers.input_manager import InputManager
 from src.managers.ui_manager import UIManager
 from src.managers.car_manager import CarManager
 from src.managers.camera_manager import CameraManager
+from src.managers.chest_manager import ChestManager
 
 
 class ManagerFactory:
@@ -15,7 +16,8 @@ class ManagerFactory:
                 'input_manager': InputManager(game_view),
                 'ui_manager': UIManager(game_view),
                 'car_manager': CarManager(game_view),
-                'camera_manager': CameraManager(game_view)
+                'camera_manager': CameraManager(game_view),
+                'chest_manager': ChestManager(game_view)
             }
         except Exception as e:
             print(f"Error creating managers: {e}")

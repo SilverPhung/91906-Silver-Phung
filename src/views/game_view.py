@@ -28,8 +28,9 @@ import threading
 # Import constants
 from src.constants import *
 
-from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH
+from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH, ENABLE_TESTING
 from src.views.fading_view import FadingView
+from src.testing import TestRunner, TestingIntegration
 
 
 class GameView(FadingView):
@@ -70,6 +71,14 @@ class GameView(FadingView):
 
         self.pathfind_barrier = None
         self.pathfind_barrier_thread_lock = threading.Lock()
+
+        # Initialize testing components
+        self.test_runner = None
+        self.testing_integration = None
+        if ENABLE_TESTING:
+            self.test_runner = TestRunner(self)
+            self.testing_integration = TestingIntegration()
+            print("[TESTING] Testing components initialized in GameView")
 
         self.preload_resources()
         self.create_scene(self.scene)
@@ -119,8 +128,10 @@ class GameView(FadingView):
 
         # Load the Tiled map
         map_name = f"resources/maps/map{self.current_map_index}.tmx"
+        print(f"[GAME_VIEW] Creating scene for map: {map_name}")
 
         self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
+        print(f"[GAME_VIEW] Tilemap loaded successfully")
 
         # Add the ground layers to the scene (in drawing order from bottom to top)
         
@@ -159,12 +170,26 @@ class GameView(FadingView):
         
         self._start_thread(create_pathfind_barrier)
 
-        # Add sprite lists for Player and Enemies (drawn on top)
+        # Add sprite lists for Player, Enemies, Cars, and Chests (drawn on top)
+        print("[GAME_VIEW] Adding sprite layers to scene")
         self.scene.add_sprite_list("Player")
         self.scene.add_sprite_list("CarsLayer")
+        self.scene.add_sprite_list("ChestsLayer")
+        print("[GAME_VIEW] Sprite layers added successfully")
         
         # Load car positions from Tiled map
+        print("[GAME_VIEW] Loading cars from map...")
         self.car_manager.load_cars_from_map()
+        
+        # Load chest positions from Tiled map
+        print("[GAME_VIEW] Loading chests from map...")
+        self.chest_manager.load_chests_from_map()
+        
+        # Log scene sprite counts
+        print(f"[GAME_VIEW] Scene sprite counts:")
+        for layer_name in self.scene._name_mapping.keys():
+            sprite_list = self.scene._name_mapping[layer_name]
+            print(f"[GAME_VIEW]   {layer_name}: {len(sprite_list)} sprites")
 
     def _start_thread(self, target_func):
         """Start a thread and add it to the threads list."""
@@ -179,6 +204,14 @@ class GameView(FadingView):
     def handle_car_interaction(self):
         """Handle car interaction when E key is pressed"""
         self.car_manager.handle_car_interaction()
+
+    def check_chest_interactions(self):
+        """Check if player is near any chest and update interaction state"""
+        self.chest_manager.check_chest_interactions()
+
+    def handle_chest_interaction(self):
+        """Handle chest interaction when E key is pressed"""
+        self.chest_manager.handle_chest_interaction()
 
     def transition_to_next_map(self):
         """Transition to the next map"""
@@ -214,37 +247,73 @@ class GameView(FadingView):
         print(f"[MAP] New scene created")
         
         # Recreate scene with new map
-        self.create_scene(self.scene)
+        for layer_name in ("Dirt", "Grass", "Road"):
+            self.scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
+        
+        self.wall_list = self.tile_map.sprite_lists["Walls"]
+        self.scene.add_sprite_list("Walls", sprite_list=self.wall_list)
+        
+        # Reset camera bounds for new map
+        self.camera_manager.setup_camera_bounds(self.tile_map)
         print(f"[MAP] Scene recreated with new map")
         
-        # Reset player using built-in reset function
+        # Reset player for new map
         self.player.reset()
         print(f"[MAP] Player reset")
         
-        # Clear and respawn enemies
+        # Clear enemies from previous map
         print(f"[MAP] Clearing {len(self.enemies)} enemies")
-        for enemy in self.enemies:
-            enemy.cleanup()
         self.enemies.clear()
-        self.reset()
-
-        # Reset player position to old car position
+        
+        # Add sprite lists for new map
+        print("[MAP] Adding sprite layers for new map")
+        self.scene.add_sprite_list("Player")
+        self.scene.add_sprite_list("CarsLayer")
+        self.scene.add_sprite_list("ChestsLayer")
+        print("[MAP] Sprite layers added")
+        
+        # Load cars and chests for new map
+        print("[MAP] Loading cars for new map")
+        self.car_manager.load_cars_from_map()
+        print("[MAP] Loading chests for new map")
+        self.chest_manager.load_chests_from_map()
+        
+        # Position player at old car
         self.car_manager.position_player_at_old_car()
+        
+        # Spawn enemies for new map
+        for _ in range(10):
+            zombie = Zombie(
+                game_view=self,
+                scale=CHARACTER_SCALING,
+                speed=ZOMBIE_MOVEMENT_SPEED,
+                sound_set={
+                    "death": "resources/sound/zombie/Flesh Blood and Gore/Head Smash/Head Smash 1.wav"
+                }
+            )
+            self.enemies.append(zombie)
+            self.scene.add_sprite("Enemies", zombie)
         print(f"[MAP] Enemies cleared and respawned")
         
         # Reset car parts for new level
         self.car_manager.reset_car_parts()
         
-        # Reset input keys to prevent lingering inputs
+        # Reset input keys for new map
         self.input_manager.reset_keys()
         
         # Reset UI elements for new map
         self.ui_manager.reset_ui()
         
         print(f"[MAP] Map {map_index} loaded successfully")
+        
+        # Log final scene sprite counts
+        print(f"[MAP] Final scene sprite counts:")
+        for layer_name in self.scene._name_mapping.keys():
+            sprite_list = self.scene._name_mapping[layer_name]
+            print(f"[MAP]   {layer_name}: {len(sprite_list)} sprites")
 
     def draw_ui(self):
-        """Draw UI elements including car interaction prompts."""
+        """Draw UI elements including car and chest interaction prompts."""
         self.ui_manager.draw_ui()
 
     def on_draw(self):
@@ -314,8 +383,9 @@ class GameView(FadingView):
 
         self.enemies.update(delta_time)
 
-        # Check car interactions
+        # Check car and chest interactions
         self.check_car_interactions()
+        self.check_chest_interactions()
 
         self.camera_manager.update_zoom(delta_time)
         Debug.update("Camera Zoom", f"{self.camera_manager.get_camera().zoom:.2f}")
@@ -323,6 +393,10 @@ class GameView(FadingView):
         self.bullet_list.update(
             delta_time, [self.scene.get_sprite_list("Enemies")], [self.wall_list]
         )
+        
+        # Run testing updates if enabled
+        if ENABLE_TESTING and self.test_runner:
+            self.run_testing_updates(delta_time)
 
     def on_resize(self, width: int, height: int):
         """Resize window"""
@@ -337,4 +411,61 @@ class GameView(FadingView):
         elif self.window.fullscreen and (
             width < display_width or height < display_height
         ):
-            self.window.set_fullscreen(False) 
+            self.window.set_fullscreen(False)
+    
+    # === Testing Methods ===
+    
+    def run_testing_updates(self, delta_time):
+        """Run testing updates during game loop."""
+        if not ENABLE_TESTING or not self.test_runner:
+            return
+        
+        # Inject tracking if not already done
+        if self.testing_integration and not hasattr(self, '_tracking_injected'):
+            print("[TESTING] Starting tracking injection...")
+            self.testing_integration.inject_all_tracking(self)
+            self._tracking_injected = True
+            print("[TESTING] Tracking injected into game components")
+        else:
+            if hasattr(self, '_tracking_injected'):
+                print("[TESTING] Tracking already injected, skipping")
+            else:
+                print("[TESTING] No testing integration available")
+    
+    def run_tests_for_objective(self, objective):
+        """Run tests for a specific objective."""
+        if not ENABLE_TESTING or not self.test_runner:
+            return None
+        
+        print(f"[TESTING] Running tests for objective: {objective}")
+        
+        if objective == "movement":
+            return self.test_runner.run_movement_tests()
+        elif objective == "combat":
+            return self.test_runner.run_combat_tests()
+        elif objective == "car_interaction":
+            return self.test_runner.run_car_tests()
+        elif objective == "health_system":
+            return self.test_runner.run_health_tests()
+        elif objective == "map_progression":
+            # Map progression tests would be implemented here
+            print("[TESTING] Map progression tests not yet implemented")
+            return {}
+        else:
+            print(f"[TESTING] Unknown objective: {objective}")
+            return {}
+    
+    def run_all_tests(self):
+        """Run all available tests."""
+        if not ENABLE_TESTING or not self.test_runner:
+            return None
+        
+        print("[TESTING] Running all tests...")
+        return self.test_runner.run_all_tests()
+    
+    def get_test_results(self):
+        """Get current test results."""
+        if not ENABLE_TESTING or not self.test_runner:
+            return None
+        
+        return self.test_runner.get_all_tracker_results() 
