@@ -274,22 +274,22 @@ class Entity(arcade.Sprite):
             if self.has_animation(anim_name):
                 animation_data = Entity.loaded_animations[self.character_preset][anim_name]
                 if animation_data and "frames" in animation_data and len(animation_data["frames"]) > 0:
-                    self._apply_texture_and_offset(animation_data["frames"][0])
+                    if self.current_animation != anim_name: 
+                        # if the animation is different, restart the animation
+                        # Since this function is continously running, we don't want to restart the animation every time
+                        self.restart_animation()
+                        self._apply_texture_and_offset(animation_data["frames"][0])
                     self.current_animation = anim_name
-                    self.current_animation_frame = 0
                     self.animation_frames = animation_data["frames"]
                     self.animation_frame_duration = animation_data.get("frame_duration", 0.1)
-                    print(f"[ENTITY] Set animation: {anim_name} with {len(self.animation_frames)} frames")
+                    # Animation set successfully
                 else:
-                    print(f"[ENTITY] Warning: Animation '{anim_name}' has no frames or is empty")
                     # Set a fallback texture
                     self._set_fallback_texture()
             else:
-                print(f"[ENTITY] Warning: Animation '{anim_name}' not found in {list(Entity.loaded_animations.get(self.character_preset, {}).keys())}")
                 # Set a fallback texture
                 self._set_fallback_texture()
         except Exception as e:
-            print(f"[ENTITY] Error setting animation '{anim_name}': {e}")
             # Set a fallback texture
             self._set_fallback_texture()
     
@@ -300,9 +300,8 @@ class Entity(arcade.Sprite):
                 64, arcade.color.RED, name="fallback"
             )
             self.texture = fallback_texture
-            print(f"[ENTITY] Set fallback texture")
         except Exception as e:
-            print(f"[ENTITY] Error setting fallback texture: {e}")
+            pass
 
     # --- Static Methods ---
     @staticmethod

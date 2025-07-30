@@ -50,10 +50,12 @@ class CameraManager:
 
     def update_zoom(self, delta_time):
         """Update camera zoom with smooth interpolation."""
-        if abs(self.camera.zoom - self.target_zoom) > 0.001:
-            self.camera.zoom = arcade.math.lerp(
-                self.camera.zoom, self.target_zoom, 5 * delta_time
+        current_zoom = self.camera.zoom
+        if abs(current_zoom - self.target_zoom) > 0.001:
+            new_zoom = arcade.math.lerp(
+                current_zoom, self.target_zoom, 5 * delta_time
             )
+            self.camera.zoom = new_zoom
 
     def set_target_zoom(self, zoom_level):
         """Set the target zoom level."""

@@ -9,6 +9,5 @@ from .input_manager import InputManager
 from .ui_manager import UIManager
 from .car_manager import CarManager
 from .camera_manager import CameraManager
-from .scene_manager import SceneManager
 
-__all__ = ['InputManager', 'UIManager', 'CarManager', 'CameraManager', 'SceneManager'] 
+__all__ = ['InputManager', 'UIManager', 'CarManager', 'CameraManager'] 

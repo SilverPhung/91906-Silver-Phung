@@ -37,8 +37,6 @@ class GameView(FadingView):
 
     def __init__(self):
         super().__init__()
-        print(f"[GAMEVIEW] Initializing GameView with map_index: {getattr(self, 'current_map_index', 'NOT SET')}")
-
         Debug._initialize()
 
         self.window.background_color = arcade.color.AMAZON
@@ -74,9 +72,7 @@ class GameView(FadingView):
         self.pathfind_barrier_thread_lock = threading.Lock()
 
         self.preload_resources()
-        print(f"[GAMEVIEW] Creating scene for map {self.current_map_index}")
         self.create_scene(self.scene)
-        print(f"[GAMEVIEW] Scene creation complete")
         
         # Reset input keys for initial setup
         self.input_manager.reset_keys()
@@ -112,26 +108,21 @@ class GameView(FadingView):
             self.player.health_bar.fullness = 1.0
 
     def setup(self):
-        print(f"[GAMEVIEW] Setup called for map {self.current_map_index}")
         self.reset()
         for thread in self.threads:
             thread.join()
 
         self.game_paused = False
-        print(f"[GAMEVIEW] Setup complete, game unpaused")
 
     def create_scene(self, scene: arcade.Scene):
         """Set up the game and initialize the variables."""
 
         # Load the Tiled map
         map_name = f"resources/maps/map{self.current_map_index}.tmx"
-        print(f"[SCENE] Loading map: {map_name}")
 
         self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
-        print(f"[SCENE] Tilemap loaded with {len(self.tile_map.sprite_lists)} sprite lists")
 
         # Add the ground layers to the scene (in drawing order from bottom to top)
-        print(f"[SCENE] Available sprite lists: {list(self.tile_map.sprite_lists.keys())}")
         
         for layer_name in ("Dirt", "Grass", "Road"):
             scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
@@ -140,7 +131,6 @@ class GameView(FadingView):
         scene.add_sprite_list(
             "Walls", sprite_list=self.wall_list
         )
-        print(f"[SCENE] Added tile layers to scene")
         
         self.camera_manager.setup_camera_bounds(self.tile_map)
 
@@ -192,19 +182,15 @@ class GameView(FadingView):
 
     def transition_to_next_map(self):
         """Transition to the next map"""
-        print(f"[TRANSITION] ===== TRANSITION_TO_NEXT_MAP CALLED =====")
-        print(f"[TRANSITION] Current map: {self.current_map_index}, transitioning to: {self.current_map_index + 1}")
         self.current_map_index += 1
         
         if self.current_map_index > 3:
-            print("[TRANSITION] Game completed! Showing end screen")
             from src.views.end_view import EndView
             end_view = EndView()
             self.window.show_view(end_view)
             return
             
         # Show transition screen
-        print(f"[TRANSITION] Showing transition screen for map {self.current_map_index}")
         from src.views.transition_view import TransitionView
         transition_view = TransitionView(self.current_map_index, 3, previous_game_view=self)
         self.window.show_view(transition_view)
@@ -332,7 +318,6 @@ class GameView(FadingView):
         self.check_car_interactions()
 
         self.camera_manager.update_zoom(delta_time)
-        Debug.update("Camera Zoom", f"{self.camera_manager.get_camera().zoom:.2f}")
 
         self.bullet_list.update(
             delta_time, [self.scene.get_sprite_list("Enemies")], [self.wall_list]

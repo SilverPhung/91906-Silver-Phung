@@ -73,6 +73,8 @@ class InputManager:
         
         if key == arcade.key.Z:
             self.game_view.camera_manager.set_target_zoom(1.0)
+        elif key == arcade.key.LCTRL:
+            self.game_view.camera_manager.set_target_zoom(1.0)
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Handle mouse movement."""

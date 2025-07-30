@@ -18,6 +18,7 @@ class MenuView(BaseView):
             color=arcade.color.WHITE,
             font_size=30
         )
+        print("[TESTING] Menu screen loaded - player can start game")
 
     def on_update(self, dt):
         """Handle transitions when fade_out is set"""
@@ -32,7 +33,7 @@ class MenuView(BaseView):
         """Handle key presses. In this case, we'll just count a 'space' as
         game over and advance to the game over view."""
         if self.fade_out is None and key == arcade.key.SPACE:
-            print(f"[MENU] Space pressed, transitioning to GameView")
+            print("[TESTING] Player pressed SPACE - starting game")
             self.fade_out = 0
 
     def setup(self):

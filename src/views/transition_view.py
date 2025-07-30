@@ -6,7 +6,6 @@ class TransitionView(BaseView):
     """Transition screen shown when moving to the next map"""
     
     def __init__(self, next_map_index: int, total_maps: int = 3, previous_game_view=None):
-        print(f"[TRANSITION_VIEW] Initializing TransitionView with map_index: {next_map_index}")
         super().__init__()
         self.next_map_index = next_map_index
         self.total_maps = total_maps
@@ -14,10 +13,8 @@ class TransitionView(BaseView):
         
         # Set background color for better visibility
         self.background_color = arcade.color.DARK_BLUE
-        print(f"[TRANSITION_VIEW] Set background_color to: {self.background_color}")
         
         # Create text objects using the factory with better colors
-        print(f"[TRANSITION_VIEW] Creating text objects...")
         self.transition_text = self.add_centered_text(
             f"Moving to Map {next_map_index}",
             y_offset=50,
@@ -36,20 +33,12 @@ class TransitionView(BaseView):
             color=arcade.color.LIGHT_CYAN,
             font_size=18
         )
-        print(f"[TRANSITION_VIEW] TransitionView initialization complete")
-
-    def on_draw(self):
-        """Override on_draw to add specific logging"""
-        print(f"[TRANSITION_VIEW] on_draw called for TransitionView")
-        print(f"[TRANSITION_VIEW] Background color: {self.background_color}")
-        print(f"[TRANSITION_VIEW] Number of text objects: {len(self.text_objects)}")
-        super().on_draw()
-        print(f"[TRANSITION_VIEW] on_draw completed for TransitionView")
+        print(f"[TESTING] Transition screen loaded - Map {next_map_index}/{total_maps}")
 
     def on_key_press(self, key, modifiers):
         """Handle key presses"""
         if key == arcade.key.SPACE:
-            print(f"[TRANSITION] Space pressed, transitioning to map {self.next_map_index}")
+            print(f"[TESTING] Player pressed SPACE - transitioning to map {self.next_map_index}")
             
             if self.previous_game_view:
                 # Use existing GameView and call load_map

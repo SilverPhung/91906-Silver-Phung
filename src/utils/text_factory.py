@@ -17,9 +17,6 @@ class TextFactory:
     ) -> arcade.Text:
         """Create a centered text object with consistent positioning"""
         try:
-            print(f"[TEXT_FACTORY] Creating centered text: '{text}'")
-            print(f"[TEXT_FACTORY] Position: ({WINDOW_WIDTH // 2}, {WINDOW_HEIGHT // 2 + y_offset})")
-            print(f"[TEXT_FACTORY] Color: {color}, Font size: {font_size}")
             text_obj = arcade.Text(
                 text,
                 WINDOW_WIDTH // 2,
@@ -29,10 +26,8 @@ class TextFactory:
                 anchor_x=anchor_x,
                 anchor_y=anchor_y
             )
-            print(f"[TEXT_FACTORY] Centered text created successfully")
             return text_obj
         except Exception as e:
-            print(f"[TEXT_FACTORY] Error creating centered text: {e}")
             # Return a fallback text object
             fallback = arcade.Text("Error", 0, 0, arcade.color.RED, 12)
             return fallback
@@ -49,8 +44,6 @@ class TextFactory:
     ) -> arcade.Text:
         """Create a text object at specific coordinates"""
         try:
-            print(f"[TEXT_FACTORY] Creating positioned text: '{text}' at ({x}, {y})")
-            print(f"[TEXT_FACTORY] Color: {color}, Font size: {font_size}")
             text_obj = arcade.Text(
                 text,
                 x,
@@ -60,10 +53,8 @@ class TextFactory:
                 anchor_x=anchor_x,
                 anchor_y=anchor_y
             )
-            print(f"[TEXT_FACTORY] Positioned text created successfully")
             return text_obj
         except Exception as e:
-            print(f"[TEXT_FACTORY] Error creating positioned text: {e}")
             # Return a fallback text object
             fallback = arcade.Text("Error", 0, 0, arcade.color.RED, 12)
             return fallback
@@ -78,13 +69,9 @@ class TextFactory:
     ) -> arcade.Text:
         """Create a UI text object for overlays"""
         try:
-            print(f"[TEXT_FACTORY] Creating UI text: '{text}' at ({x}, {y})")
-            print(f"[TEXT_FACTORY] Color: {color}, Font size: {font_size}")
             text_obj = arcade.Text(text, x, y, color, font_size)
-            print(f"[TEXT_FACTORY] UI text created successfully")
             return text_obj
         except Exception as e:
-            print(f"[TEXT_FACTORY] Error creating UI text: {e}")
             # Return a fallback text object
             fallback = arcade.Text("Error", 0, 0, arcade.color.RED, 12)
             return fallback 
