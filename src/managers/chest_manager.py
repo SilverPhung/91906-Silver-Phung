@@ -21,14 +21,9 @@ class ChestManager:
         self.near_chest = None  # Track which chest player is near
         self.parts_collected_from_chests = 0  # Track parts collected from chests
         
-        print(f"[CHEST_MANAGER] Initialized with game_view: {type(game_view).__name__}")
 
     def load_chests_from_map(self):
         """Load chests from the Tiled object layers."""
-        print("[CHESTS] Loading chests from map...")
-        print(f"[CHESTS] Game view tile_map type: {type(self.game_view.tile_map)}")
-        print(f"[CHESTS] Available object layers: {list(self.game_view.tile_map.object_lists.keys())}")
-        
         try:
             chest_layers = {
                 "Chest-parts": (self.chests_with_parts, True),  # Chests with parts
@@ -36,27 +31,18 @@ class ChestManager:
             }
 
             for layer_name, (chest_list, has_part) in chest_layers.items():
-                print(f"[CHESTS] Checking layer: '{layer_name}'")
                 chest_objects = self.game_view.tile_map.object_lists.get(layer_name, [])
-                print(f"[CHESTS] Found {len(chest_objects)} objects in layer '{layer_name}'")
                 
                 if not chest_objects:
-                    print(f"[CHESTS] No objects found for layer '{layer_name}'")
                     continue
 
                 for i, chest_object in enumerate(chest_objects):
-                    print(f"[CHESTS] Processing chest object {i+1}: {type(chest_object)}")
-                    print(f"[CHESTS] Chest object attributes: {dir(chest_object)}")
-                    
                     try:
                         pos_x, pos_y = chest_object.shape
-                        print(f"[CHESTS] Chest position: ({pos_x}, {pos_y})")
                         
                         chest = Chest((pos_x, pos_y), has_part=has_part)
                         chest_list.append(chest)
                         self.game_view.scene.add_sprite("ChestsLayer", chest)
-                        part_type = "with part" if has_part else "without part"
-                        print(f"[CHESTS] Chest {part_type} loaded at ({pos_x}, {pos_y})")
                         
                     except Exception as e:
                         print(f"[CHESTS] Error creating chest {i+1}: {e}")
@@ -66,13 +52,7 @@ class ChestManager:
             # Add test chests if no chests were loaded from map
             total_chests = len(self.chests_with_parts) + len(self.chests_without_parts)
             if total_chests == 0:
-                print("[CHESTS] No chests found in map, adding test chests...")
                 self._add_test_chests()
-
-            total_chests = len(self.chests_with_parts) + len(self.chests_without_parts)
-            print(f"[CHESTS] Total chests loaded: {total_chests}")
-            print(f"[CHESTS] Chests with parts: {len(self.chests_with_parts)}")
-            print(f"[CHESTS] Chests without parts: {len(self.chests_without_parts)}")
 
         except Exception as e:
             print(f"[CHESTS] Error loading chests from map: {e}")
@@ -81,15 +61,12 @@ class ChestManager:
 
     def _add_test_chests(self):
         """Add test chests to verify the system works."""
-        print("[CHESTS] Adding test chests...")
-        
         # Add a chest with part near the old car
         if self.game_view.car_manager.old_car:
             old_car_pos = (self.game_view.car_manager.old_car.center_x + 100, self.game_view.car_manager.old_car.center_y)
             test_chest_with_part = Chest(old_car_pos, has_part=True)
             self.chests_with_parts.append(test_chest_with_part)
             self.game_view.scene.add_sprite("ChestsLayer", test_chest_with_part)
-            print(f"[CHESTS] Test chest with part added at {old_car_pos}")
         
         # Add a chest without part near the new car
         if self.game_view.car_manager.new_car:
@@ -97,14 +74,12 @@ class ChestManager:
             test_chest_without_part = Chest(new_car_pos, has_part=False)
             self.chests_without_parts.append(test_chest_without_part)
             self.game_view.scene.add_sprite("ChestsLayer", test_chest_without_part)
-            print(f"[CHESTS] Test chest without part added at {new_car_pos}")
         
         # Add a chest in the middle of the map
         middle_pos = (1000, 1000)
         test_chest_middle = Chest(middle_pos, has_part=True)
         self.chests_with_parts.append(test_chest_middle)
         self.game_view.scene.add_sprite("ChestsLayer", test_chest_middle)
-        print(f"[CHESTS] Test chest with part added at {middle_pos}")
 
     def check_chest_interactions(self):
         """
@@ -131,10 +106,6 @@ class ChestManager:
                 is_near = chest.check_proximity(self.game_view.player)
                 if is_near:
                     self.near_chest = chest
-                    # Only log when proximity state changes
-                    if previous_near_chest != self.near_chest:
-                        part_status = "with part" if chest.has_part else "without part"
-                        print(f"[CHESTS] Player now near chest {i+1} ({part_status}) at ({chest.center_x:.1f}, {chest.center_y:.1f})")
                     
                     # Track testing data
                     if ENABLE_TESTING:
@@ -145,11 +116,6 @@ class ChestManager:
                             'chest_state': chest.state
                         })
                     break
-        
-        # Only log when proximity state changes
-        if previous_near_chest != self.near_chest:
-            if self.near_chest is None:
-                print(f"[CHESTS] Player no longer near any chest")
         
         # Reset interaction state for chests not near player
         for chest in all_chests:
@@ -164,14 +130,10 @@ class ChestManager:
         with car parts collection.
         """
         if not self.near_chest:
-            print("[INTERACTION] No chest nearby")
             return
         
         if not self.near_chest.can_interact():
-            print("[INTERACTION] Chest cannot be interacted with")
             return
-            
-        print(f"[INTERACTION] Interacting with chest")
         
         # Track testing data before interaction
         if ENABLE_TESTING:
@@ -185,17 +147,11 @@ class ChestManager:
         part_collected = self.near_chest.handle_interaction()
         
         if part_collected:
-            print("[INTERACTION] Part collected from chest!")
             self.parts_collected_from_chests += 1
             
             # Add the part to the car
             if self.game_view.car_manager.new_car:
-                print(f"[CHESTS] Adding part to car. Before: {self.game_view.car_manager.new_car.get_parts_status()}")
-                part_added = self.game_view.car_manager.new_car.add_part()
-                print(f"[CHESTS] Part added: {part_added}. After: {self.game_view.car_manager.new_car.get_parts_status()}")
-                print(f"[CHESTS] Car can use: {self.game_view.car_manager.new_car.can_use()}")
-            else:
-                print("[CHESTS] Warning: No new car found to add parts to")
+                self.game_view.car_manager.new_car.add_part()
         
         # Track testing data after interaction
         if ENABLE_TESTING:
@@ -227,7 +183,6 @@ class ChestManager:
         self.chests_without_parts.clear()
         self.near_chest = None
         self.parts_collected_from_chests = 0
-        print("[CHESTS] Chest state reset")
 
     def get_chest_stats(self):
         """
