@@ -150,6 +150,13 @@ class Entity(arcade.Sprite):
     def die(self):
         """Trigger death animation"""
         self.change_state(EntityState.DYING)
+        
+    def cleanup(self):
+        """Clean up entity resources, including health bar"""
+        if self.health_bar:
+            if self.health_bar in self.game_view.bar_list:
+                self.game_view.bar_list.remove(self.health_bar)
+            self.health_bar = None
 
     # --- Movement ---
     def move(self, direction: Vec2):

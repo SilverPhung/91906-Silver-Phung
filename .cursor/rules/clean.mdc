@@ -1,0 +1,8 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+
+refactor make this code to make it cleaner. Use DRY principle

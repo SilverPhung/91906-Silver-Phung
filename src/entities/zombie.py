@@ -39,16 +39,7 @@ class Zombie(Enemy):
         self.random_move_point = Vec2(0, 0)
 
 
-        # Add health bar to zombie
-        self.health_bar = IndicatorBar(
-            self,
-            game_view.bar_list,
-            (self.center_x, self.center_y),
-            width=HEALTHBAR_WIDTH,
-            height=HEALTHBAR_HEIGHT,
-        )
         self.current_health = self.max_health
-        self.health_bar.fullness = 1.0
 
         # Add zombie to game view lists and create physics engine
         game_view.enemies.append(self)

@@ -16,12 +16,15 @@ import math
 import concurrent.futures
 
 # Import refactored classes
+from src.sprites.car import Car
 from src.debug import Debug
 from src.entities.entity import Entity, EntityState
 from src.sprites.bullet import Bullet
 from src.sprites.indicator_bar import IndicatorBar
 from src.entities.player import Player, WeaponType
 from src.entities.zombie import Zombie
+from src.managers.input_manager import InputManager
+from src.managers.ui_manager import UIManager
 import threading
 # Import constants
 from src.constants import *
@@ -37,6 +40,7 @@ class GameView(FadingView):
 
     def __init__(self):
         super().__init__()
+        print(f"[GAMEVIEW] Initializing GameView with map_index: {getattr(self, 'current_map_index', 'NOT SET')}")
 
         Debug._initialize()
 
@@ -60,22 +64,18 @@ class GameView(FadingView):
         # Enemy list
         self.enemies = arcade.SpriteList()
 
-        # Track the current state of what key is pressed
-        self.key_down = {
-            LEFT_KEY: False,
-            RIGHT_KEY: False,
-            UP_KEY: False,
-            DOWN_KEY: False,
-            A_KEY: False,
-            D_KEY: False,
-            W_KEY: False,
-            S_KEY: False,
-        }
+        # Car-related properties
+        self.old_car = None
+        self.new_car = None
+        self.car_parts_collected = 0
+        self.current_map_index = 1
+        self.near_car = None  # Track which car player is near
+        
 
-        # Mouse position tracking
-        self.mouse_offset = Vec2(0, 0)
-        self.mouse_position = Vec2(0, 0)
-        self.left_mouse_pressed = False
+
+        # Initialize managers
+        self.input_manager = InputManager(self)
+        self.ui_manager = UIManager(self)
 
         self.gun_shot_sound = arcade.load_sound(
             "resources/sound/weapon/Desert Eagle/gun_rifle_pistol.wav"
@@ -90,7 +90,13 @@ class GameView(FadingView):
         self.pathfind_barrier_thread_lock = threading.Lock()
 
         self.preload_resources()
+        print(f"[GAMEVIEW] Creating scene for map {self.current_map_index}")
         self.create_scene(self.scene)
+        print(f"[GAMEVIEW] Scene creation complete")
+        
+        # Reset input keys for initial setup
+        self.input_manager.reset_keys()
+        self.ui_manager.reset_ui()
 
     def preload_resources(self):
         Entity.load_animations(character_preset="Man", character_config_path=PLAYER_CONFIG_FILE, game_view=self)
@@ -101,7 +107,11 @@ class GameView(FadingView):
 
         self.enemies.clear()
         self.bullet_list.clear()
-        self.scene.add_sprite_list("Enemies", self.enemies)
+        if "Enemies" not in self.scene._name_mapping:
+            self.scene.add_sprite_list("Enemies", self.enemies)
+        else:
+            self.scene.get_sprite_list("Enemies").clear()
+            self.scene.get_sprite_list("Enemies").extend(self.enemies)
         
 
         # thread.join()
@@ -110,50 +120,49 @@ class GameView(FadingView):
 
         
 
-        # Add a test zombie
-        for i in range(100):
+        # Spawn zombies
+        for _ in range(10):
             zombie = Zombie(
                 game_view=self,
                 zombie_type="Army_zombie",
                 player_ref=self.player,
             )
-
             zombie.spawn_random_position()
-            # zombie.position = (1000, 500)
 
         self.player.current_health = self.player.max_health
-        self.player.health_bar.fullness = 1.0
+        if self.player.health_bar:
+            self.player.health_bar.fullness = 1.0
 
     def setup(self):
+        print(f"[GAMEVIEW] Setup called for map {self.current_map_index}")
         self.reset()
         for thread in self.threads:
             thread.join()
 
         self.game_paused = False
+        print(f"[GAMEVIEW] Setup complete, game unpaused")
 
     def create_scene(self, scene: arcade.Scene):
         """Set up the game and initialize the variables."""
 
         # Load the Tiled map
-        map_name = "resources/maps/Map1.tmx"
+        map_name = f"resources/maps/map{self.current_map_index}.tmx"
+        print(f"[SCENE] Loading map: {map_name}")
 
         self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
+        print(f"[SCENE] Tilemap loaded with {len(self.tile_map.sprite_lists)} sprite lists")
 
         # Add the ground layers to the scene (in drawing order from bottom to top)
-        scene.add_sprite_list(
-            "Dirt", sprite_list=self.tile_map.sprite_lists["Dirt"]
-        )
-        scene.add_sprite_list(
-            "Grass", sprite_list=self.tile_map.sprite_lists["Grass"]
-        )
-        scene.add_sprite_list(
-            "Road", sprite_list=self.tile_map.sprite_lists["Road"]
-        )
+        print(f"[SCENE] Available sprite lists: {list(self.tile_map.sprite_lists.keys())}")
+        
+        for layer_name in ("Dirt", "Grass", "Road"):
+            scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
         self.wall_list = self.tile_map.sprite_lists["Walls"]
         # Add the walls layer to the scene for collision
         scene.add_sprite_list(
             "Walls", sprite_list=self.wall_list
         )
+        print(f"[SCENE] Added tile layers to scene")
         
         self.camera_bounds = arcade.LRBT(
             self.window.width/2.0,
@@ -185,14 +194,164 @@ class GameView(FadingView):
                         bottom=0,
                         top=MAP_HEIGHT_PIXEL,
                     )
-        thread = threading.Thread(target=create_pathfind_barrier)
+        
+        self._start_thread(create_pathfind_barrier)
+
+    def _start_thread(self, target_func):
+        """Start a thread and add it to the threads list."""
+        thread = threading.Thread(target=target_func)
         thread.start()
         self.threads.append(thread)
 
         # Add sprite lists for Player and Enemies (drawn on top)
-        scene.add_sprite_list("Enemies")
-        scene.add_sprite_list("Player")
+        self.scene.add_sprite_list("Player")
+        self.scene.add_sprite_list("CarsLayer")
         
+        # Load car positions from Tiled map
+        self.load_cars_from_map()
+        
+    def load_cars_from_map(self):
+        """Load cars (old/new) from the Tiled object layers."""
+        print("[CARS] Loading cars from map...")
+        try:
+            car_layers = {
+                "Old-car": ("old_car", True),
+                "New-car": ("new_car", False),
+            }
+
+            for layer_name, (attr_name, is_starting_car) in car_layers.items():
+                car_objects = self.tile_map.object_lists.get(layer_name, [])
+                if not car_objects:
+                    print(f"[CARS] No objects found for layer '{layer_name}'")
+                    continue
+
+                pos_x, pos_y = car_objects[0].shape
+                car = Car((pos_x, pos_y), is_starting_car=is_starting_car)
+                setattr(self, attr_name, car)
+                self.scene.add_sprite("CarsLayer", car)
+                car_type = "Old" if is_starting_car else "New"
+                print(f"[CARS] {car_type} car loaded at ({pos_x}, {pos_y})")
+
+        except Exception as e:
+            print(f"[CARS] Error loading cars from map: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def check_car_interactions(self):
+        """Check if player is near any car and update interaction state"""
+        from src.constants import INTERACTION_DISTANCE
+        
+        self.near_car = None
+        
+        for car in (self.old_car, self.new_car):
+            if car and not self.near_car:
+                distance = arcade.get_distance_between_sprites(self.player, car)
+                if distance <= INTERACTION_DISTANCE:
+                    self.near_car = car
+                    break
+
+    def handle_car_interaction(self):
+        """Handle car interaction when E key is pressed"""
+        if not self.near_car:
+            print("[INTERACTION] No car nearby")
+            return
+            
+        print(f"[INTERACTION] Interacting with car: {'Old' if self.near_car.is_starting_car else 'New'}")
+        
+        # Only allow interaction with New-car when it can be used
+        if not self.near_car.is_starting_car:
+            if self.near_car.can_use():
+                print("[INTERACTION] New car can be used, transitioning to next map")
+                # Use the car to progress to next level
+                self.key_down = {}
+                self.player.move(Vec2(0, 0))
+                self.transition_to_next_map()
+            else:
+                print(f"[INTERACTION] Cannot use car yet. Need {self.near_car.required_parts - self.near_car.collected_parts} more parts")
+        else:
+            # Old car - no interaction allowed
+            print("[INTERACTION] This car is broken and cannot be used")
+
+    def transition_to_next_map(self):
+        """Transition to the next map"""
+        print(f"[TRANSITION] ===== TRANSITION_TO_NEXT_MAP CALLED =====")
+        print(f"[TRANSITION] Current map: {self.current_map_index}, transitioning to: {self.current_map_index + 1}")
+        self.current_map_index += 1
+        
+        if self.current_map_index > 3:
+            print("[TRANSITION] Game completed! Showing end screen")
+            from src.views.end_view import EndView
+            end_view = EndView()
+            self.window.show_view(end_view)
+            return
+            
+        # Show transition screen
+        print(f"[TRANSITION] Showing transition screen for map {self.current_map_index}")
+        from src.views.transition_view import TransitionView
+        transition_view = TransitionView(self.current_map_index, 3, previous_game_view=self)
+        self.window.show_view(transition_view)
+        
+    def load_map(self, map_index):
+        """Load a specific map by index"""
+        print(f"[MAP] ===== LOAD_MAP CALLED with map_index: {map_index} =====")
+        map_name = f"resources/maps/map{map_index}.tmx"
+        print(f"[MAP] Map file: {map_name}")
+        
+        # Clear health bars from previous map
+        print(f"[MAP] Clearing {len(self.bar_list)} health bars")
+        self.bar_list.clear()
+        
+        # Load new tile map
+        self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
+        print(f"[MAP] Tilemap loaded successfully")
+        
+        # Create new scene
+        self.scene = arcade.Scene()
+        print(f"[MAP] New scene created")
+        
+        # Recreate scene with new map
+        self.create_scene(self.scene)
+        print(f"[MAP] Scene recreated with new map")
+        
+        # Reset player using built-in reset function
+        self.player.reset()
+        print(f"[MAP] Player reset")
+        
+        
+        # Clear and respawn enemies
+        print(f"[MAP] Clearing {len(self.enemies)} enemies")
+        for enemy in self.enemies:
+            enemy.cleanup()
+        self.enemies.clear()
+        self.reset()
+
+        
+        # Reset player position to old car position
+        if self.old_car:
+            self.player.position = self.old_car.position
+            print(f"[MAP] Player positioned at: ({self.old_car.center_x}, {self.old_car.center_y})")
+            print(f"[MAP] Player actual position after teleport: center_x={self.player.center_x}, center_y={self.player.center_y}, position={self.player.position}")
+        else:
+            print("[MAP] Warning: No old car found for player positioning")
+        print(f"[MAP] Enemies cleared and respawned")
+        
+        # Reset car parts for new level
+        self.car_parts_collected = 0
+        if self.new_car:
+            self.new_car.reset_parts()
+            print(f"[MAP] Car parts reset for new level")
+        
+        # Reset input keys to prevent lingering inputs
+        self.input_manager.reset_keys()
+        
+        # Reset UI elements for new map
+        self.ui_manager.reset_ui()
+        
+        print(f"[MAP] Map {map_index} loaded successfully")
+
+    def draw_ui(self):
+        """Draw UI elements including car interaction prompts."""
+        self.ui_manager.draw_ui()
 
     def on_draw(self):
         """Render the screen."""
@@ -207,93 +366,38 @@ class GameView(FadingView):
 
         with self.camera_gui.activate():
             Debug.render(10, 10)
+            self.draw_ui()
 
         for enemy in self.enemies:
             enemy.draw()
         
 
     def update_player_speed(self):
-        # Calculate speed based on the keys pressed
-
-        movement_x = 0
-        movement_y = 0
-        
-        if self.key_down.get(LEFT_KEY) or self.key_down.get(A_KEY):
-            movement_x += -1
-        if self.key_down.get(RIGHT_KEY) or self.key_down.get(D_KEY):
-            movement_x += 1
-            
-        if self.key_down.get(UP_KEY) or self.key_down.get(W_KEY):
-            movement_y += 1
-        if self.key_down.get(DOWN_KEY) or self.key_down.get(S_KEY):
-            movement_y += -1
-
-        self.player.move(Vec2(movement_x, movement_y))
+        """Calculate movement based on pressed keys."""
+        self.input_manager.update_player_speed()
 
     def switch_weapon(self, key):
-        match key:
-            case arcade.key.KEY_1:
-                self.player.set_weapon(WeaponType.GUN)
-            case arcade.key.KEY_2:
-                self.player.set_weapon(WeaponType.BAT)
-            case arcade.key.KEY_3:
-                self.player.set_weapon(WeaponType.KNIFE)
-            case arcade.key.KEY_4:
-                self.player.set_weapon(WeaponType.RIFLE)
-            case arcade.key.KEY_5:
-                self.player.set_weapon(WeaponType.FLAMETHROWER)
+        """Switch weapon based on number key pressed."""
+        self.input_manager._switch_weapon(key)
 
     def on_key_press(self, key, modifiers):
-        self.key_down[key] = True
-
-        # Toggle fullscreen with F11
-        if key == FULLSCREEN_KEY:
-            self.window.set_fullscreen(not self.window.fullscreen)
-            # Update camera when toggling fullscreen
-            self.on_resize(self.window.width, self.window.height)
-
-        # Weapon switching with number keys
-        self.switch_weapon(key)
-
-        # Attack with space
-        if key == arcade.key.SPACE:
-            self.player.attack()
-
-        # Death animation with K (for testing)
-        if key == arcade.key.K:
-            self.player.die()
-
-        # Reset game with R key
-        if key == arcade.key.R:
-            self.reset()
-
-        # Zoom functionality with LCTRL
-        if key == arcade.key.LCTRL:
-            self.target_zoom = MIN_ZOOM
+        """Handle key press events."""
+        self.input_manager.on_key_press(key, modifiers)
 
     def on_key_release(self, key, modifiers):
-        self.key_down[key] = False
-
-        if key == ZOOM_KEY:
-            self.target_zoom = 1.0
+        self.input_manager.on_key_release(key, modifiers)
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Handle mouse movement"""
-        # Convert screen coordinates to world coordinates
-        offset_x = (x - WINDOW_WIDTH / 2) / self.camera.zoom
-        offset_y = (y - WINDOW_HEIGHT / 2) / self.camera.zoom
-        self.mouse_offset = (offset_x, offset_y)
+        self.input_manager.on_mouse_motion(x, y, dx, dy)
 
     def on_mouse_press(self, x, y, button, modifiers):
         """Handle mouse clicks"""
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            self.left_mouse_pressed = True
-            self.player.attack()
+        self.input_manager.on_mouse_press(x, y, button, modifiers)
 
     def on_mouse_release(self, x, y, button, modifiers):
         """Handle mouse clicks"""
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            self.left_mouse_pressed = False
+        self.input_manager.on_mouse_release(x, y, button, modifiers)
 
     def center_camera_to_player(self, delta_time):
         current_camera_position = Vec2(
@@ -328,12 +432,8 @@ class GameView(FadingView):
         self.center_camera_to_player(delta_time)
         
 
-        # debug deltatime
-        self.mouse_position = (
-            self.mouse_offset[0] + self.camera.position[0],
-            self.mouse_offset[1] + self.camera.position[1],
-        )
-        self.player.mouse_position = self.mouse_position
+        # Update mouse position
+        self.input_manager.update_mouse_position()
 
         self.update_player_speed()
 
@@ -341,6 +441,9 @@ class GameView(FadingView):
         Debug.update("Delta Time", f"{delta_time:.2f}")
 
         self.enemies.update(delta_time)
+
+        # Check car interactions
+        self.check_car_interactions()
 
         if abs(self.camera.zoom - self.target_zoom) > 0.001:
             self.camera.zoom = arcade.math.lerp(

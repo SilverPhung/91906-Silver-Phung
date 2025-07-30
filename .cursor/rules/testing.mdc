@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+When testing python code, before running the program, tell the user what their objective is for testing. feel free to add print statement to track the player progression like movement or interaction etc. Dont add too much, it can overwhelm the logs

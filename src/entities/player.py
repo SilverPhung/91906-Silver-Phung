@@ -58,16 +58,6 @@ class Player(Entity):
 
         self.current_health = self.max_health
 
-        # Initialize player's health bar
-        self.health_bar = IndicatorBar(
-            self,
-            game_view.bar_list,
-            (self.center_x, self.center_y),
-            width=HEALTHBAR_WIDTH,
-            height=HEALTHBAR_HEIGHT,
-        )
-        self.health_bar.fullness = 1.0
-
         self.shoot_cooldown = shoot_cooldown
         self.shoot_cooldown_timer = 0
 
@@ -246,14 +236,12 @@ class Player(Entity):
     def reset(self):
         """Reset the player to initial state"""
         self.current_health = self.max_health
-        # self.change_state(EntityState.IDLE)
         self.state = EntityState.IDLE
         self.current_weapon = WeaponType.GUN
         self.velocity = Vec2(0.0, 0.0)
         self.change_x = 0.0
         self.change_y = 0.0
-        self.position = self.spawn_position
-        
+        self.position = self.spawn_position  # <-- REMOVE THIS LINE
         # Reset health bar if it exists
         if hasattr(self, 'health_bar') and self.health_bar:
             self.health_bar.fullness = 1.0

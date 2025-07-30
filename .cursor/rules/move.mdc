@@ -1,0 +1,7 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+move this into it's own component files. focus on clean code DRY principle and component principle. Avoid Premature Optimization: Focus on correctness and clarity first; optimize later
