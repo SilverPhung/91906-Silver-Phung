@@ -25,6 +25,7 @@ from src.entities.player import Player, WeaponType
 from src.entities.zombie import Zombie
 from src.managers.input_manager import InputManager
 from src.managers.ui_manager import UIManager
+from src.managers.car_manager import CarManager
 import threading
 # Import constants
 from src.constants import *
@@ -64,18 +65,14 @@ class GameView(FadingView):
         # Enemy list
         self.enemies = arcade.SpriteList()
 
-        # Car-related properties
-        self.old_car = None
-        self.new_car = None
-        self.car_parts_collected = 0
         self.current_map_index = 1
-        self.near_car = None  # Track which car player is near
         
 
 
         # Initialize managers
         self.input_manager = InputManager(self)
         self.ui_manager = UIManager(self)
+        self.car_manager = CarManager(self)
 
         self.gun_shot_sound = arcade.load_sound(
             "resources/sound/weapon/Desert Eagle/gun_rifle_pistol.wav"
@@ -208,69 +205,17 @@ class GameView(FadingView):
         self.scene.add_sprite_list("CarsLayer")
         
         # Load car positions from Tiled map
-        self.load_cars_from_map()
+        self.car_manager.load_cars_from_map()
         
-    def load_cars_from_map(self):
-        """Load cars (old/new) from the Tiled object layers."""
-        print("[CARS] Loading cars from map...")
-        try:
-            car_layers = {
-                "Old-car": ("old_car", True),
-                "New-car": ("new_car", False),
-            }
 
-            for layer_name, (attr_name, is_starting_car) in car_layers.items():
-                car_objects = self.tile_map.object_lists.get(layer_name, [])
-                if not car_objects:
-                    print(f"[CARS] No objects found for layer '{layer_name}'")
-                    continue
-
-                pos_x, pos_y = car_objects[0].shape
-                car = Car((pos_x, pos_y), is_starting_car=is_starting_car)
-                setattr(self, attr_name, car)
-                self.scene.add_sprite("CarsLayer", car)
-                car_type = "Old" if is_starting_car else "New"
-                print(f"[CARS] {car_type} car loaded at ({pos_x}, {pos_y})")
-
-        except Exception as e:
-            print(f"[CARS] Error loading cars from map: {e}")
-            import traceback
-            traceback.print_exc()
 
     def check_car_interactions(self):
         """Check if player is near any car and update interaction state"""
-        from src.constants import INTERACTION_DISTANCE
-        
-        self.near_car = None
-        
-        for car in (self.old_car, self.new_car):
-            if car and not self.near_car:
-                distance = arcade.get_distance_between_sprites(self.player, car)
-                if distance <= INTERACTION_DISTANCE:
-                    self.near_car = car
-                    break
+        self.car_manager.check_car_interactions()
 
     def handle_car_interaction(self):
         """Handle car interaction when E key is pressed"""
-        if not self.near_car:
-            print("[INTERACTION] No car nearby")
-            return
-            
-        print(f"[INTERACTION] Interacting with car: {'Old' if self.near_car.is_starting_car else 'New'}")
-        
-        # Only allow interaction with New-car when it can be used
-        if not self.near_car.is_starting_car:
-            if self.near_car.can_use():
-                print("[INTERACTION] New car can be used, transitioning to next map")
-                # Use the car to progress to next level
-                self.key_down = {}
-                self.player.move(Vec2(0, 0))
-                self.transition_to_next_map()
-            else:
-                print(f"[INTERACTION] Cannot use car yet. Need {self.near_car.required_parts - self.near_car.collected_parts} more parts")
-        else:
-            # Old car - no interaction allowed
-            print("[INTERACTION] This car is broken and cannot be used")
+        self.car_manager.handle_car_interaction()
 
     def transition_to_next_map(self):
         """Transition to the next map"""
@@ -327,19 +272,11 @@ class GameView(FadingView):
 
         
         # Reset player position to old car position
-        if self.old_car:
-            self.player.position = self.old_car.position
-            print(f"[MAP] Player positioned at: ({self.old_car.center_x}, {self.old_car.center_y})")
-            print(f"[MAP] Player actual position after teleport: center_x={self.player.center_x}, center_y={self.player.center_y}, position={self.player.position}")
-        else:
-            print("[MAP] Warning: No old car found for player positioning")
+        self.car_manager.position_player_at_old_car()
         print(f"[MAP] Enemies cleared and respawned")
         
         # Reset car parts for new level
-        self.car_parts_collected = 0
-        if self.new_car:
-            self.new_car.reset_parts()
-            print(f"[MAP] Car parts reset for new level")
+        self.car_manager.reset_car_parts()
         
         # Reset input keys to prevent lingering inputs
         self.input_manager.reset_keys()

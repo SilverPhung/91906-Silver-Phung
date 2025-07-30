@@ -21,25 +21,25 @@ class UIManager:
 
     def _draw_interaction_text(self):
         """Draw car interaction text based on proximity and car state."""
-        if not self.game_view.near_car:
+        if not self.game_view.car_manager.near_car:
             self.interaction_text.text = ""
             return
 
-        if self.game_view.near_car.is_starting_car:
+        if self.game_view.car_manager.near_car.is_starting_car:
             # Old car - no interaction text
             self.interaction_text.text = ""
-        elif self.game_view.near_car.can_use():
+        elif self.game_view.car_manager.near_car.can_use():
             self.interaction_text.text = "Press E to use car"
         else:
-            parts_needed = self.game_view.near_car.required_parts - self.game_view.near_car.collected_parts
+            parts_needed = self.game_view.car_manager.near_car.required_parts - self.game_view.car_manager.near_car.collected_parts
             self.interaction_text.text = f"Need {parts_needed} more parts"
         
         self.interaction_text.draw()
 
     def _draw_parts_status(self):
         """Draw car parts status text."""
-        if self.game_view.new_car:
-            self.parts_text.text = f"Car Parts: {self.game_view.new_car.get_parts_status()}"
+        if self.game_view.car_manager.new_car:
+            self.parts_text.text = f"Car Parts: {self.game_view.car_manager.new_car.get_parts_status()}"
             self.parts_text.draw()
 
     def _draw_map_info(self):

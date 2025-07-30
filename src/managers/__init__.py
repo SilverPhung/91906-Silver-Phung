@@ -7,5 +7,6 @@ following the component principle and DRY (Don't Repeat Yourself) principle.
 
 from .input_manager import InputManager
 from .ui_manager import UIManager
+from .car_manager import CarManager
 
-__all__ = ['InputManager', 'UIManager'] 
+__all__ = ['InputManager', 'UIManager', 'CarManager'] 

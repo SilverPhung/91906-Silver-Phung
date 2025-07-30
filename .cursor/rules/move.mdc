@@ -4,4 +4,4 @@ globs:
 alwaysApply: false
 ---
 
-move this into it's own component files. focus on clean code DRY principle and component principle. Avoid Premature Optimization: Focus on correctness and clarity first; optimize later
+Refactor this code by separating it into individual component files. Ensure adherence to clean code practices, the DRY (Don't Repeat Yourself) principle, and component-based design principles. Avoid Premature Optimization: Focus on correctness and clarity first; optimize later. Abstraction: Hide the internal complexity behind simple, well-defined interfaces that expose only what's necessary for the users or other systems.

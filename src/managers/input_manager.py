@@ -122,11 +122,7 @@ class InputManager:
 
     def _add_test_car_part(self):
         """Add a car part for testing purposes."""
-        if self.game_view.new_car:
-            self.game_view.new_car.add_part()
-            print(f"[PARTS] Added car part! Now have {self.game_view.new_car.get_parts_status()}")
-        else:
-            print("[PARTS] No new car found to add parts to")
+        self.game_view.car_manager.add_test_car_part()
 
     def _zoom_in(self):
         """Zoom in with left control."""
