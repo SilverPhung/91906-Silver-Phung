@@ -47,7 +47,16 @@ class Interactable(arcade.Sprite, ABC):
         """
         try:
             distance = arcade.get_distance_between_sprites(self, player)
+            was_near = self.is_near_player
             self.is_near_player = distance <= self.interaction_distance
+            
+            # Only log when proximity state changes
+            if was_near != self.is_near_player:
+                if hasattr(self, 'is_starting_car'):
+                    car_type = "Old" if self.is_starting_car else "New"
+                    status = "near" if self.is_near_player else "not near"
+                    print(f"[PROXIMITY] {car_type} car - Distance: {distance:.1f}, Required: {self.interaction_distance}, Now {status}")
+            
             return self.is_near_player
         except Exception as e:
             print(f"[INTERACTABLE] Error checking proximity: {e}")

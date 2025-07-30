@@ -235,13 +235,16 @@ class Player(Entity):
         
     def reset(self):
         """Reset the player to initial state"""
+        print(f"[PLAYER] Reset called. Current position: ({self.center_x:.1f}, {self.center_y:.1f})")
         self.current_health = self.max_health
         self.state = EntityState.IDLE
         self.current_weapon = WeaponType.GUN
         self.velocity = Vec2(0.0, 0.0)
         self.change_x = 0.0
         self.change_y = 0.0
-        self.position = self.spawn_position  # <-- REMOVE THIS LINE
+        # Don't reset position here - let the car manager position the player
+        # self.position = self.spawn_position  # <-- REMOVED THIS LINE
+        print(f"[PLAYER] Reset complete. Position: ({self.center_x:.1f}, {self.center_y:.1f})")
         # Reset health bar if it exists
         if hasattr(self, 'health_bar') and self.health_bar:
             self.health_bar.fullness = 1.0

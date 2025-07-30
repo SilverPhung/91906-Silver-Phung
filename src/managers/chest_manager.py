@@ -112,13 +112,11 @@ class ChestManager:
         
         Uses the new Interactable proximity checking system.
         """
+        previous_near_chest = self.near_chest
         self.near_chest = None
         
         # Check all chests (with and without parts)
         all_chests = self.chests_with_parts + self.chests_without_parts
-        
-        if all_chests:
-            print(f"[CHESTS] Checking {len(all_chests)} chests for proximity")
         
         # Track testing data
         if ENABLE_TESTING:
@@ -133,8 +131,10 @@ class ChestManager:
                 is_near = chest.check_proximity(self.game_view.player)
                 if is_near:
                     self.near_chest = chest
-                    part_status = "with part" if chest.has_part else "without part"
-                    print(f"[CHESTS] Player near chest {i+1} ({part_status}) at ({chest.center_x}, {chest.center_y})")
+                    # Only log when proximity state changes
+                    if previous_near_chest != self.near_chest:
+                        part_status = "with part" if chest.has_part else "without part"
+                        print(f"[CHESTS] Player now near chest {i+1} ({part_status}) at ({chest.center_x:.1f}, {chest.center_y:.1f})")
                     
                     # Track testing data
                     if ENABLE_TESTING:
@@ -145,8 +145,11 @@ class ChestManager:
                             'chest_state': chest.state
                         })
                     break
-                else:
-                    print(f"[CHESTS] Player not near chest {i+1} at ({chest.center_x}, {chest.center_y})")
+        
+        # Only log when proximity state changes
+        if previous_near_chest != self.near_chest:
+            if self.near_chest is None:
+                print(f"[CHESTS] Player no longer near any chest")
         
         # Reset interaction state for chests not near player
         for chest in all_chests:

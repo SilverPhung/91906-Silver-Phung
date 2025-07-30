@@ -73,12 +73,17 @@ class InputManager:
     def on_key_press(self, key, modifiers):
         """Handle key press events."""
         self.key_down[key] = True
+        
+        # Debug: Log all key presses
+        print(f"[INPUT] Key pressed: {key} (E key is {arcade.key.E})")
 
         # Execute testing action if key is mapped and testing is enabled
         if key in self.testing_key_actions:
+            print(f"[INPUT] Executing testing action for key {key}")
             self.testing_key_actions[key]()
         # Execute regular action if key is mapped
         elif key in self.key_actions:
+            print(f"[INPUT] Executing regular action for key {key}")
             self.key_actions[key]()
         else:
             # Handle weapon switching
@@ -147,7 +152,7 @@ class InputManager:
         
         Car interaction takes precedence over chest interaction.
         """
-        print("[INPUT] E key pressed - checking for interactable objects")
+        print("[INPUT] ===== E KEY PRESSED =====")
         print(f"[INPUT] Car manager near_car: {self.game_view.car_manager.near_car}")
         print(f"[INPUT] Chest manager near_chest: {self.game_view.chest_manager.near_chest}")
         
@@ -162,6 +167,7 @@ class InputManager:
         else:
             print("[INPUT] No interactable objects nearby")
             print(f"[INPUT] Total chests: {len(self.game_view.chest_manager.chests_with_parts) + len(self.game_view.chest_manager.chests_without_parts)}")
+        print("[INPUT] =========================")
 
     def _add_test_car_part(self):
         """Add a car part for testing purposes."""

@@ -52,27 +52,24 @@ class CarManager:
         
         Uses the new Interactable proximity checking system.
         """
+        previous_near_car = self.near_car
         self.near_car = None
-        
-        print(f"[CARS] Checking car interactions:")
-        print(f"[CARS]   Old car: {self.old_car}")
-        print(f"[CARS]   New car: {self.new_car}")
-        print(f"[CARS]   Player position: ({self.game_view.player.center_x}, {self.game_view.player.center_y})")
         
         for car in (self.old_car, self.new_car):
             if car and not self.near_car:
                 # Use the new Interactable proximity checking
-                car_type = "Old" if car.is_starting_car else "New"
-                print(f"[CARS]   Checking {car_type} car at ({car.center_x}, {car.center_y})")
-                
                 if car.check_proximity(self.game_view.player):
                     self.near_car = car
-                    print(f"[CARS] Player near {car_type} car")
+                    # Only log when proximity state changes
+                    if previous_near_car != self.near_car:
+                        car_type = "Old" if car.is_starting_car else "New"
+                        print(f"[CARS] Player now near {car_type} car at ({car.center_x:.1f}, {car.center_y:.1f})")
                     break
-                else:
-                    print(f"[CARS] Player not near {car_type} car")
         
-        print(f"[CARS] Final near_car: {self.near_car}")
+        # Only log when proximity state changes
+        if previous_near_car != self.near_car:
+            if self.near_car is None:
+                print(f"[CARS] Player no longer near any car")
         
         # Reset interaction state for cars not near player
         for car in (self.old_car, self.new_car):
@@ -89,13 +86,14 @@ class CarManager:
             print("[INTERACTION] No car nearby")
             return
         
-        print(f"[INTERACTION] Car interaction debug:")
-        print(f"[INTERACTION]   Car type: {'Old' if self.near_car.is_starting_car else 'New'}")
-        print(f"[INTERACTION]   Can interact: {self.near_car.can_interact()}")
-        print(f"[INTERACTION]   Can use: {self.near_car.can_use()}")
-        print(f"[INTERACTION]   Parts status: {self.near_car.get_parts_status()}")
-        print(f"[INTERACTION]   Required parts: {self.near_car.required_parts}")
-        print(f"[INTERACTION]   Collected parts: {self.near_car.collected_parts}")
+        print(f"[CAR_INTERACTION] ===== CAR INTERACTION DEBUG =====")
+        print(f"[CAR_INTERACTION]   Car type: {'Old' if self.near_car.is_starting_car else 'New'}")
+        print(f"[CAR_INTERACTION]   Can interact: {self.near_car.can_interact()}")
+        print(f"[CAR_INTERACTION]   Can use: {self.near_car.can_use()}")
+        print(f"[CAR_INTERACTION]   Parts status: {self.near_car.get_parts_status()}")
+        print(f"[CAR_INTERACTION]   Required parts: {self.near_car.required_parts}")
+        print(f"[CAR_INTERACTION]   Collected parts: {self.near_car.collected_parts}")
+        print(f"[CAR_INTERACTION] =================================")
         
         if not self.near_car.can_interact():
             print("[INTERACTION] Car cannot be interacted with")

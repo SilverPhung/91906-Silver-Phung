@@ -28,9 +28,8 @@ import threading
 # Import constants
 from src.constants import *
 
-from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH, ENABLE_TESTING
+from src.constants import WINDOW_HEIGHT, WINDOW_WIDTH
 from src.views.fading_view import FadingView
-from src.testing import TestRunner, TestingIntegration
 
 
 class GameView(FadingView):
@@ -71,14 +70,6 @@ class GameView(FadingView):
 
         self.pathfind_barrier = None
         self.pathfind_barrier_thread_lock = threading.Lock()
-
-        # Initialize testing components
-        self.test_runner = None
-        self.testing_integration = None
-        if ENABLE_TESTING:
-            self.test_runner = TestRunner(self)
-            self.testing_integration = TestingIntegration()
-            print("[TESTING] Testing components initialized in GameView")
 
         self.preload_resources()
         self.create_scene(self.scene)
@@ -259,7 +250,7 @@ class GameView(FadingView):
         
         # Reset player for new map
         self.player.reset()
-        print(f"[MAP] Player reset")
+        print(f"[MAP] Player reset at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
         
         # Clear enemies from previous map
         print(f"[MAP] Clearing {len(self.enemies)} enemies")
@@ -271,6 +262,11 @@ class GameView(FadingView):
         self.scene.add_sprite_list("CarsLayer")
         self.scene.add_sprite_list("ChestsLayer")
         print("[MAP] Sprite layers added")
+        
+        # CRITICAL: Re-add player to the new scene
+        print(f"[MAP] Re-adding player to scene at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
+        self.scene.add_sprite("Player", self.player)
+        print(f"[MAP] Player added to scene. Scene Player layer count: {len(self.scene.get_sprite_list('Player'))}")
         
         # Load cars and chests for new map
         print("[MAP] Loading cars for new map")
@@ -286,13 +282,9 @@ class GameView(FadingView):
             zombie = Zombie(
                 game_view=self,
                 scale=CHARACTER_SCALING,
-                speed=ZOMBIE_MOVEMENT_SPEED,
-                sound_set={
-                    "death": "resources/sound/zombie/Flesh Blood and Gore/Head Smash/Head Smash 1.wav"
-                }
+                speed=ZOMBIE_MOVEMENT_SPEED
             )
-            self.enemies.append(zombie)
-            self.scene.add_sprite("Enemies", zombie)
+            # Note: Zombie is already added to enemies list and scene in its constructor
         print(f"[MAP] Enemies cleared and respawned")
         
         # Reset car parts for new level
@@ -323,6 +315,16 @@ class GameView(FadingView):
         self.clear()
 
         with self.camera_manager.activate():
+            # Debug: Log what's being drawn (only once per second to avoid spam)
+            if not hasattr(self, '_last_draw_log') or time.time() - self._last_draw_log > 1.0:
+                player_layer = self.scene.get_sprite_list("Player")
+                print(f"[DRAW] Drawing scene. Player layer count: {len(player_layer)}")
+                if len(player_layer) > 0:
+                    print(f"[DRAW] Player position: ({player_layer[0].center_x:.1f}, {player_layer[0].center_y:.1f})")
+                else:
+                    print(f"[DRAW] WARNING: No player in scene!")
+                self._last_draw_log = time.time()
+            
             self.scene.draw()
             self.bullet_list.draw()
             self.bar_list.draw()
@@ -344,6 +346,8 @@ class GameView(FadingView):
 
     def on_key_press(self, key, modifiers):
         """Handle key press events."""
+        # Simple test to see if ANY key press is detected
+        print(f"[GAME] Key pressed: {key} (E key is {arcade.key.E}) - Game paused: {self.game_paused}")
         self.input_manager.on_key_press(key, modifiers)
 
     def on_key_release(self, key, modifiers):
@@ -393,10 +397,6 @@ class GameView(FadingView):
         self.bullet_list.update(
             delta_time, [self.scene.get_sprite_list("Enemies")], [self.wall_list]
         )
-        
-        # Run testing updates if enabled
-        if ENABLE_TESTING and self.test_runner:
-            self.run_testing_updates(delta_time)
 
     def on_resize(self, width: int, height: int):
         """Resize window"""
@@ -411,61 +411,4 @@ class GameView(FadingView):
         elif self.window.fullscreen and (
             width < display_width or height < display_height
         ):
-            self.window.set_fullscreen(False)
-    
-    # === Testing Methods ===
-    
-    def run_testing_updates(self, delta_time):
-        """Run testing updates during game loop."""
-        if not ENABLE_TESTING or not self.test_runner:
-            return
-        
-        # Inject tracking if not already done
-        if self.testing_integration and not hasattr(self, '_tracking_injected'):
-            print("[TESTING] Starting tracking injection...")
-            self.testing_integration.inject_all_tracking(self)
-            self._tracking_injected = True
-            print("[TESTING] Tracking injected into game components")
-        else:
-            if hasattr(self, '_tracking_injected'):
-                print("[TESTING] Tracking already injected, skipping")
-            else:
-                print("[TESTING] No testing integration available")
-    
-    def run_tests_for_objective(self, objective):
-        """Run tests for a specific objective."""
-        if not ENABLE_TESTING or not self.test_runner:
-            return None
-        
-        print(f"[TESTING] Running tests for objective: {objective}")
-        
-        if objective == "movement":
-            return self.test_runner.run_movement_tests()
-        elif objective == "combat":
-            return self.test_runner.run_combat_tests()
-        elif objective == "car_interaction":
-            return self.test_runner.run_car_tests()
-        elif objective == "health_system":
-            return self.test_runner.run_health_tests()
-        elif objective == "map_progression":
-            # Map progression tests would be implemented here
-            print("[TESTING] Map progression tests not yet implemented")
-            return {}
-        else:
-            print(f"[TESTING] Unknown objective: {objective}")
-            return {}
-    
-    def run_all_tests(self):
-        """Run all available tests."""
-        if not ENABLE_TESTING or not self.test_runner:
-            return None
-        
-        print("[TESTING] Running all tests...")
-        return self.test_runner.run_all_tests()
-    
-    def get_test_results(self):
-        """Get current test results."""
-        if not ENABLE_TESTING or not self.test_runner:
-            return None
-        
-        return self.test_runner.get_all_tracker_results() 
+            self.window.set_fullscreen(False) 
