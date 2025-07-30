@@ -318,6 +318,7 @@ class GameView(FadingView):
         self.check_car_interactions()
 
         self.camera_manager.update_zoom(delta_time)
+        Debug.update("Camera Zoom", f"{self.camera_manager.get_camera().zoom:.2f}")
 
         self.bullet_list.update(
             delta_time, [self.scene.get_sprite_list("Enemies")], [self.wall_list]
