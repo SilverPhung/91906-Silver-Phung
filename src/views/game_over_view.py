@@ -7,6 +7,17 @@ from src.views.menu_view import MenuView
 
 class GameOverView(FadingView):
     """ Class to manage the game overview """
+    def __init__(self):
+        super().__init__()
+        self.game_over_text = arcade.Text(
+            "Game Over - press SPACE to advance",
+            WINDOW_WIDTH / 2,
+            WINDOW_HEIGHT / 2,
+            arcade.color.WHITE,
+            font_size=30,
+            anchor_x="center"
+        )
+
     def on_update(self, dt):
         self.update_fade(next_view=MenuView)
 
@@ -17,8 +28,7 @@ class GameOverView(FadingView):
     def on_draw(self):
         """ Draw the game overview """
         self.clear()
-        arcade.draw_text("Game Over - press SPACE to advance", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-                         arcade.color.WHITE, 30, anchor_x="center")
+        self.game_over_text.draw()
         self.draw_fading()
 
     def on_key_press(self, key, _modifiers):

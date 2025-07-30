@@ -15,11 +15,21 @@ class MenuView(FadingView):
         """ Called when switching to this view"""
         self.window.background_color = arcade.color.WHITE
 
+    def __init__(self):
+        super().__init__()
+        self.menu_text = arcade.Text(
+            "Menu Screen - press space to advance",
+            WINDOW_WIDTH / 2,
+            WINDOW_HEIGHT / 2,
+            arcade.color.BLACK,
+            font_size=30,
+            anchor_x="center"
+        )
+
     def on_draw(self):
         """ Draw the menu """
         self.clear()
-        arcade.draw_text("Menu Screen - press space to advance", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=30, anchor_x="center")
+        self.menu_text.draw()
         self.draw_fading()
 
     def on_key_press(self, key, _modifiers):

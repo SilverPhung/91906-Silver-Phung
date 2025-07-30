@@ -80,7 +80,9 @@ class Entity(arcade.Sprite):
         self.max_health = MAX_HEALTH
         self.current_health = self.max_health
         self.health_bar = None
-        if self.game_view.bar_list:
+        
+        # Create health bar if bar_list exists
+        if self.game_view.bar_list is not None:
             self.health_bar = IndicatorBar(
                 self,
                 self.game_view.bar_list,
