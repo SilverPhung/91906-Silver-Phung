@@ -63,7 +63,7 @@ All views now inherit from `BaseView` and use `TextFactory`:
 #### `TransitionView`
 - Reduced from 80 lines to 45 lines
 - Simplified text creation
-- Uses factory for view creation
+- Uses factory for view creation 
 
 #### `GameView`
 - Reduced complexity by using `ManagerFactory`

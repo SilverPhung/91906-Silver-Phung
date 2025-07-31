@@ -20,7 +20,7 @@ class MenuView(BaseView):
         
         # Create menu text using the factory with better contrast
         self.menu_text = self.add_centered_text(
-            "Zombie Spawn System Testing - Press SPACE to start game, T to cycle objectives, R to run tests",
+            "Game Testing System - Press SPACE to start game, T to cycle objectives, R to run tests",
             y_offset=0,
             color=arcade.color.WHITE,
             font_size=24
@@ -43,12 +43,10 @@ class MenuView(BaseView):
         )
         
         self.update_instruction_text()
-        print("[TESTING] Menu screen loaded - player can start game")
 
     def on_update(self, dt):
         """Handle transitions when fade_out is set"""
-        if self.fade_out is not None:
-            self.update_fade(next_view=GameView)
+        self.update_fade(next_view=GameView)
 
     def on_show_view(self):
         """Called when switching to this view"""
@@ -58,7 +56,6 @@ class MenuView(BaseView):
         """Handle key presses for menu navigation and testing."""
         if self.fade_out is None:
             if key == arcade.key.SPACE:
-                print("[TESTING] Player pressed SPACE - starting game")
                 self.fade_out = 0
             elif key == arcade.key.T and ENABLE_DEBUG and ENABLE_TESTING:
                 # T key cycles through testing objectives
@@ -75,7 +72,7 @@ class MenuView(BaseView):
                 current_objective = objectives[self.current_objective_index]
                 objective_desc = TESTING_OBJECTIVES[current_objective]
                 
-                self.testing_text.text = f"Testing: {objective_desc}\nPress T to cycle objectives, R to run tests"
+                self.testing_text.text = f"Current Test: {objective_desc}\nPress T to cycle objectives, R to run tests"
             else:
                 self.testing_text.text = "No testing objectives available"
         else:
@@ -89,14 +86,12 @@ class MenuView(BaseView):
             current_objective = objectives[self.current_objective_index]
             self.testing_manager.set_objective(current_objective)
             self.update_instruction_text()
-            print(f"[TESTING] Switched to objective: {current_objective}")
     
     def run_current_tests(self):
         """Run tests for the current objective."""
         objectives = list(TESTING_OBJECTIVES.keys())
         if objectives:
             current_objective = objectives[self.current_objective_index]
-            print(f"[TESTING] Running tests for objective: {current_objective}")
             
             # Set the objective
             self.testing_manager.set_objective(current_objective)
@@ -106,7 +101,6 @@ class MenuView(BaseView):
             
             # Show test execution message
             self.results_text.text = f"Tests will run when game starts..."
-            print("[TESTING] Tests queued for execution when game starts")
     
     def display_test_results(self, results):
         """Display test results on the menu."""
@@ -116,7 +110,6 @@ class MenuView(BaseView):
             success_rate = results.get('success_rate', 0)
             
             self.results_text.text = f"Test Results: {passed_tests}/{total_tests} passed ({success_rate:.1f}%)"
-            print(f"[TESTING] Displaying test results: {passed_tests}/{total_tests} passed")
         else:
             self.results_text.text = ""
 

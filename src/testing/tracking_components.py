@@ -20,13 +20,10 @@ class MovementTracker:
         self.speed_measurements = []
         self.direction_changes = []
         self.collision_events = []
-        
-        print("[TESTING] MovementTracker initialized")
     
     def start_tracking(self):
         """Start tracking movement."""
         self.initial_position = self.player.position
-        print("[TESTING] Movement tracking started")
     
     def record_movement(self, direction: str, speed: float):
         """Record a movement event."""
@@ -105,8 +102,6 @@ class CombatTracker:
         self.enemy_damage_events = []
         self.weapon_switches = []
         self.accuracy_measurements = []
-        
-        print("[TESTING] CombatTracker initialized")
     
     def record_shot(self, target_position: tuple, weapon_type: str = "default"):
         """Record a shot fired."""
@@ -173,8 +168,6 @@ class CarInteractionTracker:
         self.parts_collected = 0
         self.car_usage_events = []
         self.interaction_distances = []
-        
-        print("[TESTING] CarInteractionTracker initialized")
     
     def record_interaction_attempt(self, car_type: str, success: bool, distance: float = 0.0):
         """Record a car interaction attempt."""
@@ -236,8 +229,6 @@ class HealthTracker:
         self.damage_events = []
         self.healing_events = []
         self.health_bar_updates = []
-        
-        print("[TESTING] HealthTracker initialized")
     
     def record_health_change(self, old_health: int, new_health: int, reason: str):
         """Record a health change."""

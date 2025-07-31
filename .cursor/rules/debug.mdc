@@ -1,0 +1,15 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+attempt to find the error first. If you are certain you've found the error, fix it. If this is proven difficult or the error persist for too long, or you are uncertain,
+
+Please add comprehensive logs to the code to get better visibility into what is going on so we can find the fix. I'll run the code and feed you the logs results. Don't add too much loggings, it can overwhelm the logs. NEVER add longs that are triggered every frame. ONLY run logs that are triggered on event or periodically using delta time.
+
+If possible, you should automatically run the file for user to test. This will allow you to get log feedback immediately. YOU SHOULD do this IF you can
+
+before running the program, tell the user what their objective is for testing. add print statement to track the test validation and player progression like movement or interaction etc. Keep track of all the tests and print a final message whether a test was successful, unsuccessful, or not attempted. 
+
+Once the error is confirmed to be resolved completely, remove debug loggings. 

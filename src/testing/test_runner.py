@@ -20,15 +20,11 @@ class TestRunner:
         self.centralized_tests = CentralizedTests(game_view)
         self.active_trackers = {}
         self.test_results = {}
-        
-        print("[TESTING] TestRunner initialized")
     
     def run_movement_tests(self) -> Dict[str, Any]:
         """Run all movement tests."""
         if not ENABLE_TESTING:
             return {}
-        
-        print("[TESTING] Starting movement tests...")
         
         # Create movement tracker
         movement_tracker = self.centralized_tests.create_movement_tracker()
@@ -41,15 +37,12 @@ class TestRunner:
             'collision': self.centralized_tests.test_collision_detection()
         }
         
-        print("[TESTING] Movement tests completed")
         return results
     
     def run_combat_tests(self) -> Dict[str, Any]:
         """Run all combat tests."""
         if not ENABLE_TESTING:
             return {}
-        
-        print("[TESTING] Starting combat tests...")
         
         # Create combat tracker
         combat_tracker = self.centralized_tests.create_combat_tracker()
@@ -62,15 +55,12 @@ class TestRunner:
             'enemy_damage': self.centralized_tests.test_enemy_damage()
         }
         
-        print("[TESTING] Combat tests completed")
         return results
     
     def run_car_tests(self) -> Dict[str, Any]:
         """Run all car interaction tests."""
         if not ENABLE_TESTING:
             return {}
-        
-        print("[TESTING] Starting car interaction tests...")
         
         # Create car tracker
         car_tracker = self.centralized_tests.create_car_tracker()
@@ -82,15 +72,12 @@ class TestRunner:
             'car_usage': self.centralized_tests.test_car_usage()
         }
         
-        print("[TESTING] Car interaction tests completed")
         return results
     
     def run_health_tests(self) -> Dict[str, Any]:
         """Run all health system tests."""
         if not ENABLE_TESTING:
             return {}
-        
-        print("[TESTING] Starting health system tests...")
         
         # Create health tracker
         health_tracker = self.centralized_tests.create_health_tracker()
@@ -102,15 +89,12 @@ class TestRunner:
             'damage': self.centralized_tests.test_damage_application()
         }
         
-        print("[TESTING] Health system tests completed")
         return results
     
     def run_all_tests(self) -> Dict[str, Any]:
         """Run all tests and generate comprehensive report."""
         if not ENABLE_TESTING:
             return {}
-        
-        print("[TESTING] Running comprehensive test suite...")
         
         all_results = {
             'movement': self.run_movement_tests(),
@@ -142,7 +126,6 @@ class TestRunner:
             'detailed_results': results
         }
         
-        print(f"[TESTING] Test Report: {passed_tests}/{total_tests} tests passed ({success_rate:.1f}%)")
         return report
     
     def get_tracker_results(self, tracker_name: str) -> Optional[Dict[str, Any]]:
@@ -162,7 +145,6 @@ class TestRunner:
     def clear_trackers(self):
         """Clear all active trackers."""
         self.active_trackers.clear()
-        print("[TESTING] All trackers cleared")
     
     def start_tracking(self, tracker_name: str):
         """Start tracking for a specific component."""
@@ -170,7 +152,6 @@ class TestRunner:
             tracker = self.active_trackers[tracker_name]
             if hasattr(tracker, 'start_tracking'):
                 tracker.start_tracking()
-                print(f"[TESTING] Started tracking for {tracker_name}")
     
     def record_event(self, tracker_name: str, event_type: str, data: Dict[str, Any]):
         """Record an event for a specific tracker."""
@@ -179,7 +160,6 @@ class TestRunner:
             if hasattr(tracker, f'record_{event_type}'):
                 method = getattr(tracker, f'record_{event_type}')
                 method(**data)
-                print(f"[TESTING] Recorded {event_type} event for {tracker_name}")
     
     def validate_test_results(self, tracker_name: str) -> bool:
         """Validate results from a specific tracker."""

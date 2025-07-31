@@ -1,0 +1,304 @@
+"""
+Map Manager for handling map loading, scene creation, and map transitions.
+
+This module provides a centralized system for managing map-related operations
+including tile map loading, scene setup, camera bounds calculation, and map transitions.
+"""
+
+import arcade
+import os
+import time
+from typing import Optional, Tuple
+from src.constants import TILE_SCALING, MAP_WIDTH_PIXEL, MAP_HEIGHT_PIXEL, ENABLE_TESTING
+from src.debug import Debug
+
+
+class MapManager:
+    """Manages map loading, scene creation, and map transitions."""
+    
+    def __init__(self, game_view):
+        self.game_view = game_view
+        self.current_map_index = 1
+        self.tile_map = None
+        self.wall_list = None
+        self.scene = None
+        
+    def load_map(self, map_index: int) -> bool:
+        """
+        Load a specific map by index.
+        
+        Args:
+            map_index: The index of the map to load
+            
+        Returns:
+            bool: True if map loaded successfully, False otherwise
+        """
+        print(f"[MAP_MANAGER] ===== LOAD_MAP CALLED with map_index: {map_index} =====")
+        map_name = f"resources/maps/map{map_index}.tmx"
+        print(f"[MAP_MANAGER] Map file: {map_name}")
+        
+        # Check if map file exists
+        if not os.path.exists(map_name):
+            print(f"[MAP_MANAGER] ERROR: Map file {map_name} does not exist!")
+            available_maps = [f for f in os.listdir('resources/maps') if f.endswith('.tmx')]
+            print(f"[MAP_MANAGER] Available maps: {available_maps}")
+            
+            # Fallback to map1 if map doesn't exist
+            map_index = 1
+            map_name = f"resources/maps/map{map_index}.tmx"
+            print(f"[MAP_MANAGER] Falling back to {map_name}")
+        
+        try:
+            # Load new tile map
+            self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
+            print(f"[MAP_MANAGER] Tilemap loaded successfully")
+            self.current_map_index = map_index
+            return True
+        except Exception as e:
+            print(f"[MAP_MANAGER] ERROR loading tilemap: {e}")
+            # Fallback to map1
+            map_index = 1
+            map_name = f"resources/maps/map{map_index}.tmx"
+            print(f"[MAP_MANAGER] Falling back to {map_name}")
+            try:
+                self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
+                print(f"[MAP_MANAGER] Fallback tilemap loaded successfully")
+                self.current_map_index = map_index
+                return True
+            except Exception as fallback_error:
+                print(f"[MAP_MANAGER] CRITICAL ERROR: Could not load fallback map: {fallback_error}")
+                return False
+    
+    def create_scene(self) -> arcade.Scene:
+        """
+        Create a new scene with the current tile map.
+        
+        Returns:
+            arcade.Scene: The created scene
+        """
+        print(f"[MAP_MANAGER] Creating scene for map: resources/maps/map{self.current_map_index}.tmx")
+        
+        # Clear existing scene if it exists
+        if self.scene:
+            print(f"[MAP_MANAGER] Clearing existing scene...")
+            # Clear all sprite lists in the scene
+            for sprite_list_name in list(self.scene._name_mapping.keys()):
+                sprite_list = self.scene._name_mapping[sprite_list_name]
+                sprite_list.clear()
+            print(f"[MAP_MANAGER] Existing scene cleared")
+        
+        # Create new scene
+        self.scene = arcade.Scene()
+        print(f"[MAP_MANAGER] New scene created")
+        
+        # Add the ground layers to the scene (in drawing order from bottom to top)
+        print(f"[MAP_MANAGER] Adding ground layers to scene...")
+        for layer_name in ("Dirt", "Grass", "Road"):
+            self.scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
+        print(f"[MAP_MANAGER] Ground layers added")
+        
+        # Add the walls layer
+        self.wall_list = self.tile_map.sprite_lists["Walls"]
+        self.scene.add_sprite_list("Walls", sprite_list=self.wall_list)
+        print(f"[MAP_MANAGER] Walls layer added with {len(self.wall_list)} sprites")
+        
+        # Add sprite lists for entities (drawn on top)
+        print("[MAP_MANAGER] Adding entity sprite layers to scene")
+        self.scene.add_sprite_list("Player")
+        self.scene.add_sprite_list("CarsLayer")
+        self.scene.add_sprite_list("ChestsLayer")
+        self.scene.add_sprite_list("Enemies")
+        print("[MAP_MANAGER] Entity sprite layers added successfully")
+        
+        # Log scene sprite counts
+        print(f"[MAP_MANAGER] Scene sprite counts:")
+        for layer_name in self.scene._name_mapping.keys():
+            sprite_list = self.scene._name_mapping[layer_name]
+            print(f"[MAP_MANAGER]   {layer_name}: {len(sprite_list)} sprites")
+        
+        return self.scene
+    
+    def setup_camera_bounds(self) -> None:
+        """Set up camera bounds based on the current tile map."""
+        if self.tile_map:
+            self.game_view.camera_manager.setup_camera_bounds(self.tile_map)
+            print(f"[MAP_MANAGER] Camera bounds set up")
+    
+    def create_pathfinding_barrier(self) -> None:
+        """Create or regenerate the pathfinding barrier for AI navigation."""
+        def create_pathfind_barrier():
+            with self.game_view.pathfind_barrier_thread_lock:
+                # Always recreate the barrier for new maps
+                self.game_view.pathfind_barrier = arcade.AStarBarrierList(
+                    moving_sprite=self.game_view.player,
+                    blocking_sprites=self.wall_list,
+                    grid_size=30,
+                    left=0,
+                    right=MAP_WIDTH_PIXEL,
+                    bottom=0,
+                    top=MAP_HEIGHT_PIXEL,
+                )
+                print(f"[MAP_MANAGER] Pathfinding barrier created with {len(self.wall_list)} blocking sprites")
+        
+        self.game_view._start_thread(create_pathfind_barrier)
+        print(f"[MAP_MANAGER] Pathfinding barrier thread started")
+    
+    def transition_to_next_map(self) -> Optional[str]:
+        """
+        Transition to the next map.
+        
+        Returns:
+            Optional[str]: The name of the view to transition to, or None if continuing with current view
+        """
+        self.current_map_index += 1
+        print(f"[MAP_MANAGER] Transitioning to map {self.current_map_index}")
+        
+        if self.current_map_index > 3:
+            print(f"[MAP_MANAGER] All maps completed, transitioning to end view")
+            return "EndView"
+        
+        # Show transition screen
+        print(f"[MAP_MANAGER] Showing transition screen to map {self.current_map_index}")
+        return "TransitionView"
+    
+    def get_map_info(self) -> Tuple[int, str]:
+        """
+        Get current map information.
+        
+        Returns:
+            Tuple[int, str]: (map_index, map_name)
+        """
+        map_name = f"resources/maps/map{self.current_map_index}.tmx"
+        return self.current_map_index, map_name
+    
+    def get_wall_list(self) -> arcade.SpriteList:
+        """Get the wall list for collision detection."""
+        return self.wall_list
+    
+    def get_tile_map(self) -> arcade.TileMap:
+        """Get the current tile map."""
+        return self.tile_map
+    
+    def get_scene(self) -> arcade.Scene:
+        """Get the current scene."""
+        return self.scene
+    
+    def clear_health_bars(self) -> None:
+        """Clear health bars from the previous map."""
+        bar_count = len(self.game_view.bar_list)
+        print(f"[MAP_MANAGER] Clearing {bar_count} health bars")
+        self.game_view.bar_list.clear()
+    
+    def reset_entities(self) -> None:
+        """Reset entities for the new map."""
+        # Clear enemies from previous map
+        for enemy in self.game_view.enemies:
+            enemy.cleanup()
+        self.game_view.enemies.clear()
+        
+        # Clear bullets from previous map
+        self.game_view.bullet_list.clear()
+        
+        # Re-add player to the new scene
+        player_list = self.scene.get_sprite_list("Player")
+        if not player_list or self.game_view.player not in player_list:
+            self.scene.add_sprite("Player", self.game_view.player)
+    
+    def setup_managers_for_map(self) -> None:
+        """Set up all managers for the new map."""
+        # Set up spawn manager for new map
+        self.game_view.spawn_manager.setup_for_map(self.tile_map, self.wall_list)
+        
+        # Load car positions from Tiled map
+        self.game_view.car_manager.load_cars_from_map()
+        
+        # Load chest positions from Tiled map
+        self.game_view.chest_manager.load_chests_from_map()
+        
+        # Position player at old car
+        with self.game_view.pathfind_barrier_thread_lock:
+            self.game_view.car_manager.position_player_at_old_car()
+        
+    
+    def spawn_enemies_for_map(self, zombie_count: int = 10) -> None:
+        """
+        Spawn enemies for the new map.
+        
+        Args:
+            zombie_count: Number of zombies to spawn
+        """
+        current_time = time.time()
+        spawn_positions = self.game_view.spawn_manager.get_spawn_positions(zombie_count, current_time)
+        
+        for x, y in spawn_positions:
+            self.game_view.spawn_manager.create_zombie(x, y)
+    
+    def reset_game_state_for_map(self) -> None:
+        """Reset game state for the new map."""
+        # Reset car parts for new level
+        self.game_view.car_manager.reset_car_parts()
+        
+        # Reset input keys for new map
+        self.game_view.input_manager.reset_keys()
+        
+        # Reset UI elements for new map
+        print(f"[MAP_MANAGER] Resetting UI elements...")
+        self.game_view.ui_manager.reset_ui()
+    
+    def load_complete_map(self, map_index: int) -> bool:
+        """
+        Load a complete map with all setup and entity spawning.
+        
+        Args:
+            map_index: The index of the map to load
+            
+        Returns:
+            bool: True if map loaded successfully, False otherwise
+        """
+        print(f"[MAP_MANAGER] ===== LOADING COMPLETE MAP {map_index} =====")
+        
+        # Load the map
+        if not self.load_map(map_index):
+            return False
+        
+        # Clear health bars from previous map
+        self.clear_health_bars()
+        
+        # Create new scene
+        self.create_scene()
+        
+        # Set up camera bounds
+        self.setup_camera_bounds()
+        
+        # Create pathfinding barrier
+        self.create_pathfinding_barrier()
+        
+        # Reset entities
+        self.reset_entities()
+        
+        # Set up managers for new map
+        self.setup_managers_for_map()
+        
+        # Spawn enemies
+        self.spawn_enemies_for_map()
+        
+        # Reset game state
+        self.reset_game_state_for_map()
+        
+        print(f"[MAP_MANAGER] Map {map_index} loaded successfully")
+        
+        # Final scene sprite counts
+        print(f"[MAP_MANAGER] Final scene sprite counts:")
+        for layer_name in self.scene._name_mapping.keys():
+            sprite_list = self.scene._name_mapping[layer_name]
+            print(f"[MAP_MANAGER]   {layer_name}: {len(sprite_list)} sprites")
+        
+        if ENABLE_TESTING:
+            Debug.track_event("map_loaded", {
+                'map_index': map_index,
+                'wall_count': len(self.wall_list),
+                'scene_layers': len(self.scene._name_mapping),
+                'enemy_count': len(self.game_view.enemies)
+            })
+        
+        return True 

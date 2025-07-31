@@ -14,6 +14,7 @@ import os
 import asyncio
 import math
 import concurrent.futures
+from typing import Dict, Any
 
 # Import refactored classes
 from src.sprites.car import Car
@@ -24,6 +25,7 @@ from src.sprites.indicator_bar import IndicatorBar
 from src.entities.player import Player, WeaponType
 from src.entities.zombie import Zombie
 from src.managers.manager_factory import ManagerFactory
+from src.managers.reset_coordinator import ResetCoordinator
 import threading
 # Import constants
 from src.constants import *
@@ -53,11 +55,13 @@ class GameView(FadingView):
         # Enemy list
         self.enemies = arcade.SpriteList()
 
-        self.current_map_index = 1
-
         # Initialize managers using factory
         managers = ManagerFactory.create_managers(self)
         ManagerFactory.setup_managers(managers, self)
+        
+        # Initialize testing manager
+        from src.managers.testing_manager import TestingManager
+        self.testing_manager = TestingManager()
 
         self.gun_shot_sound = arcade.load_sound(
             "resources/sound/weapon/Desert Eagle/gun_rifle_pistol.wav"
@@ -72,7 +76,11 @@ class GameView(FadingView):
         self.pathfind_barrier_thread_lock = threading.Lock()
 
         self.preload_resources()
-        self.create_scene(self.scene)
+        self.create_initial_scene()
+        
+        # Initialize reset coordinator
+        self.reset_coordinator = ResetCoordinator(self)
+        self._register_resetable_components()
         
         # Reset input keys for initial setup
         self.input_manager.reset_keys()
@@ -82,120 +90,70 @@ class GameView(FadingView):
         Entity.load_animations(character_preset="Man", character_config_path=PLAYER_CONFIG_FILE, game_view=self)
         Entity.load_animations(character_preset="Army_zombie", character_config_path=ZOMBIE_CONFIG_FILE, game_view=self)
 
+    def _register_resetable_components(self):
+        """Register all resetable components with the coordinator."""
+        
+        # Register map-specific components
+        if hasattr(self, 'car_manager'):
+            self.reset_coordinator.register_component(self.car_manager, "map")
+        if hasattr(self, 'chest_manager'):
+            self.reset_coordinator.register_component(self.chest_manager, "map")
+        if hasattr(self, 'input_manager'):
+            self.reset_coordinator.register_component(self.input_manager, "map")
+        if hasattr(self, 'ui_manager'):
+            self.reset_coordinator.register_component(self.ui_manager, "map")
+        if hasattr(self, 'game_state_manager'):
+            self.reset_coordinator.register_component(self.game_state_manager, "game")
+
     def reset(self):
-        self.enemies.clear()
-        self.bullet_list.clear()
-        if "Enemies" not in self.scene._name_mapping:
-            self.scene.add_sprite_list("Enemies", self.enemies)
-        else:
-            self.scene.get_sprite_list("Enemies").clear()
-            self.scene.get_sprite_list("Enemies").extend(self.enemies)
+        """Reset the game state for the current map."""
+        self.reset_coordinator.reset_for_map()
         
-        self.player.reset()
-        self.scene.add_sprite("Player", self.player)
-
-        # Set up spawn manager for initial scene
-        print(f"[RESET] Setting up spawn manager for initial scene...")
-        self.spawn_manager.setup_for_map(self.tile_map, self.wall_list)
-        
-        # Spawn zombies using spawn manager
-        zombie_count = 25  # Increased from 10 to 25
-        current_time = time.time()
-        spawn_positions = self.spawn_manager.get_spawn_positions(zombie_count, current_time)
-        
-        for x, y in spawn_positions:
-            zombie = Zombie(
-                game_view=self,
-                zombie_type="Army_zombie",
-                player_ref=self.player,
-            )
-            zombie.spawn_at_position(x, y)
-        
-        print(f"[RESET] {len(self.enemies)} enemies spawned using spawn manager")
-
+        # Reset player health
         self.player.current_health = self.player.max_health
         if self.player.health_bar:
             self.player.health_bar.fullness = 1.0
 
     def setup(self):
-        self.reset()
+        # Don't reset here - only reset when actually changing maps
+        # self.reset()
         for thread in self.threads:
             thread.join()
 
         self.game_paused = False
 
-    def create_scene(self, scene: arcade.Scene):
-        """Set up the game and initialize the variables."""
-
-        # Load the Tiled map
-        map_name = f"resources/maps/map{self.current_map_index}.tmx"
-        print(f"[GAME_VIEW] Creating scene for map: {map_name}")
-
-        self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
-        print(f"[GAME_VIEW] Tilemap loaded successfully")
-
-        # Add the ground layers to the scene (in drawing order from bottom to top)
-        print(f"[GAME_VIEW] Adding ground layers to scene...")
-        for layer_name in ("Dirt", "Grass", "Road"):
-            scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
-            print(f"[GAME_VIEW] Added {layer_name} layer with {len(self.tile_map.sprite_lists[layer_name])} sprites")
+    def create_initial_scene(self):
+        """Create the initial scene for the game."""
         
-        self.wall_list = self.tile_map.sprite_lists["Walls"]
-        # Add the walls layer to the scene for collision
-        scene.add_sprite_list("Walls", sprite_list=self.wall_list)
-        print(f"[GAME_VIEW] Added Walls layer with {len(self.wall_list)} sprites")
+        # Load initial map
+        if not self.map_manager.load_map(self.map_manager.current_map_index):
+            return
         
-        self.camera_manager.setup_camera_bounds(self.tile_map)
-        print(f"[GAME_VIEW] Camera bounds set up")
-
-        # Set up the player info
-        print(f"[GAME_VIEW] Creating player...")
+        # Create scene
+        self.scene = self.map_manager.create_scene()
+        
+        # Create player
         self.player = Player(
             game_view=self,
+            player_preset="Man",
+            config_file=PLAYER_CONFIG_FILE,
             scale=CHARACTER_SCALING,
+            friction=PLAYER_FRICTION,
             speed=PLAYER_MOVEMENT_SPEED,
-            sound_set={
-                "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
-            }
         )
-        print(f"[GAME_VIEW] Player created at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
 
-        def create_pathfind_barrier():
-            with self.pathfind_barrier_thread_lock:
-                if self.pathfind_barrier is None:
-                    self.pathfind_barrier = arcade.AStarBarrierList(
-                        moving_sprite=self.player,
-                        blocking_sprites=self.wall_list,
-                        grid_size=30,
-                        left=0,
-                        right=MAP_WIDTH_PIXEL,
-                        bottom=0,
-                        top=MAP_HEIGHT_PIXEL,
-                    )
         
-        self._start_thread(create_pathfind_barrier)
-        print(f"[GAME_VIEW] Pathfinding barrier thread started")
-
-        # Add sprite lists for Player, Enemies, Cars, and Chests (drawn on top)
-        print("[GAME_VIEW] Adding sprite layers to scene")
-        self.scene.add_sprite_list("Player")
-        self.scene.add_sprite_list("CarsLayer")
-        self.scene.add_sprite_list("ChestsLayer")
-        print("[GAME_VIEW] Sprite layers added successfully")
+        # Set up camera bounds
+        self.map_manager.setup_camera_bounds()
         
-        # Load car positions from Tiled map
-        print("[GAME_VIEW] Loading cars from map...")
-        self.car_manager.load_cars_from_map()
+        # Create pathfinding barrier
+        self.map_manager.create_pathfinding_barrier()
         
-        # Load chest positions from Tiled map
-        print("[GAME_VIEW] Loading chests from map...")
-        self.chest_manager.load_chests_from_map()
+        # Set up managers for initial scene (this will position the player)
+        self.map_manager.setup_managers_for_map()
         
-        # Log scene sprite counts
-        print(f"[GAME_VIEW] Scene sprite counts:")
-        for layer_name in self.scene._name_mapping.keys():
-            sprite_list = self.scene._name_mapping[layer_name]
-            print(f"[GAME_VIEW]   {layer_name}: {len(sprite_list)} sprites")
+        # Add player to scene
+        self.scene.add_sprite("Player", self.player)
 
     def _start_thread(self, target_func):
         """Start a thread and add it to the threads list."""
@@ -209,6 +167,7 @@ class GameView(FadingView):
 
     def handle_car_interaction(self):
         """Handle car interaction when E key is pressed"""
+        print(f"[INTERACTION] Car interaction attempted")
         self.car_manager.handle_car_interaction()
 
     def check_chest_interactions(self):
@@ -217,111 +176,38 @@ class GameView(FadingView):
 
     def handle_chest_interaction(self):
         """Handle chest interaction when E key is pressed"""
+        print(f"[INTERACTION] Chest interaction attempted")
         self.chest_manager.handle_chest_interaction()
 
     def transition_to_next_map(self):
         """Transition to the next map"""
-        self.current_map_index += 1
+        next_view = self.map_manager.transition_to_next_map()
         
-        if self.current_map_index > 3:
+        if next_view == "EndView":
             from src.views.end_view import EndView
             end_view = EndView()
             self.window.show_view(end_view)
             return
-            
-        # Show transition screen
-        from src.views.transition_view import TransitionView
-        transition_view = TransitionView(self.current_map_index, 3, previous_game_view=self)
-        self.window.show_view(transition_view)
+        elif next_view == "TransitionView":
+            # Show transition screen
+            from src.views.transition_view import TransitionView
+            transition_view = TransitionView(self.map_manager.current_map_index, 3, previous_game_view=self)
+            self.window.show_view(transition_view)
         
     def load_map(self, map_index):
-        """Load a specific map by index"""
-        print(f"[MAP] ===== LOAD_MAP CALLED with map_index: {map_index} =====")
-        map_name = f"resources/maps/map{map_index}.tmx"
-        print(f"[MAP] Map file: {map_name}")
+        """Load a specific map by index using the MapManager"""
+        print(f"[GAME_VIEW] Loading map {map_index} using MapManager...")
         
-        # Clear health bars from previous map
-        print(f"[MAP] Clearing {len(self.bar_list)} health bars")
-        self.bar_list.clear()
+        # Use MapManager to load the complete map
+        success = self.map_manager.load_complete_map(map_index)
         
-        # Load new tile map
-        self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
-        print(f"[MAP] Tilemap loaded successfully")
+        if success:
+            # Update GameView references to use MapManager
+            self.scene = self.map_manager.get_scene()
+            self.tile_map = self.map_manager.get_tile_map()
+            self.wall_list = self.map_manager.get_wall_list()
         
-        # Create new scene
-        self.scene = arcade.Scene()
-        print(f"[MAP] New scene created")
-        
-        # Use create_scene to properly set up the scene
-        print(f"[MAP] Calling create_scene to set up scene properly")
-        self.create_scene(self.scene)
-        print(f"[MAP] Scene created successfully")
-        
-        # Reset player for new map
-        print(f"[MAP] Resetting player...")
-        self.player.reset()
-        print(f"[MAP] Player reset at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
-        
-        # Clear enemies from previous map
-        print(f"[MAP] Clearing {len(self.enemies)} enemies")
-        for enemy in self.enemies:
-            enemy.cleanup()
-        self.enemies.clear()
-        
-        # CRITICAL: Re-add player to the new scene
-        print(f"[MAP] Re-adding player to scene at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
-        self.scene.add_sprite("Player", self.player)
-        print(f"[MAP] Player added to scene. Scene Player layer count: {len(self.scene.get_sprite_list('Player'))}")
-        
-        # Position player at old car
-        print(f"[MAP] Positioning player at old car...")
-        self.car_manager.position_player_at_old_car()
-        print(f"[MAP] Player positioned at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
-        
-        # Set up spawn manager for new map
-        print(f"[MAP] Setting up spawn manager for new map...")
-        self.spawn_manager.setup_for_map(self.tile_map, self.wall_list)
-        
-        # Spawn enemies for new map using spawn manager
-        print(f"[MAP] Spawning enemies for new map...")
-        zombie_count = 25  # Increased from 10 to 25
-        current_time = time.time()
-        spawn_positions = self.spawn_manager.get_spawn_positions(zombie_count, current_time)
-        
-        for x, y in spawn_positions:
-            zombie = Zombie(
-                game_view=self,
-                scale=CHARACTER_SCALING,
-                speed=ZOMBIE_MOVEMENT_SPEED
-            )
-            zombie.spawn_at_position(x, y)
-            # Note: Zombie is already added to enemies list and scene in its constructor
-        
-        print(f"[MAP] {len(self.enemies)} enemies spawned using spawn manager")
-        
-        # Log spawn statistics
-        spawn_stats = self.spawn_manager.get_spawn_stats()
-        print(f"[MAP] Spawn stats: {spawn_stats}")
-        
-        # Reset car parts for new level
-        print(f"[MAP] Resetting car parts...")
-        self.car_manager.reset_car_parts()
-        
-        # Reset input keys for new map
-        print(f"[MAP] Resetting input keys...")
-        self.input_manager.reset_keys()
-        
-        # Reset UI elements for new map
-        print(f"[MAP] Resetting UI elements...")
-        self.ui_manager.reset_ui()
-        
-        print(f"[MAP] Map {map_index} loaded successfully")
-        
-        # Log final scene sprite counts
-        print(f"[MAP] Final scene sprite counts:")
-        for layer_name in self.scene._name_mapping.keys():
-            sprite_list = self.scene._name_mapping[layer_name]
-            print(f"[MAP]   {layer_name}: {len(sprite_list)} sprites")
+        return success
 
     def draw_ui(self):
         """Draw UI elements including car and chest interaction prompts."""
@@ -334,23 +220,6 @@ class GameView(FadingView):
         self.clear()
 
         with self.camera_manager.activate():
-            # Debug: Log what's being drawn (only once per second to avoid spam)
-            if not hasattr(self, '_last_draw_log') or time.time() - self._last_draw_log > 1.0:
-                player_layer = self.scene.get_sprite_list("Player")
-                print(f"[DRAW] Drawing scene. Player layer count: {len(player_layer)}")
-                if len(player_layer) > 0:
-                    print(f"[DRAW] Player position: ({player_layer[0].center_x:.1f}, {player_layer[0].center_y:.1f})")
-                else:
-                    print(f"[DRAW] WARNING: No player in scene!")
-                
-                # Log all scene layers
-                print(f"[DRAW] Scene layers:")
-                for layer_name in self.scene._name_mapping.keys():
-                    sprite_list = self.scene._name_mapping[layer_name]
-                    print(f"[DRAW]   {layer_name}: {len(sprite_list)} sprites")
-                
-                self._last_draw_log = time.time()
-            
             self.scene.draw()
             self.bullet_list.draw()
             self.bar_list.draw()
@@ -372,8 +241,6 @@ class GameView(FadingView):
 
     def on_key_press(self, key, modifiers):
         """Handle key press events."""
-        # Simple test to see if ANY key press is detected
-        print(f"[GAME] Key pressed: {key} (E key is {arcade.key.E}) - Game paused: {self.game_paused}")
         self.input_manager.on_key_press(key, modifiers)
 
     def on_key_release(self, key, modifiers):
@@ -410,6 +277,12 @@ class GameView(FadingView):
 
         self.player.update(delta_time)
         Debug.update("Delta Time", f"{delta_time:.2f}")
+        
+        # Track player progression for testing
+        if hasattr(self, 'testing_manager') and self.testing_manager.current_objective:
+            print(f"[PROGRESS] Player position: ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
+            print(f"[PROGRESS] Player health: {self.player.current_health}/{self.player.max_health}")
+            print(f"[PROGRESS] Enemies remaining: {len(self.enemies)}")
 
         self.enemies.update(delta_time)
 
@@ -420,9 +293,30 @@ class GameView(FadingView):
         self.camera_manager.update_zoom(delta_time)
         Debug.update("Camera Zoom", f"{self.camera_manager.get_camera().zoom:.2f}")
 
+        # Get wall_list from MapManager
+        wall_list = self.map_manager.get_wall_list() if hasattr(self, 'map_manager') else self.wall_list
         self.bullet_list.update(
-            delta_time, [self.scene.get_sprite_list("Enemies")], [self.wall_list]
+            delta_time, [self.scene.get_sprite_list("Enemies")], [wall_list]
         )
+
+    def run_tests_for_objective(self, objective: str) -> Dict[str, Any]:
+        """Run tests for a specific objective."""
+        if hasattr(self, 'testing_manager'):
+            self.testing_manager.set_objective(objective)
+            return self.testing_manager.run_all_tests(self)
+        return {}
+    
+    def run_all_tests(self) -> Dict[str, Any]:
+        """Run all tests."""
+        if hasattr(self, 'testing_manager'):
+            return self.testing_manager.run_all_tests(self)
+        return {}
+    
+    def get_test_results(self) -> Dict[str, Any]:
+        """Get current test results."""
+        if hasattr(self, 'testing_manager'):
+            return self.testing_manager.test_results
+        return {}
 
     def on_resize(self, width: int, height: int):
         """Resize window"""

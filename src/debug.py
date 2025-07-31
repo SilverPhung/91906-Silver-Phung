@@ -70,7 +70,6 @@ class Debug:
         if ENABLE_TESTING:
             Debug.testing_objective = objective
             Debug.test_start_time = time.time()
-            print(f"[TESTING] Objective set: {objective}")
     
     @staticmethod
     def track_event(event_type: str, data: Dict[str, Any]):
@@ -82,15 +81,12 @@ class Debug:
                 'timestamp': time.time()
             }
             Debug.tracking_events.append(event)
-            print(f"[TESTING] Event tracked: {event_type} - {data}")
     
     @staticmethod
     def validate_test(test_name: str, condition: bool):
         """Validate a test condition."""
         if ENABLE_TESTING:
             Debug.test_results[test_name] = condition
-            status = "PASSED" if condition else "FAILED"
-            print(f"[TESTING] {test_name}: {status}")
             return condition
         return True
     
@@ -104,18 +100,6 @@ class Debug:
         passed_tests = sum(1 for result in Debug.test_results.values() if result)
         failed_tests = total_tests - passed_tests
         success_rate = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
-        
-        print(f"\n[TESTING] === Test Results Report ===")
-        print(f"[TESTING] Total Tests: {total_tests}")
-        print(f"[TESTING] Passed: {passed_tests}")
-        print(f"[TESTING] Failed: {failed_tests}")
-        print(f"[TESTING] Success Rate: {success_rate:.1f}%")
-        
-        if failed_tests > 0:
-            print(f"[TESTING] Failed Tests:")
-            for test_name, result in Debug.test_results.items():
-                if not result:
-                    print(f"[TESTING]   - {test_name}")
         
         return {
             'total_tests': total_tests,
@@ -132,5 +116,4 @@ class Debug:
             Debug.testing_objective = None
             Debug.test_results.clear()
             Debug.tracking_events.clear()
-            Debug.test_start_time = None
-            print("[TESTING] Testing data cleared") 
+            Debug.test_start_time = None 

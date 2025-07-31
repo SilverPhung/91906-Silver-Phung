@@ -67,7 +67,7 @@ class SpawnManager:
             # Look for "Zombie-spawns" object layer
             if "Zombie-spawns" in tile_map.sprite_lists:
                 spawn_layer = tile_map.sprite_lists["Zombie-spawns"]
-                print(f"[SPAWN] Found {len(spawn_layer)} spawn points in map")
+
                 
                 for spawn_sprite in spawn_layer:
                     spawn_point = SpawnPoint(
@@ -83,10 +83,10 @@ class SpawnManager:
                             'is_valid': spawn_point.is_valid
                         })
             else:
-                print(f"[SPAWN] No 'Zombie-spawns' layer found in map")
+                pass
                 
         except Exception as e:
-            print(f"[SPAWN] Error loading spawn points: {e}")
+            pass
             
         return spawn_points
     
@@ -118,12 +118,11 @@ class SpawnManager:
             is_valid = len(wall_collisions) == 0
             
             if not is_valid:
-                print(f"[SPAWN] Invalid spawn point at ({spawn_point.x:.1f}, {spawn_point.y:.1f}) - wall collision")
+                pass
                 
             return is_valid
             
         except Exception as e:
-            print(f"[SPAWN] Error validating spawn point: {e}")
             return False
     
     def validate_all_spawn_points(self, wall_list) -> List[SpawnPoint]:
@@ -144,7 +143,7 @@ class SpawnManager:
             else:
                 spawn_point.is_valid = False
                 
-        print(f"[SPAWN] Validated {len(valid_spawn_points)}/{len(self.spawn_points)} spawn points")
+
         
         if ENABLE_TESTING:
             Debug.track_event("spawn_points_validated", {
@@ -169,7 +168,6 @@ class SpawnManager:
         valid_spawn_points = [sp for sp in self.spawn_points if sp.is_valid]
         
         if not valid_spawn_points:
-            print(f"[SPAWN] No valid spawn points available, using random positions")
             return self._generate_random_positions(zombie_count)
         
         # Filter spawn points by cooldown
@@ -179,7 +177,6 @@ class SpawnManager:
         ]
         
         if len(available_spawn_points) < zombie_count:
-            print(f"[SPAWN] Not enough available spawn points ({len(available_spawn_points)}), using all valid points")
             available_spawn_points = valid_spawn_points
         
         # Select spawn points with weighted distribution (prefer less used points)
@@ -250,7 +247,7 @@ class SpawnManager:
             tile_map: The loaded tile map
             wall_list: List of wall sprites for validation
         """
-        print(f"[SPAWN] Setting up spawn manager for new map")
+
         
         # Load spawn points from map
         self.spawn_points = self.load_spawn_points_from_map(tile_map)
@@ -259,7 +256,7 @@ class SpawnManager:
         # Validate spawn points
         valid_spawn_points = self.validate_all_spawn_points(wall_list)
         
-        print(f"[SPAWN] Setup complete: {len(valid_spawn_points)} valid spawn points")
+
         
         if ENABLE_TESTING:
             Debug.track_event("spawn_manager_setup", {
@@ -280,6 +277,37 @@ class SpawnManager:
             List of (x, y) coordinates for zombie spawning
         """
         return self.select_spawn_points(zombie_count, current_time)
+    
+    def create_zombie(self, x: float, y: float):
+        """
+        Create a zombie at the specified position.
+        
+        Args:
+            x: X coordinate for zombie spawn
+            y: Y coordinate for zombie spawn
+            
+        Returns:
+            Zombie: The created zombie instance
+        """
+        from src.entities.zombie import Zombie
+        from src.constants import CHARACTER_SCALING, ZOMBIE_MOVEMENT_SPEED
+        
+        zombie = Zombie(
+            game_view=self.game_view,
+            scale=CHARACTER_SCALING,
+            speed=ZOMBIE_MOVEMENT_SPEED,
+            player_ref=self.game_view.player
+        )
+        zombie.spawn_at_position(x, y)
+        
+        if ENABLE_TESTING:
+            Debug.track_event("enemy_spawned_at_position", {
+                'x': int(x),
+                'y': int(y),
+                'enemy_type': 'Army_zombie'
+            })
+        
+        return zombie
     
     def get_spawn_stats(self) -> dict:
         """

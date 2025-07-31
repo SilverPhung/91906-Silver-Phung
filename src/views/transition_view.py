@@ -33,26 +33,17 @@ class TransitionView(BaseView):
             color=arcade.color.LIGHT_CYAN,
             font_size=18
         )
-        print(f"[TESTING] Transition screen loaded - Map {next_map_index}/{total_maps}")
-
     def on_key_press(self, key, modifiers):
         """Handle key presses"""
         if key == arcade.key.SPACE:
-            print(f"[TESTING] Player pressed SPACE - transitioning to map {self.next_map_index}")
-            
             if self.previous_game_view:
                 # Use existing GameView and call load_map
-                print(f"[TRANSITION] Using existing GameView, calling load_map({self.next_map_index})")
                 self.previous_game_view.load_map(self.next_map_index)
-                print(f"[TRANSITION] load_map complete, showing existing GameView")
                 self.window.show_view(self.previous_game_view)
             else:
                 # Fallback: create new GameView using direct import
-                print(f"[TRANSITION] No previous GameView, creating new one")
                 from src.views.game_view import GameView
                 game_view = GameView()
                 game_view.current_map_index = self.next_map_index
-                print(f"[TRANSITION] Created new GameView with map index: {game_view.current_map_index}")
                 game_view.setup()
-                print(f"[TRANSITION] GameView setup complete, showing view")
                 self.window.show_view(game_view) 

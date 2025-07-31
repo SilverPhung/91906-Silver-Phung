@@ -20,19 +20,12 @@ class TestingIntegration:
         if not ENABLE_TESTING:
             return
         
-        print("[TESTING] Injecting tracking into player...")
-        print(f"[TESTING] Player type: {type(player)}")
-        print(f"[TESTING] Player has move method: {hasattr(player, 'move')}")
-        print(f"[TESTING] Player has update method: {hasattr(player, 'update')}")
-        print(f"[TESTING] Player has take_damage method: {hasattr(player, 'take_damage')}")
-        
         # Store original methods
         original_update = player.update
         original_move = getattr(player, 'move', None)
         original_take_damage = getattr(player, 'take_damage', None)
         
         # Create tracking wrapper for update method
-        print(f"[TESTING] Creating tracked_update wrapper for player")
         def tracked_update(delta_time):
             try:
                 # Call original update
@@ -44,13 +37,11 @@ class TestingIntegration:
                 
                 return result
             except Exception as e:
-                print(f"[TESTING] Error in tracked_update: {e}")
                 # Fallback to original method
                 return original_update(delta_time)
         
         # Create tracking wrapper for move method
         if original_move:
-            print(f"[TESTING] Creating tracked_move wrapper for player")
             def tracked_move(direction):
                 try:
                     # Call original move
@@ -64,18 +55,13 @@ class TestingIntegration:
                     
                     return result
                 except Exception as e:
-                    print(f"[TESTING] Error in tracked_move: {e}")
                     # Fallback to original method
                     return original_move(direction)
             
             player.move = tracked_move
-            print(f"[TESTING] Successfully replaced player.move with tracked version")
-        else:
-            print(f"[TESTING] No move method found on player")
         
         # Create tracking wrapper for take_damage method
         if original_take_damage:
-            print(f"[TESTING] Creating tracked_take_damage wrapper for player")
             def tracked_take_damage(damage):
                 try:
                     old_health = getattr(player, 'current_health', 0)
@@ -90,28 +76,19 @@ class TestingIntegration:
                     
                     return result
                 except Exception as e:
-                    print(f"[TESTING] Error in tracked_take_damage: {e}")
                     # Fallback to original method
                     return original_take_damage(damage)
             
             player.take_damage = tracked_take_damage
-            print(f"[TESTING] Successfully replaced player.take_damage with tracked version")
-        else:
-            print(f"[TESTING] No take_damage method found on player")
         
         # Replace update method
         player.update = tracked_update
-        print(f"[TESTING] Successfully replaced player.update with tracked version")
-        
-        print("[TESTING] Player tracking injection complete")
     
     @staticmethod
     def inject_tracking_into_car_manager(car_manager):
         """Inject tracking into car manager."""
         if not ENABLE_TESTING:
             return
-        
-        print("[TESTING] Injecting tracking into car manager...")
         
         # Store original methods
         original_handle_interaction = getattr(car_manager, 'handle_car_interaction', None)
@@ -144,16 +121,12 @@ class TestingIntegration:
                 return result
             
             car_manager.check_car_interactions = tracked_check_interactions
-        
-        print("[TESTING] Car manager tracking injection complete")
     
     @staticmethod
     def inject_tracking_into_chest_manager(chest_manager):
         """Inject tracking into chest manager."""
         if not ENABLE_TESTING:
             return
-        
-        print("[TESTING] Injecting tracking into chest manager...")
         
         # Store original methods
         original_handle_interaction = getattr(chest_manager, 'handle_chest_interaction', None)
@@ -186,16 +159,12 @@ class TestingIntegration:
                 return result
             
             chest_manager.check_chest_interactions = tracked_check_interactions
-        
-        print("[TESTING] Chest manager tracking injection complete")
     
     @staticmethod
     def inject_tracking_into_game_view(game_view):
         """Inject tracking into game view."""
         if not ENABLE_TESTING:
             return
-        
-        print("[TESTING] Injecting tracking into game view...")
         
         # Store original methods
         original_on_update = game_view.on_update
@@ -226,8 +195,6 @@ class TestingIntegration:
         # Replace methods
         game_view.on_update = tracked_on_update
         game_view.on_draw = tracked_on_draw
-        
-        print("[TESTING] Game view tracking injection complete")
     
     # === Tracking Methods ===
     
@@ -245,10 +212,8 @@ class TestingIntegration:
                     'position': position,
                     'delta_time': delta_time
                 })
-            else:
-                print(f"[TESTING] Player has no _movement_tracker attribute in update")
         except Exception as e:
-            print(f"[TESTING] Error tracking player update: {e}")
+            pass
     
     @staticmethod
     def track_player_movement(player, direction, speed):
@@ -263,10 +228,8 @@ class TestingIntegration:
                     'speed': speed,
                     'position': getattr(player, 'center', (0, 0))
                 })
-            else:
-                print(f"[TESTING] Player has no _movement_tracker attribute")
         except Exception as e:
-            print(f"[TESTING] Error tracking player movement: {e}")
+            pass
     
     @staticmethod
     def track_player_damage(player, old_health, new_health, damage):
@@ -348,38 +311,20 @@ class TestingIntegration:
         if not ENABLE_TESTING:
             return
         
-        print("[TESTING] Injecting tracking into all components...")
-        print(f"[TESTING] Game view type: {type(game_view)}")
-        print(f"[TESTING] Game view has player: {hasattr(game_view, 'player')}")
-        print(f"[TESTING] Game view has car_manager: {hasattr(game_view, 'car_manager')}")
-        print(f"[TESTING] Game view has chest_manager: {hasattr(game_view, 'chest_manager')}")
-        
         # Inject into player
         if hasattr(game_view, 'player'):
-            print(f"[TESTING] Injecting into player: {type(game_view.player)}")
             TestingIntegration.inject_tracking_into_player(game_view.player)
-        else:
-            print(f"[TESTING] No player found in game view")
         
         # Inject into car manager
         if hasattr(game_view, 'car_manager'):
-            print(f"[TESTING] Injecting into car manager: {type(game_view.car_manager)}")
             TestingIntegration.inject_tracking_into_car_manager(game_view.car_manager)
-        else:
-            print(f"[TESTING] No car manager found in game view")
         
         # Inject into chest manager
         if hasattr(game_view, 'chest_manager'):
-            print(f"[TESTING] Injecting into chest manager: {type(game_view.chest_manager)}")
             TestingIntegration.inject_tracking_into_chest_manager(game_view.chest_manager)
-        else:
-            print(f"[TESTING] No chest manager found in game view")
         
         # Inject into game view
-        print(f"[TESTING] Injecting into game view")
         TestingIntegration.inject_tracking_into_game_view(game_view)
-        
-        print("[TESTING] All tracking injections complete")
     
     @staticmethod
     def remove_all_tracking(game_view):
@@ -387,9 +332,6 @@ class TestingIntegration:
         if not ENABLE_TESTING:
             return
         
-        print("[TESTING] Removing all tracking injections...")
-        
         # Note: In a real implementation, you would store original methods
         # and restore them here. For now, we'll just log the removal.
-        
-        print("[TESTING] All tracking injections removed") 
+        pass 

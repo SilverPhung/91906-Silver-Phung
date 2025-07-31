@@ -74,16 +74,11 @@ class InputManager:
         """Handle key press events."""
         self.key_down[key] = True
         
-        # Debug: Log all key presses
-        print(f"[INPUT] Key pressed: {key} (E key is {arcade.key.E})")
-
         # Execute testing action if key is mapped and testing is enabled
         if key in self.testing_key_actions:
-            print(f"[INPUT] Executing testing action for key {key}")
             self.testing_key_actions[key]()
         # Execute regular action if key is mapped
         elif key in self.key_actions:
-            print(f"[INPUT] Executing regular action for key {key}")
             self.key_actions[key]()
         else:
             # Handle weapon switching
@@ -139,7 +134,6 @@ class InputManager:
 
     def _reset(self):
         """Reset the game."""
-        print("[INPUT] Reset triggered - this should be disabled for testing")
         self.game_view.reset()
 
     def _handle_car_interaction(self):
@@ -152,22 +146,12 @@ class InputManager:
         
         Car interaction takes precedence over chest interaction.
         """
-        print("[INPUT] ===== E KEY PRESSED =====")
-        print(f"[INPUT] Car manager near_car: {self.game_view.car_manager.near_car}")
-        print(f"[INPUT] Chest manager near_chest: {self.game_view.chest_manager.near_chest}")
-        
         # First try car interaction
         if self.game_view.car_manager.near_car:
-            print("[INPUT] Car nearby - handling car interaction")
             self.game_view.handle_car_interaction()
         # If no car nearby, try chest interaction
         elif self.game_view.chest_manager.near_chest:
-            print("[INPUT] Chest nearby - handling chest interaction")
             self.game_view.handle_chest_interaction()
-        else:
-            print("[INPUT] No interactable objects nearby")
-            print(f"[INPUT] Total chests: {len(self.game_view.chest_manager.chests_with_parts) + len(self.game_view.chest_manager.chests_without_parts)}")
-        print("[INPUT] =========================")
 
     def _add_test_car_part(self):
         """Add a car part for testing purposes."""
@@ -191,56 +175,36 @@ class InputManager:
         for key in self.key_down:
             self.key_down[key] = False
         self.left_mouse_pressed = False
-        print("[INPUT] All keys reset for new map")
+
     
     # === Testing Methods ===
     
     def _run_movement_tests(self):
         """Run movement tests."""
         if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            print("[TESTING] F1 pressed - running movement tests")
             results = self.game_view.run_tests_for_objective("movement")
-            if results:
-                print(f"[TESTING] Movement tests completed: {results}")
     
     def _run_combat_tests(self):
         """Run combat tests."""
         if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            print("[TESTING] F2 pressed - running combat tests")
             results = self.game_view.run_tests_for_objective("combat")
-            if results:
-                print(f"[TESTING] Combat tests completed: {results}")
     
     def _run_car_tests(self):
         """Run car interaction tests."""
         if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            print("[TESTING] F3 pressed - running car interaction tests")
             results = self.game_view.run_tests_for_objective("car_interaction")
-            if results:
-                print(f"[TESTING] Car interaction tests completed: {results}")
     
     def _run_health_tests(self):
         """Run health system tests."""
         if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            print("[TESTING] F4 pressed - running health system tests")
             results = self.game_view.run_tests_for_objective("health_system")
-            if results:
-                print(f"[TESTING] Health system tests completed: {results}")
     
     def _run_all_tests(self):
         """Run all tests."""
         if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            print("[TESTING] F5 pressed - running all tests")
             results = self.game_view.run_all_tests()
-            if results:
-                print(f"[TESTING] All tests completed: {results}")
     
     def _show_test_results(self):
         """Show current test results."""
         if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            print("[TESTING] F6 pressed - showing test results")
-            results = self.game_view.get_test_results()
-            if results:
-                print(f"[TESTING] Current test results: {results}")
-            else:
-                print("[TESTING] No test results available") 
+            results = self.game_view.get_test_results() 

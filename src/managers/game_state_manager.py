@@ -34,7 +34,7 @@ class GameStateManager:
         self._enemies_remaining = 0
         self._car_parts_collected = 0
         
-        print(f"[GAMESTATE] GameStateManager initialized with map_index: {self._current_map_index}")
+
 
     # === State Management ===
     
@@ -56,12 +56,10 @@ class GameStateManager:
     def pause(self):
         """Pause the game."""
         self._state = GameState.PAUSED
-        print("[GAMESTATE] Game paused")
     
     def unpause(self):
         """Unpause the game."""
         self._state = GameState.PLAYING
-        print("[GAMESTATE] Game unpaused")
 
     # === Map Management ===
     
@@ -78,12 +76,10 @@ class GameStateManager:
     def set_map_index(self, map_index: int):
         """Set the current map index."""
         self._current_map_index = map_index
-        print(f"[GAMESTATE] Map index set to: {self._current_map_index}")
     
     def advance_map(self):
         """Advance to the next map and handle game completion."""
         self._current_map_index += 1
-        print(f"[GAMESTATE] Advancing to map: {self._current_map_index}")
         
         if self._current_map_index > self._max_maps:
             self._complete_game()
@@ -140,7 +136,7 @@ class GameStateManager:
     def _handle_player_death(self):
         """Handle player death."""
         self._state = GameState.LOST
-        print("[GAMESTATE] Player died - game over")
+
         self._show_game_over_screen()
 
     # === Game Completion ===
@@ -148,12 +144,10 @@ class GameStateManager:
     def _complete_game(self):
         """Handle game completion."""
         self._state = GameState.WON
-        print("[GAMESTATE] Game completed! Showing end screen")
         self._show_end_screen()
     
     def _transition_to_next_map(self):
         """Handle transition to the next map."""
-        print(f"[GAMESTATE] Transitioning to map {self._current_map_index}")
         self._show_transition_screen()
 
     # === View Management (Abstraction) ===
@@ -186,13 +180,11 @@ class GameStateManager:
         """Reset the game state for a new game."""
         self._reset_state()
         self._reset_progression()
-        print("[GAMESTATE] Game state reset")
     
     def reset_for_new_map(self):
         """Reset state for a new map while preserving progression."""
         self._state = GameState.PLAYING
         self._reset_progression()
-        print(f"[GAMESTATE] Reset for new map {self._current_map_index}")
     
     def _reset_state(self):
         """Reset game state variables."""

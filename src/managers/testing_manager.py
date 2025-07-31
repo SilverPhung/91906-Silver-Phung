@@ -19,17 +19,12 @@ class TestingManager:
         self.test_results = {}
         self.tracking_components = {}
         self.active_tests = []
-        
-        print("[TESTING] TestingManager initialized")
     
     def set_objective(self, objective: str):
         """Set the current testing objective."""
         if objective in TESTING_OBJECTIVES:
             self.current_objective = objective
             Debug.set_testing_objective(TESTING_OBJECTIVES[objective])
-            print(f"[TESTING] Objective set to: {objective}")
-        else:
-            print(f"[TESTING] Warning: Unknown objective '{objective}'")
     
     def get_current_objective(self) -> Optional[str]:
         """Get the current testing objective description."""
@@ -45,8 +40,6 @@ class TestingManager:
         """Run all movement tests."""
         if not ENABLE_TESTING:
             return {}
-        
-        print("[TESTING] Starting movement tests...")
         
         # Create movement tracker
         movement_tracker = self.create_movement_tracker(game_view.player)
@@ -66,8 +59,6 @@ class TestingManager:
         if not ENABLE_TESTING:
             return {}
         
-        print("[TESTING] Starting combat tests...")
-        
         # Create combat tracker
         combat_tracker = self.create_combat_tracker(game_view.player, game_view.enemies)
         self.tracking_components['combat'] = combat_tracker
@@ -86,8 +77,6 @@ class TestingManager:
         if not ENABLE_TESTING:
             return {}
         
-        print("[TESTING] Starting car interaction tests...")
-        
         # Create car tracker
         car_tracker = self.create_car_tracker(game_view.car_manager)
         self.tracking_components['car'] = car_tracker
@@ -104,8 +93,6 @@ class TestingManager:
         """Run all health system tests."""
         if not ENABLE_TESTING:
             return {}
-        
-        print("[TESTING] Starting health system tests...")
         
         # Create health tracker
         health_tracker = self.create_health_tracker(game_view.player)
@@ -124,8 +111,6 @@ class TestingManager:
         if not ENABLE_TESTING:
             return {}
         
-        print("[TESTING] Running comprehensive test suite...")
-        
         all_results = {
             'movement': self.run_movement_tests(game_view),
             'combat': self.run_combat_tests(game_view),
@@ -141,28 +126,24 @@ class TestingManager:
         """Create a movement tracker for the player."""
         from src.testing.tracking_components import MovementTracker
         tracker = MovementTracker(player)
-        print("[TESTING] Movement tracker created")
         return tracker
     
     def create_combat_tracker(self, player, enemies):
         """Create a combat tracker for the player and enemies."""
         from src.testing.tracking_components import CombatTracker
         tracker = CombatTracker(player, enemies)
-        print("[TESTING] Combat tracker created")
         return tracker
     
     def create_car_tracker(self, car_manager):
         """Create a car interaction tracker."""
         from src.testing.tracking_components import CarInteractionTracker
         tracker = CarInteractionTracker(car_manager)
-        print("[TESTING] Car interaction tracker created")
         return tracker
     
     def create_health_tracker(self, player):
         """Create a health tracker for the player."""
         from src.testing.tracking_components import HealthTracker
         tracker = HealthTracker(player)
-        print("[TESTING] Health tracker created")
         return tracker
     
     # === Test Implementation Methods ===
@@ -172,6 +153,8 @@ class TestingManager:
         player = game_view.player
         initial_position = player.position
         
+        print(f"[TEST] Movement Test - Initial position: ({initial_position[0]:.1f}, {initial_position[1]:.1f})")
+        
         # Simulate movement (this would be replaced with actual test logic)
         Debug.track_event("movement_test", {
             'initial_position': initial_position,
@@ -180,6 +163,10 @@ class TestingManager:
         
         # Validate movement occurred
         movement_occurred = player.position != initial_position
+        current_position = player.position
+        print(f"[TEST] Movement Test - Current position: ({current_position[0]:.1f}, {current_position[1]:.1f})")
+        print(f"[TEST] Movement Test - Movement occurred: {movement_occurred}")
+        
         return Debug.validate_test("Player Movement", movement_occurred)
     
     def _test_movement_speed(self, game_view) -> bool:
@@ -213,6 +200,9 @@ class TestingManager:
         """Test shooting mechanics."""
         player = game_view.player
         
+        print(f"[TEST] Shooting Test - Player has shoot method: {hasattr(player, 'shoot')}")
+        print(f"[TEST] Shooting Test - Game has bullet list: {hasattr(game_view, 'bullet_list')}")
+        
         # Check if shooting mechanics are available
         shooting_available = hasattr(player, 'shoot') or hasattr(game_view, 'bullet_list')
         
@@ -220,6 +210,8 @@ class TestingManager:
             'shoot_method_available': hasattr(player, 'shoot'),
             'bullet_list_available': hasattr(game_view, 'bullet_list')
         })
+        
+        print(f"[TEST] Shooting Test - Shooting mechanics available: {shooting_available}")
         
         return Debug.validate_test("Shooting Mechanics", shooting_available)
     
@@ -251,6 +243,9 @@ class TestingManager:
         """Test car part collection."""
         car_manager = game_view.car_manager
         
+        print(f"[TEST] Car Part Test - Car manager available: {hasattr(game_view, 'car_manager')}")
+        print(f"[TEST] Car Part Test - Parts collected attribute: {hasattr(car_manager, 'car_parts_collected') if car_manager else False}")
+        
         # Check if car part collection is available
         part_collection_available = hasattr(car_manager, 'car_parts_collected')
         
@@ -258,6 +253,8 @@ class TestingManager:
             'car_manager_available': hasattr(game_view, 'car_manager'),
             'parts_collected_available': hasattr(car_manager, 'car_parts_collected') if car_manager else False
         })
+        
+        print(f"[TEST] Car Part Test - Part collection available: {part_collection_available}")
         
         return Debug.validate_test("Car Part Collection", part_collection_available)
     
@@ -324,7 +321,21 @@ class TestingManager:
             'detailed_results': results
         }
         
-        print(f"[TESTING] Test Report: {passed_tests}/{total_tests} tests passed ({success_rate:.1f}%)")
+        print(f"\n[TEST] === FINAL TEST RESULTS ===")
+        print(f"[TEST] Total Tests: {total_tests}")
+        print(f"[TEST] Passed: {passed_tests}")
+        print(f"[TEST] Failed: {total_tests - passed_tests}")
+        print(f"[TEST] Success Rate: {success_rate:.1f}%")
+        
+        if total_tests - passed_tests > 0:
+            print(f"[TEST] Failed Tests:")
+            for category, category_results in results.items():
+                for test_name, test_result in category_results.items():
+                    if not test_result:
+                        print(f"[TEST]   - {category}.{test_name}")
+        
+        print(f"[TEST] === END TEST RESULTS ===\n")
+        
         return report
     
     def clear_all_data(self):
@@ -333,5 +344,4 @@ class TestingManager:
         self.test_results.clear()
         self.tracking_components.clear()
         self.active_tests.clear()
-        Debug.clear_testing_data()
-        print("[TESTING] All testing data cleared") 
+        Debug.clear_testing_data() 

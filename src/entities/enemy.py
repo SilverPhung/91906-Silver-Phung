@@ -72,7 +72,6 @@ class Enemy(Entity):
         """
         self.center_x = x
         self.center_y = y
-        print(f"[ENEMY] Spawned at position ({x:.1f}, {y:.1f})")
         
         if ENABLE_TESTING:
             Debug.track_event("enemy_spawned_at_position", {

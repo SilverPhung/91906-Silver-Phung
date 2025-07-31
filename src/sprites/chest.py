@@ -40,12 +40,12 @@ class Chest(Interactable):
         """
         # Try to load chest sprite, fallback to colored rectangle if failed
         try:
-            print(f"[CHEST] Loading chest sprite: {CHEST_CLOSED_SPRITE}")
+            # print(f"[CHEST] Loading chest sprite: {CHEST_CLOSED_SPRITE}")
             super().__init__(position, CHEST_CLOSED_SPRITE, CHEST_SCALING)
             self.use_sprites = True
-            print(f"[CHEST] Chest sprite loaded successfully")
+            # print(f"[CHEST] Chest sprite loaded successfully")
         except Exception as e:
-            print(f"[CHEST] Failed to load chest sprite: {e}, using fallback")
+            # print(f"[CHEST] Failed to load chest sprite: {e}, using fallback")
             # Create a fallback colored rectangle
             self.use_sprites = False
             super().__init__(position, None, CHEST_SCALING)
@@ -79,67 +79,59 @@ class Chest(Interactable):
             bool: True if a part was collected, False otherwise
         """
         self.interaction_count += 1
-        print(f"[CHEST] Interaction {self.interaction_count} - Current state: {self.state.value}")
+        # print(f"[CHEST] Interaction {self.interaction_count} - Current state: {self.state.value}")
         
         if self.state == ChestState.CLOSED:
             # First interaction: Open the chest
-            print(f"[CHEST] Opening chest with part: {self.has_part}")
+            # print(f"[CHEST] Opening chest with part: {self.has_part}")
             if self.has_part:
                 self.state = ChestState.OPEN_WITH_PART
-                print(f"[CHEST] State changed to OPEN_WITH_PART")
+                # print(f"[CHEST] State changed to OPEN_WITH_PART")
                 if self.use_sprites:
                     try:
-                        print(f"[CHEST] Loading texture: {CHEST_OPEN_WITH_PART_SPRITE}")
+                        # print(f"[CHEST] Loading texture: {CHEST_OPEN_WITH_PART_SPRITE}")
                         self.texture = arcade.load_texture(CHEST_OPEN_WITH_PART_SPRITE)
-                        print(f"[CHEST] Texture loaded successfully")
+                        # print(f"[CHEST] Texture loaded successfully")
                     except Exception as e:
-                        print(f"[CHEST] Failed to load texture: {e}")
+                        # print(f"[CHEST] Failed to load texture: {e}")
                         self.color = arcade.color.GOLD
                 else:
                     self.color = arcade.color.GOLD
-                    print(f"[CHEST] Using fallback color: GOLD")
+                    # print(f"[CHEST] Using fallback color: GOLD")
             else:
                 self.state = ChestState.OPEN_EMPTY
-                print(f"[CHEST] State changed to OPEN_EMPTY")
+                # print(f"[CHEST] State changed to OPEN_EMPTY")
                 if self.use_sprites:
                     try:
-                        print(f"[CHEST] Loading texture: {CHEST_OPEN_EMPTY_SPRITE}")
+                        # print(f"[CHEST] Loading texture: {CHEST_OPEN_EMPTY_SPRITE}")
                         self.texture = arcade.load_texture(CHEST_OPEN_EMPTY_SPRITE)
-                        print(f"[CHEST] Texture loaded successfully")
+                        # print(f"[CHEST] Texture loaded successfully")
                     except Exception as e:
-                        print(f"[CHEST] Failed to load texture: {e}")
+                        # print(f"[CHEST] Failed to load texture: {e}")
                         self.color = arcade.color.LIGHT_GRAY
                 else:
                     self.color = arcade.color.LIGHT_GRAY
-                    print(f"[CHEST] Using fallback color: LIGHT_GRAY")
+                    # print(f"[CHEST] Using fallback color: LIGHT_GRAY")
             return False
             
         elif self.state == ChestState.OPEN_WITH_PART:
             # Second interaction: Collect the part
-            print(f"[CHEST] Collecting part from chest")
             self.state = ChestState.COLLECTED
-            print(f"[CHEST] State changed to COLLECTED")
             if self.use_sprites:
                 try:
-                    print(f"[CHEST] Loading texture: {CHEST_OPEN_EMPTY_SPRITE}")
                     self.texture = arcade.load_texture(CHEST_OPEN_EMPTY_SPRITE)
-                    print(f"[CHEST] Texture loaded successfully")
                 except Exception as e:
-                    print(f"[CHEST] Failed to load texture: {e}")
                     self.color = arcade.color.LIGHT_GRAY
             else:
                 self.color = arcade.color.LIGHT_GRAY
-                print(f"[CHEST] Using fallback color: LIGHT_GRAY")
             return True  # Signal that a part was collected
             
         elif self.state == ChestState.OPEN_EMPTY:
             # Already opened empty - no further action
-            print(f"[CHEST] Already opened empty - no action")
             return False
             
         elif self.state == ChestState.COLLECTED:
             # Already collected - no further action
-            print(f"[CHEST] Already collected - no action")
             return False
         
         return False
@@ -189,13 +181,6 @@ class Chest(Interactable):
     
     def draw(self):
         """Override draw method to handle fallback colored rectangles."""
-        # Debug: Log drawing info (only once per second to avoid spam)
-        if not hasattr(self, '_last_draw_log') or time.time() - self._last_draw_log > 1.0:
-            print(f"[CHEST] Drawing chest at ({self.center_x:.1f}, {self.center_y:.1f}) - State: {self.state.value}, Use sprites: {self.use_sprites}")
-            if hasattr(self, 'color'):
-                print(f"[CHEST] Fallback color: {self.color}")
-            self._last_draw_log = time.time()
-        
         if not self.use_sprites and hasattr(self, 'color'):
             # Draw a colored rectangle as fallback
             arcade.draw_rectangle_filled(

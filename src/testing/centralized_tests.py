@@ -23,8 +23,6 @@ class CentralizedTests:
         self.game_view = game_view
         self.tracking_components = {}
         self.test_results = {}
-        
-        print("[TESTING] CentralizedTests initialized")
     
     # === Tracker Creation Methods ===
     
@@ -32,7 +30,6 @@ class CentralizedTests:
         """Create a movement tracker for the player."""
         from .tracking_components import MovementTracker
         tracker = MovementTracker(self.game_view.player)
-        print("[TESTING] Movement tracker created")
         return tracker
     
     def create_combat_tracker(self):
@@ -40,7 +37,6 @@ class CentralizedTests:
         from .tracking_components import CombatTracker
         enemies = getattr(self.game_view, 'enemies', [])
         tracker = CombatTracker(self.game_view.player, enemies)
-        print("[TESTING] Combat tracker created")
         return tracker
     
     def create_car_tracker(self):
@@ -48,14 +44,12 @@ class CentralizedTests:
         from .tracking_components import CarInteractionTracker
         car_manager = getattr(self.game_view, 'car_manager', None)
         tracker = CarInteractionTracker(car_manager)
-        print("[TESTING] Car interaction tracker created")
         return tracker
     
     def create_health_tracker(self):
         """Create a health tracker for the player."""
         from .tracking_components import HealthTracker
         tracker = HealthTracker(self.game_view.player)
-        print("[TESTING] Health tracker created")
         return tracker
     
     # === Movement Tests ===

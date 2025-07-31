@@ -25,12 +25,26 @@ class CameraManager:
 
     def center_camera_to_player(self, delta_time):
         """Center the camera on the player with smooth following."""
+        # Get player position without affecting it
+        player_x = self.game_view.player.center_x
+        player_y = self.game_view.player.center_y
+        
+        # Log camera updates periodically
+        if hasattr(self, '_camera_log_timer'):
+            self._camera_log_timer += delta_time
+        else:
+            self._camera_log_timer = 0
+        
+        # Log every 3 seconds
+        if self._camera_log_timer >= 3.0:
+            print(f"[CAMERA_DEBUG] Player position: ({player_x:.1f}, {player_y:.1f})")
+            print(f"[CAMERA_DEBUG] Camera position: ({self.camera.position[0]:.1f}, {self.camera.position[1]:.1f})")
+            self._camera_log_timer = 0
+        
         current_camera_position = Vec2(
             self.camera.position[0], self.camera.position[1]
         )
-        player_position_vec = Vec2(
-            self.game_view.player.position[0], self.game_view.player.position[1]
-        )
+        player_position_vec = Vec2(player_x, player_y)
 
         new_camera_position_vec = arcade.math.smerp_2d(
             current_camera_position,
@@ -38,6 +52,8 @@ class CameraManager:
             delta_time,
             FOLLOW_DECAY_CONST,
         )
+        
+        # Only update camera position, not player position
         self.camera.position = (
             new_camera_position_vec.x,
             new_camera_position_vec.y,

@@ -1,4 +1,5 @@
 import random
+import time
 from src.entities.enemy import *
 from src.entities.player import Player
 from src.constants import *
@@ -44,6 +45,8 @@ class Zombie(Enemy):
         # Add zombie to game view lists and create physics engine
         game_view.enemies.append(self)
         game_view.scene.add_sprite("Enemies", self)
+        
+
 
 
     def hunt_player(self, delta_time: float):
