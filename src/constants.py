@@ -97,13 +97,13 @@ MAP_WIDTH_PIXEL=   MAP_WIDTH * TILE_SIZE * TILE_SCALING
 MAP_HEIGHT_PIXEL = MAP_HEIGHT* TILE_SIZE * TILE_SCALING
 
 # Car constants
-CAR_SCALING = 1.0
+CAR_SCALING = 3
 INTERACTION_DISTANCE = 100
 REQUIRED_CAR_PARTS = 5
 CAR_SPRITE_PATH = "resources/Car/sprite/Viper.png"
 
 # Chest constants
-CHEST_SCALING = 1.0
+CHEST_SCALING = 1.3
 CHEST_CLOSED_SPRITE = "resources/Chest/closed.png"
 CHEST_OPEN_EMPTY_SPRITE = "resources/Chest/open-empty.png"
 CHEST_OPEN_WITH_PART_SPRITE = "resources/Chest/open-glow1.png"
