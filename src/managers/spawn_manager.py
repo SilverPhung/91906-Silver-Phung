@@ -7,6 +7,7 @@ validating spawn locations, and distributing zombies across available spawn poin
 
 import arcade
 import random
+import time
 from typing import List, Tuple, Optional
 from src.constants import MAP_WIDTH_PIXEL, MAP_HEIGHT_PIXEL, ENABLE_TESTING
 from src.debug import Debug
@@ -278,6 +279,24 @@ class SpawnManager:
         """
         return self.select_spawn_points(zombie_count, current_time)
     
+    def clear_zombies(self):
+        """Clear all zombies completely."""
+        zombie_count = len(self.game_view.enemies)
+        print(f"[SPAWN_MANAGER] Clearing {zombie_count} zombies")
+        
+        for zombie in self.game_view.enemies:
+            zombie.cleanup()
+        self.game_view.enemies.clear()
+        
+    def spawn_zombies_for_map(self, count: int):
+        """Spawn new zombies for current map."""
+        print(f"[SPAWN_MANAGER] Spawning {count} zombies for map")
+        
+        # Always spawn fresh zombies for new map
+        spawn_positions = self.get_spawn_positions(count, time.time())
+        for x, y in spawn_positions:
+            self.create_zombie(x, y)
+            
     def create_zombie(self, x: float, y: float):
         """
         Create a zombie at the specified position.
@@ -299,6 +318,7 @@ class SpawnManager:
             player_ref=self.game_view.player
         )
         zombie.spawn_at_position(x, y)
+        print(f"[SPAWN_MANAGER] Added zombie to scene at ({zombie.center_x:.1f}, {zombie.center_y:.1f})")
         
         if ENABLE_TESTING:
             Debug.track_event("enemy_spawned_at_position", {

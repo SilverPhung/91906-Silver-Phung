@@ -257,19 +257,31 @@ class Player(Entity):
 
 
         
-    def reset(self):
-        """Reset the player to initial state"""
-        self.current_health = self.max_health
-        self.state = EntityState.IDLE
-        self.current_weapon = WeaponType.GUN
+    def reset_position(self):
+        """Reset player position without recreation."""
+        self.position = self.spawn_position
         self.velocity = Vec2(0.0, 0.0)
         self.change_x = 0.0
         self.change_y = 0.0
-        # Don't reset position here - let the car manager position the player
-        self.position = self.spawn_position
-        # Reset health bar if it exists
+        # Debug logging removed to prevent infinite loops
+        
+    def update_spawn_position(self, new_position):
+        """Update the spawn position for the current map."""
+        self.spawn_position = new_position
+        print(f"[PLAYER] Spawn position updated to: {new_position}")
+        
+    def reset_health(self):
+        """Reset player health without recreation."""
+        self.current_health = self.max_health
         if hasattr(self, 'health_bar') and self.health_bar:
             self.health_bar.fullness = 1.0
+            
+    def reset(self):
+        """Reset the player to initial state"""
+        self.reset_health()
+        self.state = EntityState.IDLE
+        self.current_weapon = WeaponType.GUN
+        self.reset_position()
     
 
     

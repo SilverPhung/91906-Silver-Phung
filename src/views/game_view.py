@@ -76,11 +76,12 @@ class GameView(FadingView):
         self.pathfind_barrier_thread_lock = threading.Lock()
 
         self.preload_resources()
-        self.create_initial_scene()
         
-        # Initialize reset coordinator
+        # Initialize reset coordinator BEFORE creating initial scene
         self.reset_coordinator = ResetCoordinator(self)
         self._register_resetable_components()
+        
+        self.create_initial_scene()
         
         # Reset input keys for initial setup
         self.input_manager.reset_keys()
@@ -107,12 +108,34 @@ class GameView(FadingView):
 
     def reset(self):
         """Reset the game state for the current map."""
-        self.reset_coordinator.reset_for_map()
+        # Completely recreate scene
+        self.scene = None
+        self.scene = self.map_manager.create_scene()
         
-        # Reset player health
-        self.player.current_health = self.player.max_health
-        if self.player.health_bar:
-            self.player.health_bar.fullness = 1.0
+        # Use new player reset methods for better asset optimization
+        self.player.reset_position()
+        self.player.reset_health()
+        
+        # Reset input keys to prevent lingering movement
+        self.input_manager.reset_keys()
+        print(f"[GAME_VIEW] Input keys reset")
+        
+        # Add player to scene first
+        self.scene.add_sprite("Player", self.player)
+        print(f"[GAME_VIEW] Player added to scene at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
+        
+        # Don't run reset coordinator here - entities are already loaded by MapManager
+        # The reset coordinator was clearing entities that were just loaded
+        print(f"[GAME_VIEW] Skipping reset coordinator to preserve loaded entities")
+        
+        # Debug: Final scene verification
+        print(f"[GAME_VIEW] Final scene verification after reset:")
+        for layer_name in ["Player", "CarsLayer", "ChestsLayer", "Enemies"]:
+            sprite_list = self.scene.get_sprite_list(layer_name)
+            if sprite_list:
+                print(f"[GAME_VIEW]   {layer_name}: {len(sprite_list)} sprites")
+            else:
+                print(f"[GAME_VIEW]   {layer_name}: No sprite list found!")
 
     def setup(self):
         # Don't reset here - only reset when actually changing maps
@@ -121,6 +144,13 @@ class GameView(FadingView):
             thread.join()
 
         self.game_paused = False
+
+    def reset_scene(self):
+        """Reset the scene for the current map."""
+        self.scene = None
+        self.scene = self.map_manager.create_scene()
+
+        self.bar_list.clear()
 
     def create_initial_scene(self):
         """Create the initial scene for the game."""
@@ -154,6 +184,15 @@ class GameView(FadingView):
         
         # Add player to scene
         self.scene.add_sprite("Player", self.player)
+        print(f"[GAME_VIEW] Player added to scene at ({self.player.center_x:.1f}, {self.player.center_y:.1f})")
+        
+        # Spawn zombies for initial scene
+        self.map_manager.spawn_enemies_for_map()
+        print(f"[GAME_VIEW] Zombies spawned for initial scene")
+        
+        # Don't run reset here - entities are already loaded properly
+        # The reset was causing infinite loops and clearing entities
+        print(f"[GAME_VIEW] Skipping initial reset to preserve loaded entities")
 
     def _start_thread(self, target_func):
         """Start a thread and add it to the threads list."""
@@ -298,6 +337,8 @@ class GameView(FadingView):
         self.bullet_list.update(
             delta_time, [self.scene.get_sprite_list("Enemies")], [wall_list]
         )
+
+    
 
     def run_tests_for_objective(self, objective: str) -> Dict[str, Any]:
         """Run tests for a specific objective."""

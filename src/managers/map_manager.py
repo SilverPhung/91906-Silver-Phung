@@ -78,18 +78,13 @@ class MapManager:
         """
         print(f"[MAP_MANAGER] Creating scene for map: resources/maps/map{self.current_map_index}.tmx")
         
-        # Clear existing scene if it exists
-        if self.scene:
-            print(f"[MAP_MANAGER] Clearing existing scene...")
-            # Clear all sprite lists in the scene
-            for sprite_list_name in list(self.scene._name_mapping.keys()):
-                sprite_list = self.scene._name_mapping[sprite_list_name]
-                sprite_list.clear()
-            print(f"[MAP_MANAGER] Existing scene cleared")
+        # COMPLETELY DELETE AND RECREATE SCENE
+        print(f"[MAP_MANAGER] Completely deleting existing scene...")
+        self.scene = None  # Force garbage collection of old scene
         
         # Create new scene
         self.scene = arcade.Scene()
-        print(f"[MAP_MANAGER] New scene created")
+        print(f"[MAP_MANAGER] New scene created from scratch")
         
         # Add the ground layers to the scene (in drawing order from bottom to top)
         print(f"[MAP_MANAGER] Adding ground layers to scene...")
@@ -110,11 +105,32 @@ class MapManager:
         self.scene.add_sprite_list("Enemies")
         print("[MAP_MANAGER] Entity sprite layers added successfully")
         
+        # Debug: Verify layer order is correct (entities should be on top)
+        print(f"[MAP_MANAGER] Layer order verification:")
+        layer_names = list(self.scene._name_mapping.keys())
+        for i, layer_name in enumerate(layer_names):
+            print(f"[MAP_MANAGER]   Layer {i}: {layer_name}")
+        
+        # Verify entities are at the end (on top)
+        entity_layers = ["Player", "CarsLayer", "ChestsLayer", "Enemies"]
+        for entity_layer in entity_layers:
+            if entity_layer in layer_names:
+                layer_index = layer_names.index(entity_layer)
+                print(f"[MAP_MANAGER]   {entity_layer} is at layer {layer_index} (should be near end)")
+        
+        # Debug: Log the final drawing order
+        print(f"[MAP_MANAGER] Final scene drawing order:")
+        for i, layer_name in enumerate(self.scene._name_mapping.keys()):
+            print(f"[MAP_MANAGER]   {i+1}. {layer_name}")
+        
         # Log scene sprite counts
         print(f"[MAP_MANAGER] Scene sprite counts:")
         for layer_name in self.scene._name_mapping.keys():
             sprite_list = self.scene._name_mapping[layer_name]
             print(f"[MAP_MANAGER]   {layer_name}: {len(sprite_list)} sprites")
+        
+        # Debug: Log entity addition tracking
+        print(f"[MAP_MANAGER] Entity layers ready for sprites")
         
         return self.scene
     
@@ -209,10 +225,12 @@ class MapManager:
         # Set up spawn manager for new map
         self.game_view.spawn_manager.setup_for_map(self.tile_map, self.wall_list)
         
-        # Load car positions from Tiled map
+        # Use new car manager methods for better asset optimization
+        self.game_view.car_manager.clear_cars()
         self.game_view.car_manager.load_cars_from_map()
         
-        # Load chest positions from Tiled map
+        # Use new chest manager methods for better asset optimization
+        self.game_view.chest_manager.clear_chests()
         self.game_view.chest_manager.load_chests_from_map()
         
         # Position player at old car
@@ -227,11 +245,9 @@ class MapManager:
         Args:
             zombie_count: Number of zombies to spawn
         """
-        current_time = time.time()
-        spawn_positions = self.game_view.spawn_manager.get_spawn_positions(zombie_count, current_time)
-        
-        for x, y in spawn_positions:
-            self.game_view.spawn_manager.create_zombie(x, y)
+        # Use new spawn manager methods for better asset optimization
+        self.game_view.spawn_manager.clear_zombies()
+        self.game_view.spawn_manager.spawn_zombies_for_map(zombie_count)
     
     def reset_game_state_for_map(self) -> None:
         """Reset game state for the new map."""
@@ -273,17 +289,21 @@ class MapManager:
         # Create pathfinding barrier
         self.create_pathfinding_barrier()
         
-        # Reset entities
-        self.reset_entities()
-        
         # Set up managers for new map
         self.setup_managers_for_map()
         
         # Spawn enemies
         self.spawn_enemies_for_map()
         
-        # Reset game state
-        self.reset_game_state_for_map()
+        # Add player to scene (if not already added)
+        player_list = self.scene.get_sprite_list("Player")
+        if not player_list or self.game_view.player not in player_list:
+            self.scene.add_sprite("Player", self.game_view.player)
+            print(f"[MAP_MANAGER] Player added to scene at ({self.game_view.player.center_x:.1f}, {self.game_view.player.center_y:.1f})")
+        
+        # Don't call GameView reset here - entities are already loaded properly
+        # The reset was clearing entities that were just loaded
+        print(f"[MAP_MANAGER] Skipping GameView reset to preserve loaded entities")
         
         print(f"[MAP_MANAGER] Map {map_index} loaded successfully")
         
@@ -292,6 +312,24 @@ class MapManager:
         for layer_name in self.scene._name_mapping.keys():
             sprite_list = self.scene._name_mapping[layer_name]
             print(f"[MAP_MANAGER]   {layer_name}: {len(sprite_list)} sprites")
+        
+        # Debug: Check specific entity counts
+        player_list = self.scene.get_sprite_list("Player")
+        car_list = self.scene.get_sprite_list("CarsLayer")
+        chest_list = self.scene.get_sprite_list("ChestsLayer")
+        enemy_list = self.scene.get_sprite_list("Enemies")
+        
+        print(f"[MAP_MANAGER] Entity counts - Player: {len(player_list) if player_list else 0}, Cars: {len(car_list) if car_list else 0}, Chests: {len(chest_list) if chest_list else 0}, Enemies: {len(enemy_list) if enemy_list else 0}")
+        
+        # Debug: Check if entities are actually in the scene
+        if car_list:
+            print(f"[MAP_MANAGER] Cars in scene: {[f'({car.center_x:.1f}, {car.center_y:.1f})' for car in car_list]}")
+        if enemy_list:
+            print(f"[MAP_MANAGER] Enemies in scene: {[f'({enemy.center_x:.1f}, {enemy.center_y:.1f})' for enemy in enemy_list]}")
+        
+        # Debug: Check if entities are in the game view lists
+        print(f"[MAP_MANAGER] Game view enemies: {len(self.game_view.enemies)}")
+        print(f"[MAP_MANAGER] Game view cars: {len(self.game_view.car_manager.get_all_cars()) if hasattr(self.game_view.car_manager, 'get_all_cars') else 'N/A'}")
         
         if ENABLE_TESTING:
             Debug.track_event("map_loaded", {

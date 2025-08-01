@@ -109,4 +109,14 @@ class Car(Interactable):
         Reset collected parts to 0.
         """
         self.collected_parts = 0
+        
+    def cleanup(self):
+        """
+        Clean up the car sprite when removing from scene.
+        """
+        # Remove from scene if it exists
+        if hasattr(self, 'scene') and self.scene:
+            car_list = self.scene.get_sprite_list("CarsLayer")
+            if car_list and self in car_list:
+                car_list.remove(self)
  

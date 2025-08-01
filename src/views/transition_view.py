@@ -38,7 +38,8 @@ class TransitionView(BaseView):
         if key == arcade.key.SPACE:
             if self.previous_game_view:
                 # Use existing GameView and call load_map
-                self.previous_game_view.load_map(self.next_map_index)
+                self.previous_game_view.reset_scene()
+                self.previous_game_view.create_initial_scene()
                 self.window.show_view(self.previous_game_view)
             else:
                 # Fallback: create new GameView using direct import

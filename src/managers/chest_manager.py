@@ -22,12 +22,9 @@ class ChestManager:
         self.parts_collected_from_chests = 0  # Track parts collected from chests
         
 
-    def load_chests_from_map(self):
-        """Load chests from the Tiled object layers."""
-        # Get tile_map from MapManager
-        tile_map = self.game_view.map_manager.get_tile_map() if hasattr(self.game_view, 'map_manager') else self.game_view.tile_map
-        
-        # Clear existing chests from scene and lists
+    def clear_chests(self):
+        """Clear chests completely for new map."""
+        # Clear from scene
         all_chests = self.chests_with_parts + self.chests_without_parts
         for chest in all_chests:
             try:
@@ -38,10 +35,21 @@ class ChestManager:
             except Exception as e:
                 pass
         
-        # Clear the lists
+        # Clear lists
         self.chests_with_parts.clear()
         self.chests_without_parts.clear()
         self.near_chest = None
+        self.parts_collected_from_chests = 0
+        
+    def load_chests_from_map(self):
+        """Load chests from the Tiled object layers."""
+        # Check if chests are already loaded
+        if self.chests_with_parts or self.chests_without_parts:
+            print(f"[CHEST_MANAGER] Chests already loaded, skipping")
+            return  # Already loaded
+            
+        # Get tile_map from MapManager
+        tile_map = self.game_view.map_manager.get_tile_map() if hasattr(self.game_view, 'map_manager') else self.game_view.tile_map
 
         
         try:
@@ -54,6 +62,7 @@ class ChestManager:
                 # Get tile_map from MapManager
                 tile_map = self.game_view.map_manager.get_tile_map() if hasattr(self.game_view, 'map_manager') else self.game_view.tile_map
                 chest_objects = tile_map.object_lists.get(layer_name, [])
+                print(f"[CHEST_MANAGER] Looking for {layer_name}, found {len(chest_objects)} objects")
 
                 
                 if not chest_objects:
@@ -91,6 +100,7 @@ class ChestManager:
             test_chest_with_part = Chest(old_car_pos, has_part=True)
             self.chests_with_parts.append(test_chest_with_part)
             self.game_view.scene.add_sprite("ChestsLayer", test_chest_with_part)
+            print(f"[CHEST_MANAGER] Added chest with part to scene at ({test_chest_with_part.center_x:.1f}, {test_chest_with_part.center_y:.1f})")
 
         
         # Add a chest without part near the new car
@@ -99,6 +109,7 @@ class ChestManager:
             test_chest_without_part = Chest(new_car_pos, has_part=False)
             self.chests_without_parts.append(test_chest_without_part)
             self.game_view.scene.add_sprite("ChestsLayer", test_chest_without_part)
+            print(f"[CHEST_MANAGER] Added chest without part to scene at ({test_chest_without_part.center_x:.1f}, {test_chest_without_part.center_y:.1f})")
 
         
         # Add a chest in the middle of the map
@@ -106,6 +117,7 @@ class ChestManager:
         test_chest_middle = Chest(middle_pos, has_part=True)
         self.chests_with_parts.append(test_chest_middle)
         self.game_view.scene.add_sprite("ChestsLayer", test_chest_middle)
+        print(f"[CHEST_MANAGER] Added middle chest to scene at ({test_chest_middle.center_x:.1f}, {test_chest_middle.center_y:.1f})")
 
 
     def check_chest_interactions(self):

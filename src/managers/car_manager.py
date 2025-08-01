@@ -19,9 +19,30 @@ class CarManager:
         self.car_parts_collected = 0
         self.near_car = None  # Track which car player is near
 
+    def clear_cars(self):
+        """Clear cars completely for new map."""
+        # Simply set to None - the scene will be cleared separately
+        self.old_car = None
+        self.new_car = None
+        self.near_car = None
+        self.car_parts_collected = 0
+        
+    def get_all_cars(self):
+        """Get all cars as a list."""
+        cars = []
+        if self.old_car:
+            cars.append(self.old_car)
+        if self.new_car:
+            cars.append(self.new_car)
+        return cars
+        
     def load_cars_from_map(self):
         """Load cars (old/new) from the Tiled object layers."""
-
+        # Check if cars are already loaded
+        if self.old_car or self.new_car:
+            print(f"[CAR_MANAGER] Cars already loaded, skipping")
+            return  # Already loaded
+            
         try:
             car_layers = {
                 "Old-car": ("old_car", True),
@@ -32,6 +53,7 @@ class CarManager:
                 # Get tile_map from MapManager
                 tile_map = self.game_view.map_manager.get_tile_map() if hasattr(self.game_view, 'map_manager') else self.game_view.tile_map
                 car_objects = tile_map.object_lists.get(layer_name, [])
+                print(f"[CAR_MANAGER] Looking for {layer_name}, found {len(car_objects)} objects")
                 if not car_objects:
                     continue
 
@@ -40,6 +62,14 @@ class CarManager:
                 setattr(self, attr_name, car)
                 self.game_view.scene.add_sprite("CarsLayer", car)
                 car_type = "Old" if is_starting_car else "New"
+                print(f"[CAR_MANAGER] Added {car_type} car to scene at ({car.center_x:.1f}, {car.center_y:.1f})")
+                
+                # Debug: Verify car is actually in the scene
+                car_list = self.game_view.scene.get_sprite_list("CarsLayer")
+                if car_list and car in car_list:
+                    print(f"[CAR_MANAGER] ✓ {car_type} car confirmed in scene")
+                else:
+                    print(f"[CAR_MANAGER] ✗ {car_type} car NOT found in scene!")
 
 
         except Exception as e:
@@ -100,9 +130,13 @@ class CarManager:
     def position_player_at_old_car(self):
         """Position the player at the old car location."""
         if self.old_car:
-            self.game_view.player.position = self.old_car.position
+            # Update player position and spawn position for this map
+            new_position = self.old_car.position
+            self.game_view.player.position = new_position
+            self.game_view.player.update_spawn_position(new_position)
+            print(f"[CAR_MANAGER] Player positioned at old car: {new_position}")
         else:
-            pass
+            print(f"[CAR_MANAGER] No old car found for player positioning")
 
     def reset_car_parts(self):
         """Reset car parts for new level."""

@@ -32,6 +32,7 @@ class InputManager:
             arcade.key.E: self._handle_interaction,
             arcade.key.P: self._add_test_car_part,
             arcade.key.LCTRL: self._zoom_in,
+            arcade.key.L: self._load_next_map,  # Debug hotkey for loading next map
         }
         
         # Testing key actions (only when testing is enabled)
@@ -160,6 +161,11 @@ class InputManager:
     def _zoom_in(self):
         """Zoom in with left control."""
         self.game_view.camera_manager.set_target_zoom(MIN_ZOOM)
+        
+    def _load_next_map(self):
+        """Debug hotkey to load the next map."""
+        print(f"[INPUT_MANAGER] Debug: Loading next map")
+        self.game_view.transition_to_next_map()
 
     def update_mouse_position(self):
         """Update mouse position for the game view."""
