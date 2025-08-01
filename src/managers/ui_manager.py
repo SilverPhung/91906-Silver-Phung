@@ -20,15 +20,57 @@ class UIManager:
             self.interaction_text = arcade.Text("", 10, WINDOW_HEIGHT - 50, arcade.color.WHITE, 16)
             self.parts_text = arcade.Text("", 10, WINDOW_HEIGHT - 80, arcade.color.YELLOW, 14)
             self.map_text = arcade.Text("", 10, WINDOW_HEIGHT - 110, arcade.color.CYAN, 14)
+        
+        # Fullscreen button properties
+        self.fullscreen_button = {
+            'x': 0,  # Will be set in draw method
+            'y': 0,  # Will be set in draw method
+            'width': 80,
+            'height': 30,
+            'text': '⛶',  # Fullscreen symbol
+            'color': arcade.color.WHITE,
+            'bg_color': arcade.color.BLACK,
+            'border_color': arcade.color.GRAY,
+            'hover_color': arcade.color.LIGHT_GRAY
+        }
 
     def draw_ui(self):
         """Draw UI elements including car and chest interaction prompts."""
-        # Draw car interaction text
-        if self.game_view.car_manager.near_car:
-            interaction_text = self.game_view.car_manager.get_near_car_interaction_text()
-            if interaction_text:
+        # Update and draw interaction text
+        self._draw_interaction_text()
+        
+        # Update and draw parts status
+        self._draw_parts_status()
+        
+        # Update and draw map info
+        self._draw_map_info()
+        
+        # Draw fullscreen button (temporarily disabled due to arcade method issues)
+        # self._draw_fullscreen_button()
+
+    def _draw_interaction_text(self):
+        """Draw interaction text based on proximity to cars or chests."""
+        try:
+            # Prioritize chest interactions over car interactions
+            if self.game_view.chest_manager.near_chest:
+                interaction_text = self.game_view.chest_manager.get_near_chest_interaction_text()
+                if interaction_text:
+                    self.interaction_text.text = interaction_text
+                else:
+                    self.interaction_text.text = ""
+            elif self.game_view.car_manager.near_car:
+                interaction_text = self.game_view.car_manager.get_near_car_interaction_text()
+                if interaction_text:
+                    self.interaction_text.text = interaction_text
+                else:
+                    self.interaction_text.text = ""
+            else:
+                self.interaction_text.text = ""
+            
+            # Draw the interaction text centered on screen
+            if self.interaction_text.text:
                 arcade.draw_text(
-                    interaction_text,
+                    self.interaction_text.text,
                     self.game_view.camera_gui.viewport_width // 2,
                     self.game_view.camera_gui.viewport_height - 50,
                     arcade.color.WHITE,
@@ -36,24 +78,18 @@ class UIManager:
                     anchor_x="center",
                     anchor_y="center",
                 )
-        
-        # Draw chest interaction text (prioritize chest over car)
-        elif self.game_view.chest_manager.near_chest:
-            interaction_text = self.game_view.chest_manager.get_near_chest_interaction_text()
-            if interaction_text:
-                arcade.draw_text(
-                    interaction_text,
-                    self.game_view.camera_gui.viewport_width // 2,
-                    self.game_view.camera_gui.viewport_height - 50,
-                    arcade.color.WHITE,
-                    18,
-                    anchor_x="center",
-                    anchor_y="center",
-                )
-        
-        # Draw car parts status
-        if self.game_view.car_manager.new_car:
-            parts_text = self.game_view.car_manager.new_car.get_parts_status()
+        except Exception as e:
+            print(f"Error drawing interaction text: {e}")
+
+    def _draw_parts_status(self):
+        """Draw car parts status text."""
+        try:
+            # Get parts count from car manager
+            parts_collected = getattr(self.game_view.car_manager, 'car_parts_collected', 0)
+            required_parts = getattr(self.game_view.car_manager, 'REQUIRED_CAR_PARTS', 5)
+            
+            # Always display parts status, even if no new car exists
+            parts_text = f"{parts_collected}/{required_parts}"
             arcade.draw_text(
                 f"Car Parts: {parts_text}",
                 10,
@@ -61,52 +97,20 @@ class UIManager:
                 arcade.color.WHITE,
                 14,
             )
-        
-        # Draw chest stats for debugging
-        chest_stats = self.game_view.chest_manager.get_chest_stats()
-        if chest_stats["total_chests"] > 0:
-            arcade.draw_text(
-                f"Chests: {chest_stats['total_chests']} (Parts: {chest_stats['parts_collected']}/{chest_stats['chests_with_parts']})",
-                10,
-                self.game_view.camera_gui.viewport_height - 50,
-                arcade.color.YELLOW,
-                12,
-            )
-
-    def _draw_interaction_text(self):
-        """Draw car interaction text based on proximity and car state."""
-        try:
-            if not self.game_view.car_manager.near_car:
-                self.interaction_text.text = ""
-                return
-
-            if self.game_view.car_manager.near_car.is_starting_car:
-                # Old car - no interaction text
-                self.interaction_text.text = ""
-            elif self.game_view.car_manager.near_car.can_use():
-                self.interaction_text.text = "Press E to use car"
-            else:
-                parts_needed = self.game_view.car_manager.near_car.required_parts - self.game_view.car_manager.near_car.collected_parts
-                self.interaction_text.text = f"Need {parts_needed} more parts"
-            
-            self.interaction_text.draw()
-        except Exception as e:
-            print(f"Error drawing interaction text: {e}")
-
-    def _draw_parts_status(self):
-        """Draw car parts status text."""
-        try:
-            if self.game_view.car_manager.new_car:
-                self.parts_text.text = f"Car Parts: {self.game_view.car_manager.new_car.get_parts_status()}"
-                self.parts_text.draw()
         except Exception as e:
             print(f"Error drawing parts status: {e}")
 
     def _draw_map_info(self):
         """Draw current map information."""
         try:
-            self.map_text.text = f"Map: {self.game_view.current_map_index}/3"
-            self.map_text.draw()
+            map_index = self.game_view.map_manager.current_map_index if hasattr(self.game_view, 'map_manager') else 1
+            arcade.draw_text(
+                f"Map: {map_index}/3",
+                10,
+                self.game_view.camera_gui.viewport_height - 110,
+                arcade.color.CYAN,
+                14,
+            )
         except Exception as e:
             print(f"Error drawing map info: {e}")
 
@@ -117,4 +121,62 @@ class UIManager:
             self.parts_text.text = ""
             self.map_text.text = ""
         except Exception as e:
-            print(f"Error resetting UI: {e}") 
+            print(f"Error resetting UI: {e}")
+    
+    def _draw_fullscreen_button(self):
+        """Draw the fullscreen button in the top right corner."""
+        try:
+            # Position button in top right corner
+            button = self.fullscreen_button
+            button['x'] = self.game_view.camera_gui.viewport_width - button['width'] - 10
+            button['y'] = self.game_view.camera_gui.viewport_height - button['height'] - 10
+            
+            # For now, just draw the button without hover detection
+            is_hovering = False
+            
+            # Draw button background using simple rectangle
+            bg_color = button['hover_color'] if is_hovering else button['bg_color']
+            arcade.draw_rectangle_filled(
+                button['x'] + button['width'] // 2,
+                button['y'] + button['height'] // 2,
+                button['width'],
+                button['height'],
+                bg_color
+            )
+            
+            # Draw button border
+            arcade.draw_rectangle_outline(
+                button['x'] + button['width'] // 2,
+                button['y'] + button['height'] // 2,
+                button['width'],
+                button['height'],
+                button['border_color'],
+                2
+            )
+            
+            # Draw button text
+            arcade.draw_text(
+                button['text'],
+                button['x'] + button['width'] // 2,
+                button['y'] + button['height'] // 2,
+                button['color'],
+                16,
+                anchor_x="center",
+                anchor_y="center"
+            )
+            
+        except Exception as e:
+            print(f"Error drawing fullscreen button: {e}")
+    
+    def check_fullscreen_button_click(self, x, y):
+        """Check if the fullscreen button was clicked."""
+        try:
+            button = self.fullscreen_button
+            if (button['x'] <= x <= button['x'] + button['width'] and 
+                button['y'] <= y <= button['y'] + button['height']):
+                # Toggle fullscreen
+                self.game_view.input_manager._toggle_fullscreen()
+                return True
+        except Exception as e:
+            print(f"Error checking fullscreen button click: {e}")
+        return False 

@@ -65,17 +65,18 @@ class SpawnManager:
         spawn_points = []
         
         try:
-            # Look for "Zombie-spawns" object layer
-            if "Zombie-spawns" in tile_map.sprite_lists:
-                spawn_layer = tile_map.sprite_lists["Zombie-spawns"]
-
+            # Look for "Zombie-spawns" object layer in object_lists
+            if "Zombie-spawns" in tile_map.object_lists:
+                spawn_objects = tile_map.object_lists["Zombie-spawns"]
+                print(f"[SPAWN_MANAGER] Found {len(spawn_objects)} spawn points in Zombie-spawns layer")
                 
-                for spawn_sprite in spawn_layer:
+                for spawn_object in spawn_objects:
                     spawn_point = SpawnPoint(
-                        x=spawn_sprite.center_x,
-                        y=spawn_sprite.center_y
+                        x=spawn_object.shape[0],
+                        y=spawn_object.shape[1]
                     )
                     spawn_points.append(spawn_point)
+                    print(f"[SPAWN_MANAGER] Loaded spawn point at ({spawn_point.x:.1f}, {spawn_point.y:.1f})")
                     
                     if ENABLE_TESTING:
                         Debug.track_event("spawn_point_loaded", {
@@ -84,10 +85,11 @@ class SpawnManager:
                             'is_valid': spawn_point.is_valid
                         })
             else:
-                pass
+                print(f"[SPAWN_MANAGER] No Zombie-spawns layer found in map")
+                print(f"[SPAWN_MANAGER] Available object layers: {list(tile_map.object_lists.keys())}")
                 
         except Exception as e:
-            pass
+            print(f"[SPAWN_MANAGER] Error loading spawn points: {e}")
             
         return spawn_points
     

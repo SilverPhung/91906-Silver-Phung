@@ -3,8 +3,8 @@ import arcade
 MAP_WIDTH = 39
 MAP_HEIGHT = 57
 
-ENABLE_DEBUG = True
-ENABLE_TESTING = True
+ENABLE_DEBUG = False
+ENABLE_TESTING = False
 
 # Testing constants
 TESTING_OBJECTIVES = {
@@ -24,7 +24,7 @@ SHOOTING_ACCURACY_THRESHOLD = 0.3
 HEALTH_CHANGE_THRESHOLD = 1
 
 # Window settings
-WINDOW_TITLE = "Starting Template"
+WINDOW_TITLE = "Zombie Survival: Car Escape"
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 WINDOW_RATE = 1 / 144

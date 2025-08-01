@@ -25,7 +25,8 @@ class InputManager:
         
         # Key action mapping
         self.key_actions = {
-            FULLSCREEN_KEY: self._toggle_fullscreen,
+            FULLSCREEN_KEY: self._toggle_fullscreen,  # F11
+            arcade.key.F12: self._toggle_fullscreen,  # Alternative fullscreen key
             arcade.key.SPACE: self._attack,
             arcade.key.K: self._die,
             # arcade.key.R: self._reset,  # Temporarily disabled for testing
@@ -75,6 +76,10 @@ class InputManager:
         """Handle key press events."""
         self.key_down[key] = True
         
+        # Debug: Log fullscreen keys
+        if key in [FULLSCREEN_KEY, arcade.key.F12]:
+            print(f"[INPUT_MANAGER] Fullscreen key pressed: {key}")
+        
         # Execute testing action if key is mapped and testing is enabled
         if key in self.testing_key_actions:
             self.testing_key_actions[key]()
@@ -107,6 +112,10 @@ class InputManager:
     def on_mouse_press(self, x, y, button, modifiers):
         """Handle mouse clicks."""
         if button == arcade.MOUSE_BUTTON_LEFT:
+            # Check if fullscreen button was clicked first
+            if self.game_view.ui_manager.check_fullscreen_button_click(x, y):
+                return  # Don't attack if button was clicked
+            
             self.left_mouse_pressed = True
             self.game_view.player.attack()
 
@@ -122,8 +131,11 @@ class InputManager:
 
     def _toggle_fullscreen(self):
         """Toggle fullscreen mode and update camera."""
-        self.game_view.window.set_fullscreen(not self.game_view.window.fullscreen)
+        current_state = self.game_view.window.fullscreen
+        new_state = not current_state
+        self.game_view.window.set_fullscreen(new_state)
         self.game_view.on_resize(self.game_view.window.width, self.game_view.window.height)
+        print(f"[INPUT_MANAGER] Fullscreen toggled: {current_state} -> {new_state}")
 
     def _attack(self):
         """Trigger player attack."""
