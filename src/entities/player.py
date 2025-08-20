@@ -31,7 +31,7 @@ class Player(Entity):
         shoot_cooldown=SHOOT_COOLDOWN,
         reset_on_death=True,
         spawn_position=SPAWN_POSITION,
-        sound_set={}
+        sound_set={},
     ):
         super().__init__(
             scale=scale,
@@ -64,29 +64,29 @@ class Player(Entity):
         self.sound_set = sound_set
         self.load_sounds(sound_set)
 
-        
         # Get wall_list from MapManager if available, otherwise use empty list
         wall_list = []
-        if hasattr(self.game_view, 'map_manager') and self.game_view.map_manager:
+        if (
+            hasattr(self.game_view, "map_manager")
+            and self.game_view.map_manager
+        ):
             wall_list = [self.game_view.map_manager.get_wall_list()]
-        elif hasattr(self.game_view, 'wall_list') and self.game_view.wall_list:
+        elif hasattr(self.game_view, "wall_list") and self.game_view.wall_list:
             wall_list = [self.game_view.wall_list]
-        
+
         self.physics_engine = arcade.PhysicsEngineSimple(
             self,
             wall_list,
         )
-        
+
         # Store reference to update physics engine later
         self._wall_list = wall_list
-        
+
         # Track position changes
         self._last_position = self.position
-        
+
         # Update physics engine immediately if MapManager is available
         self.update_physics_engine()
-    
-
 
     def set_weapon(self, weapon_type: WeaponType):
         """Set the current weapon"""
@@ -131,7 +131,7 @@ class Player(Entity):
     def set_animation_for_state(self):
         """Set the appropriate animation based on current state and weapon"""
         weapon_name = self.current_weapon.value
-        
+
         Debug.update(
             "Animation allow overwrite", self.animation_allow_overwrite
         )
@@ -150,12 +150,14 @@ class Player(Entity):
                     self._try_set_animation(shoot_anim)
                     self.restart_animation()
                 else:
-                    if (self._try_set_animation(weapon_name)):
+                    if self._try_set_animation(weapon_name):
                         pass
                     else:
                         print("Cannot find attack animation, using fallback")
                         # Fallback to any attack animation (if not weapon_name specific)
-                        for anim_name in Entity.loaded_animations[self.character_preset]:
+                        for anim_name in Entity.loaded_animations[
+                            self.character_preset
+                        ]:
                             if anim_name in [
                                 "Bat",
                                 "FlameThrower",
@@ -186,24 +188,30 @@ class Player(Entity):
             if self.current_weapon == WeaponType.GUN:
                 self.shoot()
             else:
-                self.attack_with_weapon() 
+                self.attack_with_weapon()
 
     def shoot(self):
         """Trigger a shoot animation based on current weapon"""
-        if self.state != EntityState.DYING and self.shoot_cooldown_timer >= self.shoot_cooldown:
-            self.change_state(EntityState.ATTACKING)    
-            bullet = Bullet(self.position, self.mouse_position, bullet_damage=BULLET_DAMAGE)
+        if (
+            self.state != EntityState.DYING
+            and self.shoot_cooldown_timer >= self.shoot_cooldown
+        ):
+            self.change_state(EntityState.ATTACKING)
+            bullet = Bullet(
+                self.position, self.mouse_position, bullet_damage=BULLET_DAMAGE
+            )
             self.game_view.bullet_list.append(bullet)
             self.shoot_cooldown_timer = 0
             # Only play sound if sound_set exists and has gun_shot
             if self.sound_set and "gun_shot" in self.sound_set:
                 self.play_sound(self.sound_set["gun_shot"])
 
-
     def attack_with_weapon(self):
         """Trigger an attack animation based on current weapon"""
         if self.state != EntityState.DYING:
-            hit_list = arcade.check_for_collision_with_list(self, self.game_view.scene.get_sprite_list("Enemies"))
+            hit_list = arcade.check_for_collision_with_list(
+                self, self.game_view.scene.get_sprite_list("Enemies")
+            )
             self.change_state(EntityState.ATTACKING)
             for enemy in hit_list:
                 enemy.take_damage(BULLET_DAMAGE)
@@ -215,14 +223,12 @@ class Player(Entity):
         else:
             self.change_state(EntityState.DYING)
 
-
-    
     def update(self, delta_time: float):
         super().update(delta_time)
-        
+
         # Update physics engine with current wall list
         self.update_physics_engine()
-        
+
         self.physics_engine.update()
         self.shoot_cooldown_timer += delta_time
         self.look_at(self.mouse_position)
@@ -234,29 +240,18 @@ class Player(Entity):
         )
         Debug.update(
             "Player Velocity",
-            f"{self.velocity[0]/delta_time:.2f}, {self.velocity[1]/delta_time:.2f}",
+            f"{self.velocity[0]/delta_time:.2f}, {\
+                self.velocity[1]/delta_time:.2f}",
         )
 
-        Debug.update(
-            "Player Health", self.current_health
-        )
+        Debug.update("Player Health", self.current_health)
 
+        Debug.update("Current Animation", self.current_animation)
 
-        Debug.update(
-            "Current Animation", self.current_animation
-        )
+        Debug.update("Animation type", self.current_animation_type)
 
-        Debug.update(
-            "Animation type", self.current_animation_type
-        )
-        
-        Debug.update(
-            "Animation state", self.state
-        )
+        Debug.update("Animation state", self.state)
 
-
-
-        
     def reset_position(self):
         """Reset player position without recreation."""
         self.position = self.spawn_position
@@ -264,30 +259,31 @@ class Player(Entity):
         self.change_x = 0.0
         self.change_y = 0.0
         # Debug logging removed to prevent infinite loops
-        
+
     def update_spawn_position(self, new_position):
         """Update the spawn position for the current map."""
         self.spawn_position = new_position
         print(f"[PLAYER] Spawn position updated to: {new_position}")
-        
+
     def reset_health(self):
         """Reset player health without recreation."""
         self.current_health = self.max_health
-        if hasattr(self, 'health_bar') and self.health_bar:
+        if hasattr(self, "health_bar") and self.health_bar:
             self.health_bar.fullness = 1.0
-            
+
     def reset(self):
         """Reset the player to initial state"""
         self.reset_health()
         self.state = EntityState.IDLE
         self.current_weapon = WeaponType.GUN
         self.reset_position()
-    
 
-    
     def update_physics_engine(self):
         """Update the physics engine with the current wall list from MapManager."""
-        if hasattr(self.game_view, 'map_manager') and self.game_view.map_manager:
+        if (
+            hasattr(self.game_view, "map_manager")
+            and self.game_view.map_manager
+        ):
             wall_list = self.game_view.map_manager.get_wall_list()
             if wall_list and wall_list != self._wall_list:
                 self._wall_list = wall_list

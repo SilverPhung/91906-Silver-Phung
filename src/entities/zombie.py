@@ -24,7 +24,7 @@ class Zombie(Enemy):
             friction=friction,
             speed=speed,
             character_config=config_file,
-            character_preset=zombie_type
+            character_preset=zombie_type,
         )
 
         self.player = player_ref
@@ -34,34 +34,38 @@ class Zombie(Enemy):
         self.engage_range = 150
         self.attack_range = 50
         self.physics_range = 10000
-        self.damage = 10 
+        self.damage = 10
         self.change_state(EntityState.IDLE)
         self.random_move_timer = random.random() * ZOMBIE_RANDOM_MOVE_INTERVAL
         self.random_move_point = Vec2(0, 0)
-
 
         self.current_health = self.max_health
 
         # Add zombie to game view lists and create physics engine
         game_view.enemies.append(self)
         game_view.scene.add_sprite("Enemies", self)
-        
-
-
 
     def hunt_player(self, delta_time: float):
         if self.player and self.animation_allow_overwrite:
-            player_pos_vec = Vec2(self.player.position[0], self.player.position[1])
+            player_pos_vec = Vec2(
+                self.player.position[0], self.player.position[1]
+            )
             enemy_pos_vec = Vec2(self.position[0], self.position[1])
             diff = player_pos_vec - enemy_pos_vec
             distance = diff.length()
             walk_random = False
 
             def engage_player(offset: True):
-                self.goto_point(player_pos_vec + offset * Vec2(random.randint(-200, 200), random.randint(-200, 200)))
+                self.goto_point(
+                    player_pos_vec
+                    + offset
+                    * Vec2(
+                        random.randint(-200, 200), random.randint(-200, 200)
+                    )
+                )
                 look_at_point = self.path[0] if self.path else player_pos_vec
                 self.look_at(look_at_point)
-                
+
             if distance < self.attack_range:
                 self.move(Vec2(0, 0))
                 self.attack()
@@ -70,27 +74,37 @@ class Zombie(Enemy):
             elif distance < self.detection_range:
                 self.random_move_point = player_pos_vec
                 engage_player(False)
-                
+
                 if self.path and len(self.path) > 1:
                     return
                 else:
                     engage_player(True)
-                    if not(self.path and len(self.path) > 1):
+                    if not (self.path and len(self.path) > 1):
                         walk_random = True
 
             elif distance < self.physics_range:
                 walk_random = True
-            
+
             if walk_random:
                 self.goto_point(self.random_move_point)
                 self.look_at(self.random_move_point)
                 self.random_move_timer += delta_time
                 diff = self.random_move_point - enemy_pos_vec
-                if self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL or diff.length() < 50:
+                if (
+                    self.random_move_timer >= ZOMBIE_RANDOM_MOVE_INTERVAL
+                    or diff.length() < 50
+                ):
                     self.pathfind_delay_timer = 0
-                    self.random_move_timer = 0 
+                    self.random_move_timer = 0
                     diff = player_pos_vec - enemy_pos_vec
-                    self.random_move_point = enemy_pos_vec+diff.normalize()*150 + Vec2(random.randint(-100, 100), random.randint(-100, 100))
+                    self.random_move_point = (
+                        enemy_pos_vec
+                        + diff.normalize() * 150
+                        + Vec2(
+                            random.randint(-100, 100),
+                            random.randint(-100, 100),
+                        )
+                    )
             else:
                 self.move(Vec2(0, 0))
                 self.change_state(EntityState.IDLE)
@@ -110,20 +124,9 @@ class Zombie(Enemy):
             self.hunt_player(delta_time)
 
         # animation debug
-        Debug.update(
-            "Zombie Animation type", self.current_animation_type
-        )
-        Debug.update(
-            "Zombie Animation state", self.state
-        )
-        Debug.update(
-            "Zombie Animation frame", self.current_animation_frame
-        )
+        Debug.update("Zombie Animation type", self.current_animation_type)
+        Debug.update("Zombie Animation state", self.state)
+        Debug.update("Zombie Animation frame", self.current_animation_frame)
         Debug.update(
             "Zombie Animation allow overwrite", self.animation_allow_overwrite
         )
-
-
-
-
-    

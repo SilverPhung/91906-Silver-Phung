@@ -1,9 +1,0 @@
----
-description:
-globs:
-alwaysApply: false
----
-
-analyse everything and the project state to create a detailed implementation plan. You can create an md file to document important information and track your progress in the directory root. Put the overall purpose, philosophy implementation plan at the top, then follow by other details that you would like to specify. Add a checklist to track progress at the end. don't make changes to the code base yet. 
-
-Split phases into testable chunks and equally manageable chunks.  

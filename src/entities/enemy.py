@@ -13,7 +13,6 @@ from src.constants import *
 class Enemy(Entity):
     """Base class for all enemies (zombies, monsters)"""
 
-
     def __init__(
         self,
         game_view: arcade.View,
@@ -56,29 +55,28 @@ class Enemy(Entity):
         self.path = None
 
         self.reset()
-    
+
     def spawn_random_position(self):
         """Spawn at a random position within map bounds."""
         self.center_x = random.randint(0, MAP_WIDTH_PIXEL)
         self.center_y = random.randint(0, MAP_HEIGHT_PIXEL)
-    
+
     def spawn_at_position(self, x: float, y: float):
         """
         Spawn at a specific position.
-        
+
         Args:
             x: X coordinate for spawning
             y: Y coordinate for spawning
         """
         self.center_x = x
         self.center_y = y
-        
+
         if ENABLE_TESTING:
-            Debug.track_event("enemy_spawned_at_position", {
-                'x': x,
-                'y': y,
-                'enemy_type': self.character_preset
-            })
+            Debug.track_event(
+                "enemy_spawned_at_position",
+                {"x": x, "y": y, "enemy_type": self.character_preset},
+            )
 
     def change_state(self, new_state: EntityState):
         super().change_state(new_state)
@@ -108,16 +106,18 @@ class Enemy(Entity):
         if self.pathfind_delay_timer >= self.pathfind_delay:
             self.pathfind_delay_timer = 0
             new_path = arcade.astar_calculate_path(
-                enemy_pos_vec, point, self.game_view.pathfind_barrier, diagonal_movement=True
+                enemy_pos_vec,
+                point,
+                self.game_view.pathfind_barrier,
+                diagonal_movement=True,
             )
             if new_path and len(new_path) > 1:
                 self.path = new_path
                 self.path.append(point)
-            
+
             # print(self.path)
 
         if self.path and len(self.path) > 1:
-            # goto_point = point if arcade.has_line_of_sight(self.position, point, self.game_view.wall_list, check_resolution=30) else self.path[0]
             
             goto_point = self.path[0]
             diff = goto_point - enemy_pos_vec
@@ -130,17 +130,21 @@ class Enemy(Entity):
         else:
             self.move(Vec2(0, 0))
             self.change_state(EntityState.IDLE)
+
     def transform_path(self, path: list[Vec2]):
         camera = self.game_view.camera_manager.get_camera()
-        return list(map(
-            lambda point: (
-                (point[0] - camera.position[0]) * camera.zoom
-                + self.game_view.window_width / 2,
-                (point[1] - camera.position[1]) * camera.zoom
-                + self.game_view.window_height / 2,
-            ),
-            path
-        ))
+        return list(
+            map(
+                lambda point: (
+                    (point[0] - camera.position[0]) * camera.zoom
+                    + self.game_view.window_width / 2,
+                    (point[1] - camera.position[1]) * camera.zoom
+                    + self.game_view.window_height / 2,
+                ),
+                path,
+            )
+        )
+
     def draw(self):
         if self.path and ENABLE_DEBUG:
             arcade.draw_line_strip(

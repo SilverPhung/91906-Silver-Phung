@@ -38,10 +38,10 @@ class AnimationType(Enum):
 
 class Entity(arcade.Sprite):
     """Base class for all entities in the game (players, enemies)"""
+
     loaded_animations = {}
     loaded_character_config = {}
     loaded_sounds = {}
-
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class Entity(arcade.Sprite):
         friction=PLAYER_FRICTION,
         speed=PLAYER_MOVEMENT_SPEED,
         character_config: str = None,
-        character_preset: str = None
+        character_preset: str = None,
     ):
         super().__init__(scale=scale)
 
@@ -80,7 +80,7 @@ class Entity(arcade.Sprite):
         self.max_health = MAX_HEALTH
         self.current_health = self.max_health
         self.health_bar = None
-        
+
         # Create health bar if bar_list exists
         if self.game_view.bar_list is not None:
             self.health_bar = IndicatorBar(
@@ -94,19 +94,25 @@ class Entity(arcade.Sprite):
         self.character_config = add_character_config(character_config)
         self.character_preset = character_preset
 
-
     # --- Helper Methods for Texture and Animation ---
     def _apply_texture_and_offset(self, texture: TextureData):
         """Helper to set texture and apply offset to center_x, center_y"""
         self.texture = texture[0]
         self.sync_hit_box_to_texture()
 
-    def has_animation(self, anim_name: str, character_preset: str = None) -> bool:
+    def has_animation(
+        self, anim_name: str, character_preset: str = None
+    ) -> bool:
         """Helper to check if an animation exists and has a sequence or idle texture."""
         if character_preset is None:
             character_preset = self.character_preset
 
-        return Entity.loaded_animations.get(character_preset, {}).get(anim_name, {}).get("frames") is not None
+        return (
+            Entity.loaded_animations.get(character_preset, {})
+            .get(anim_name, {})
+            .get("frames")
+            is not None
+        )
 
     def _try_set_animation(self, anim_name: str) -> bool:
         """Helper to attempt setting an animation if it exists and has frames. Returns True if set, False otherwise."""
@@ -128,13 +134,12 @@ class Entity(arcade.Sprite):
                 self.center_y + INDICATOR_BAR_OFFSET,
             )
 
-
     # --- State Management ---
     def update_state(self, delta_time: float):
         """Update entity state based on velocity and other factors - to be overridden by child classes"""
         if self.state == EntityState.DYING:
             return
-        
+
         if to_vector(self.velocity).length() > DEAD_ZONE:
             self.change_state(EntityState.WALKING)
         else:
@@ -152,7 +157,7 @@ class Entity(arcade.Sprite):
     def die(self):
         """Trigger death animation"""
         self.change_state(EntityState.DYING)
-        
+
     def cleanup(self):
         """Clean up entity resources, including health bar"""
         if self.health_bar:
@@ -221,7 +226,9 @@ class Entity(arcade.Sprite):
 
             # Get the current animation frames
             if self.has_animation(self.current_animation):
-                animation_data = Entity.loaded_animations[self.character_preset][self.current_animation]
+                animation_data = Entity.loaded_animations[
+                    self.character_preset
+                ][self.current_animation]
                 animation_frames = animation_data["frames"]
             else:
                 print(
@@ -229,10 +236,8 @@ class Entity(arcade.Sprite):
                 )
                 return
 
-            self.current_animation_type = AnimationType(
-                animation_data["type"]
-            )
-            
+            self.current_animation_type = AnimationType(animation_data["type"])
+
             if animation_frames:
                 if (
                     self.current_animation_type == AnimationType.MOVEMENT
@@ -260,9 +265,7 @@ class Entity(arcade.Sprite):
                         animation_frames[self.current_animation_frame]
                     )
 
-        Debug.update(
-            "Current Animation frame", self.current_animation_frame
-        )
+        Debug.update("Current Animation frame", self.current_animation_frame)
 
     def restart_animation(self):
         self.current_animation_frame = 0
@@ -272,16 +275,26 @@ class Entity(arcade.Sprite):
         """Set the current animation"""
         try:
             if self.has_animation(anim_name):
-                animation_data = Entity.loaded_animations[self.character_preset][anim_name]
-                if animation_data and "frames" in animation_data and len(animation_data["frames"]) > 0:
-                    if self.current_animation != anim_name: 
+                animation_data = Entity.loaded_animations[
+                    self.character_preset
+                ][anim_name]
+                if (
+                    animation_data
+                    and "frames" in animation_data
+                    and len(animation_data["frames"]) > 0
+                ):
+                    if self.current_animation != anim_name:
                         # if the animation is different, restart the animation
                         # Since this function is continously running, we don't want to restart the animation every time
                         self.restart_animation()
-                        self._apply_texture_and_offset(animation_data["frames"][0])
+                        self._apply_texture_and_offset(
+                            animation_data["frames"][0]
+                        )
                     self.current_animation = anim_name
                     self.animation_frames = animation_data["frames"]
-                    self.animation_frame_duration = animation_data.get("frame_duration", 0.1)
+                    self.animation_frame_duration = animation_data.get(
+                        "frame_duration", 0.1
+                    )
                     # Animation set successfully
                 else:
                     # Set a fallback texture
@@ -292,7 +305,7 @@ class Entity(arcade.Sprite):
         except Exception as e:
             # Set a fallback texture
             self._set_fallback_texture()
-    
+
     def _set_fallback_texture(self):
         """Set a fallback texture when animation fails"""
         try:
@@ -306,17 +319,19 @@ class Entity(arcade.Sprite):
     # --- Static Methods ---
     @staticmethod
     def load_sounds(sound_set: dict):
+        print(f"[SOUND] Loading sound set: {list(sound_set.keys())}")
         for sound_path in sound_set.values():
             Entity.load_sound(sound_path)
-    
+
     @staticmethod
     def load_sound(sound_path: str):
         if sound_path in Entity.loaded_sounds:
             return Entity.loaded_sounds[sound_path]
         else:
+            print(f"[SOUND] Loading sound: {sound_path}")
             Entity.loaded_sounds[sound_path] = arcade.load_sound(sound_path)
             return Entity.loaded_sounds[sound_path]
-    
+
     @staticmethod
     def play_sound(sound_name: str, volume: float = 1.0):
         if sound_name in Entity.loaded_sounds:
@@ -325,7 +340,9 @@ class Entity(arcade.Sprite):
             print(f"Sound {sound_name} not found")
 
     @staticmethod
-    def load_animation_sequence(character_preset: str, name: str, animation_data: dict):
+    def load_animation_sequence(
+        character_preset: str, name: str, animation_data: dict
+    ):
 
         if character_preset not in Entity.loaded_animations:
             Entity.loaded_animations[character_preset] = {}
@@ -356,15 +373,20 @@ class Entity(arcade.Sprite):
             )
             processed_sequence.append(processed_frame)
 
-        Entity.loaded_animations[character_preset][name]["frames"] = processed_sequence
+        Entity.loaded_animations[character_preset][name][
+            "frames"
+        ] = processed_sequence
 
-    
     animation_thread_lock = threading.Lock()
 
     @staticmethod
-    def load_animations(character_preset: str, character_config_path: str, game_view: arcade.View) -> bool:
+    def load_animations(
+        character_preset: str,
+        character_config_path: str,
+        game_view: arcade.View,
+    ) -> bool:
         """Synchronous method to load character animations from configuration file"""
-        
+
         def load_animations_thread():
             with Entity.animation_thread_lock:
                 if character_preset in Entity.loaded_animations:
@@ -385,7 +407,9 @@ class Entity(arcade.Sprite):
 
                 # Load animations from configuration
                 for animation_name, animation_data in character_data.items():
-                    Entity.load_animation_sequence(character_preset, animation_name, animation_data)
+                    Entity.load_animation_sequence(
+                        character_preset, animation_name, animation_data
+                    )
 
                 return True
 
@@ -395,9 +419,14 @@ class Entity(arcade.Sprite):
 
     @staticmethod
     def load_all_animations():
-        for character_preset, character_data in Entity.loaded_character_config.items():
+        for (
+            character_preset,
+            character_data,
+        ) in Entity.loaded_character_config.items():
             for animation_name, animation_data in character_data.items():
-                Entity.load_animation_sequence(character_preset, animation_name, animation_data)
+                Entity.load_animation_sequence(
+                    character_preset, animation_name, animation_data
+                )
 
 
 def add_character_config(config_file: str) -> dict:
@@ -414,7 +443,8 @@ def add_character_config(config_file: str) -> dict:
     except FileNotFoundError:
         print(f"Configuration file not found: {config_file}")
         print(
-            "Please run character_analyzer.py first to generate configuration files"
+            "Please run character_analyzer.py \
+first to generate configuration files"
         )
         return {}
     except json.JSONDecodeError as e:
@@ -463,5 +493,3 @@ def process_raw_texture_data(
     raw_texture_data: RawTextureData,
 ) -> TextureData:
     return process_loaded_texture_data(raw_texture_data)
-
-

@@ -357,3 +357,29 @@ class CentralizedTests:
         health_changes = results['total_health_changes'] >= 0
         
         return damage_events >= 0 and healing_events >= 0 and health_changes >= 0 
+
+    @staticmethod
+    def test_shooting_sound(game_view):
+        """Test shooting sound functionality"""
+        print("\n=== TESTING SHOOTING SOUND ===")
+        
+        # Check if player has sound_set
+        if hasattr(game_view.player, 'sound_set') and game_view.player.sound_set:
+            print(f"✓ Player has sound_set: {list(game_view.player.sound_set.keys())}")
+            
+            # Check if gun_shot sound is available
+            if "gun_shot" in game_view.player.sound_set:
+                print(f"✓ Gun shot sound available: {game_view.player.sound_set['gun_shot']}")
+                
+                # Test shooting
+                print("Testing shooting sound...")
+                game_view.player.shoot()
+                print("✓ Shooting test completed")
+                
+                return True
+            else:
+                print("✗ Gun shot sound not found in sound_set")
+                return False
+        else:
+            print("✗ Player has no sound_set")
+            return False 

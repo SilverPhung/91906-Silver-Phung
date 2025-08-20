@@ -163,6 +163,10 @@ class GameView(FadingView):
         self.scene = self.map_manager.create_scene()
         
         # Create player
+        sound_set = {
+            "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
+        }
+        
         self.player = Player(
             game_view=self,
             player_preset="Man",
@@ -170,6 +174,7 @@ class GameView(FadingView):
             scale=CHARACTER_SCALING,
             friction=PLAYER_FRICTION,
             speed=PLAYER_MOVEMENT_SPEED,
+            sound_set=sound_set
         )
 
         

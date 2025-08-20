@@ -84,9 +84,16 @@ class UIManager:
     def _draw_parts_status(self):
         """Draw car parts status text."""
         try:
-            # Get parts count from car manager
-            parts_collected = getattr(self.game_view.car_manager, 'car_parts_collected', 0)
-            required_parts = getattr(self.game_view.car_manager, 'REQUIRED_CAR_PARTS', 5)
+            # Get parts count from car manager, but use car's count if available for accuracy
+            if (hasattr(self.game_view, 'car_manager') and 
+                hasattr(self.game_view.car_manager, 'new_car') and 
+                self.game_view.car_manager.new_car):
+                parts_collected = self.game_view.car_manager.new_car.collected_parts
+                required_parts = self.game_view.car_manager.new_car.required_parts
+            else:
+                parts_collected = getattr(self.game_view.car_manager, 'car_parts_collected', 0)
+                from src.constants import REQUIRED_CAR_PARTS
+                required_parts = REQUIRED_CAR_PARTS
             
             # Always display parts status, even if no new car exists
             parts_text = f"{parts_collected}/{required_parts}"
