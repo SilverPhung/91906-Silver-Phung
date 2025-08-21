@@ -1,28 +1,45 @@
 import arcade
 from pyglet.math import Vec2
 from src.constants import (
-    LEFT_KEY, RIGHT_KEY, UP_KEY, DOWN_KEY,
-    A_KEY, D_KEY, W_KEY, S_KEY,
-    FULLSCREEN_KEY, MIN_ZOOM, ENABLE_TESTING
+    LEFT_KEY,
+    RIGHT_KEY,
+    UP_KEY,
+    DOWN_KEY,
+    A_KEY,
+    D_KEY,
+    W_KEY,
+    S_KEY,
+    FULLSCREEN_KEY,
+    MIN_ZOOM,
+    ENABLE_TESTING,
 )
 from src.entities.player import WeaponType
 
 
 class InputManager:
     """Manages all input handling including keyboard and mouse events."""
-    
+
     def __init__(self, game_view):
         self.game_view = game_view
-        
+
         # Track the current state of what key is pressed
-        movement_keys = [LEFT_KEY, RIGHT_KEY, UP_KEY, DOWN_KEY, A_KEY, D_KEY, W_KEY, S_KEY]
+        movement_keys = [
+            LEFT_KEY,
+            RIGHT_KEY,
+            UP_KEY,
+            DOWN_KEY,
+            A_KEY,
+            D_KEY,
+            W_KEY,
+            S_KEY,
+        ]
         self.key_down = {key: False for key in movement_keys}
-        
+
         # Mouse position tracking
         self.mouse_offset = Vec2(0, 0)
         self.mouse_position = Vec2(0, 0)
         self.left_mouse_pressed = False
-        
+
         # Key action mapping
         self.key_actions = {
             FULLSCREEN_KEY: self._toggle_fullscreen,  # F11
@@ -35,7 +52,7 @@ class InputManager:
             arcade.key.LCTRL: self._zoom_in,
             arcade.key.L: self._load_next_map,  # Debug hotkey for loading next map
         }
-        
+
         # Testing key actions (only when testing is enabled)
         if ENABLE_TESTING:
             self.testing_key_actions = {
@@ -49,7 +66,7 @@ class InputManager:
             }
         else:
             self.testing_key_actions = {}
-        
+
         # Weapon switching mapping
         self.weapon_map = {
             arcade.key.KEY_1: WeaponType.GUN,
@@ -61,25 +78,29 @@ class InputManager:
 
     def update_player_speed(self):
         """Calculate movement based on pressed keys."""
-        movement_x = sum([
-            -1 if self.key_down.get(LEFT_KEY) or self.key_down.get(A_KEY) else 0,
-            1 if self.key_down.get(RIGHT_KEY) or self.key_down.get(D_KEY) else 0
-        ])
-        movement_y = sum([
-            1 if self.key_down.get(UP_KEY) or self.key_down.get(W_KEY) else 0,
-            -1 if self.key_down.get(DOWN_KEY) or self.key_down.get(S_KEY) else 0
-        ])
-        
+        movement_x = sum(
+            [
+                -1 if self.key_down.get(LEFT_KEY) or self.key_down.get(A_KEY) else 0,
+                1 if self.key_down.get(RIGHT_KEY) or self.key_down.get(D_KEY) else 0,
+            ]
+        )
+        movement_y = sum(
+            [
+                1 if self.key_down.get(UP_KEY) or self.key_down.get(W_KEY) else 0,
+                -1 if self.key_down.get(DOWN_KEY) or self.key_down.get(S_KEY) else 0,
+            ]
+        )
+
         self.game_view.player.move(Vec2(movement_x, movement_y))
 
     def on_key_press(self, key, modifiers):
         """Handle key press events."""
         self.key_down[key] = True
-        
+
         # Debug: Log fullscreen keys
         if key in [FULLSCREEN_KEY, arcade.key.F12]:
             print(f"[INPUT_MANAGER] Fullscreen key pressed: {key}")
-        
+
         # Execute testing action if key is mapped and testing is enabled
         if key in self.testing_key_actions:
             self.testing_key_actions[key]()
@@ -93,7 +114,7 @@ class InputManager:
     def on_key_release(self, key, modifiers):
         """Handle key release events."""
         self.key_down[key] = False
-        
+
         if key == arcade.key.Z:
             self.game_view.camera_manager.set_target_zoom(1.0)
         elif key == arcade.key.LCTRL:
@@ -102,7 +123,7 @@ class InputManager:
     def on_mouse_motion(self, x, y, dx, dy):
         """Handle mouse movement."""
         from src.constants import WINDOW_WIDTH, WINDOW_HEIGHT
-        
+
         # Convert screen coordinates to world coordinates
         camera = self.game_view.camera_manager.get_camera()
         offset_x = (x - WINDOW_WIDTH / 2) / camera.zoom
@@ -115,7 +136,7 @@ class InputManager:
             # Check if fullscreen button was clicked first
             if self.game_view.ui_manager.check_fullscreen_button_click(x, y):
                 return  # Don't attack if button was clicked
-            
+
             self.left_mouse_pressed = True
             self.game_view.player.attack()
 
@@ -134,7 +155,9 @@ class InputManager:
         current_state = self.game_view.window.fullscreen
         new_state = not current_state
         self.game_view.window.set_fullscreen(new_state)
-        self.game_view.on_resize(self.game_view.window.width, self.game_view.window.height)
+        self.game_view.on_resize(
+            self.game_view.window.width, self.game_view.window.height
+        )
         print(f"[INPUT_MANAGER] Fullscreen toggled: {current_state} -> {new_state}")
 
     def _attack(self):
@@ -156,7 +179,7 @@ class InputManager:
     def _handle_interaction(self):
         """
         Handle interaction with E key - prioritizes car over chest.
-        
+
         Car interaction takes precedence over chest interaction.
         """
         # First try car interaction
@@ -173,10 +196,16 @@ class InputManager:
     def _zoom_in(self):
         """Zoom in with left control."""
         self.game_view.camera_manager.set_target_zoom(MIN_ZOOM)
-        
+
     def _load_next_map(self):
         """Debug hotkey to load the next map."""
         print(f"[INPUT_MANAGER] Debug: Loading next map")
+
+        # Reset player velocity before transition to prevent momentum carry-over
+        if hasattr(self.game_view, "player") and self.game_view.player:
+            self.game_view.player.reset_velocity()
+            print(f"[INPUT_MANAGER] Player velocity reset before debug map transition")
+
         self.game_view.transition_to_next_map()
 
     def update_mouse_position(self):
@@ -194,35 +223,34 @@ class InputManager:
             self.key_down[key] = False
         self.left_mouse_pressed = False
 
-    
     # === Testing Methods ===
-    
+
     def _run_movement_tests(self):
         """Run movement tests."""
-        if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            results = self.game_view.run_tests_for_objective("movement")
-    
+        if ENABLE_TESTING and hasattr(self.game_view, "test_runner"):
+            self.game_view.run_tests_for_objective("movement")
+
     def _run_combat_tests(self):
         """Run combat tests."""
-        if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            results = self.game_view.run_tests_for_objective("combat")
-    
+        if ENABLE_TESTING and hasattr(self.game_view, "test_runner"):
+            self.game_view.run_tests_for_objective("combat")
+
     def _run_car_tests(self):
         """Run car interaction tests."""
-        if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            results = self.game_view.run_tests_for_objective("car_interaction")
-    
+        if ENABLE_TESTING and hasattr(self.game_view, "test_runner"):
+            self.game_view.run_tests_for_objective("car_interaction")
+
     def _run_health_tests(self):
         """Run health system tests."""
-        if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            results = self.game_view.run_tests_for_objective("health_system")
-    
+        if ENABLE_TESTING and hasattr(self.game_view, "test_runner"):
+            self.game_view.run_tests_for_objective("health_system")
+
     def _run_all_tests(self):
         """Run all tests."""
-        if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            results = self.game_view.run_all_tests()
-    
+        if ENABLE_TESTING and hasattr(self.game_view, "test_runner"):
+            self.game_view.run_all_tests()
+
     def _show_test_results(self):
         """Show current test results."""
-        if ENABLE_TESTING and hasattr(self.game_view, 'test_runner'):
-            results = self.game_view.get_test_results() 
+        if ENABLE_TESTING and hasattr(self.game_view, "test_runner"):
+            self.game_view.get_test_results()

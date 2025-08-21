@@ -1,6 +1,5 @@
-import arcade
 from src.sprites.chest import Chest
-from src.constants import TILE_SCALING, INTERACTION_DISTANCE, ENABLE_TESTING
+from src.constants import ENABLE_TESTING
 from src.debug import Debug
 
 
@@ -17,13 +16,9 @@ class ChestManager:
 
         # Chest-related properties
         self.chests_with_parts = []  # List of chests that contain parts
-        self.chests_without_parts = (
-            []
-        )  # List of chests that don't contain parts
+        self.chests_without_parts = []  # List of chests that don't contain parts
         self.near_chest = None  # Track which chest player is near
-        self.parts_collected_from_chests = (
-            0  # Track parts collected from chests
-        )
+        self.parts_collected_from_chests = 0  # Track parts collected from chests
 
     def clear_chests(self):
         """Clear chests completely for new map."""
@@ -32,12 +27,10 @@ class ChestManager:
         for chest in all_chests:
             try:
                 # Remove from scene
-                chest_list = self.game_view.scene.get_sprite_list(
-                    "ChestsLayer"
-                )
+                chest_list = self.game_view.scene.get_sprite_list("ChestsLayer")
                 if chest in chest_list:
                     chest_list.remove(chest)
-            except Exception as e:
+            except Exception:
                 pass
 
         # Clear lists
@@ -81,7 +74,8 @@ class ChestManager:
                 )
                 chest_objects = tile_map.object_lists.get(layer_name, [])
                 print(
-                    f"[CHEST_MANAGER] Looking for {layer_name}, found {len(chest_objects)} objects"
+                    f"[CHEST_MANAGER] Looking for {layer_name}, found "
+                    f"{len(chest_objects)} objects"
                 )
 
                 if not chest_objects:
@@ -94,23 +88,21 @@ class ChestManager:
                         chest_list.append(chest)
                         self.game_view.scene.add_sprite("ChestsLayer", chest)
 
-                    except Exception as e:
+                    except Exception:
 
                         import traceback
 
                         traceback.print_exc()
 
             # Add test chests if no chests were loaded from map
-            total_chests = len(self.chests_with_parts) + len(
-                self.chests_without_parts
-            )
+            total_chests = len(self.chests_with_parts) + len(self.chests_without_parts)
             if total_chests == 0:
                 self._add_test_chests()
                 total_chests = len(self.chests_with_parts) + len(
                     self.chests_without_parts
                 )
 
-        except Exception as e:
+        except Exception:
 
             import traceback
 
@@ -127,11 +119,11 @@ class ChestManager:
             )
             test_chest_with_part = Chest(old_car_pos, has_part=True)
             self.chests_with_parts.append(test_chest_with_part)
-            self.game_view.scene.add_sprite(
-                "ChestsLayer", test_chest_with_part
-            )
+            self.game_view.scene.add_sprite("ChestsLayer", test_chest_with_part)
             print(
-                f"[CHEST_MANAGER] Added chest with part to scene at ({test_chest_with_part.center_x:.1f}, {test_chest_with_part.center_y:.1f})"
+                f"[CHEST_MANAGER] Added chest with part to scene at "
+                f"({test_chest_with_part.center_x:.1f}, "
+                f"{test_chest_with_part.center_y:.1f})"
             )
 
         # Add a chest without part near the new car
@@ -142,11 +134,11 @@ class ChestManager:
             )
             test_chest_without_part = Chest(new_car_pos, has_part=False)
             self.chests_without_parts.append(test_chest_without_part)
-            self.game_view.scene.add_sprite(
-                "ChestsLayer", test_chest_without_part
-            )
+            self.game_view.scene.add_sprite("ChestsLayer", test_chest_without_part)
             print(
-                f"[CHEST_MANAGER] Added chest without part to scene at ({test_chest_without_part.center_x:.1f}, {test_chest_without_part.center_y:.1f})"
+                f"[CHEST_MANAGER] Added chest without part to scene at "
+                f"({test_chest_without_part.center_x:.1f}, "
+                f"{test_chest_without_part.center_y:.1f})"
             )
 
         # Add a chest in the middle of the map
@@ -155,7 +147,8 @@ class ChestManager:
         self.chests_with_parts.append(test_chest_middle)
         self.game_view.scene.add_sprite("ChestsLayer", test_chest_middle)
         print(
-            f"[CHEST_MANAGER] Added middle chest to scene at ({test_chest_middle.center_x:.1f}, {test_chest_middle.center_y:.1f})"
+            f"[CHEST_MANAGER] Added middle chest to scene at "
+            f"({test_chest_middle.center_x:.1f}, {test_chest_middle.center_y:.1f})"
         )
 
     def check_chest_interactions(self):
@@ -164,7 +157,7 @@ class ChestManager:
 
         Uses the new Interactable proximity checking system.
         """
-        previous_near_chest = self.near_chest
+        self.near_chest
         self.near_chest = None
 
         # Check all chests (with and without parts)
@@ -241,7 +234,11 @@ class ChestManager:
                 if part_added:
                     # Also update the car manager's counter for UI display
                     self.game_view.car_manager.car_parts_collected += 1
-                    print(f"[CHEST_MANAGER] Part collected from chest. Total parts: {self.game_view.car_manager.car_parts_collected}")
+                    parts_count = self.game_view.car_manager.car_parts_collected
+                    print(
+                        f"[CHEST_MANAGER] Part collected from chest. "
+                        f"Total parts: {parts_count}"
+                    )
 
         # Track testing data after interaction
         if ENABLE_TESTING:
@@ -284,9 +281,7 @@ class ChestManager:
         Returns:
             dict: Statistics about chests and parts
         """
-        total_chests = len(self.chests_with_parts) + len(
-            self.chests_without_parts
-        )
+        total_chests = len(self.chests_with_parts) + len(self.chests_without_parts)
         chests_with_parts = len(self.chests_with_parts)
         chests_without_parts = len(self.chests_without_parts)
 
@@ -295,6 +290,5 @@ class ChestManager:
             "chests_with_parts": chests_with_parts,
             "chests_without_parts": chests_without_parts,
             "parts_collected": self.parts_collected_from_chests,
-            "parts_remaining": chests_with_parts
-            - self.parts_collected_from_chests,
+            "parts_remaining": chests_with_parts - self.parts_collected_from_chests,
         }

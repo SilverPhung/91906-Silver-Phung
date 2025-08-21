@@ -2,9 +2,12 @@ from typing import cast
 import arcade
 import math
 from pyglet.math import Vec2
-from src.extended import to_vector
 from src.entities.entity import Entity
-from src.constants import *
+from src.constants import (
+    BULLET_DAMAGE,
+    BULLET_LIFE,
+    BULLET_SPEED,
+)
 
 
 class Bullet(arcade.Sprite):
@@ -24,7 +27,9 @@ class Bullet(arcade.Sprite):
             20, arcade.color.YELLOW, name="bullet"
         )
         super().__init__(path_or_texture=bullet_texture, scale=(0.2, 5), **kwargs)
-        diff = Vec2(end_position[0] - start_position[0], end_position[1] - start_position[1])
+        diff = Vec2(
+            end_position[0] - start_position[0], end_position[1] - start_position[1]
+        )
         self.position = start_position + diff.normalize() * 5
         self.target_position = end_position
 
@@ -40,7 +45,9 @@ class Bullet(arcade.Sprite):
             normalized_direction_x = 0.0
             normalized_direction_y = 0.0
 
-        self.angle = math.degrees(math.atan2(normalized_direction_x, normalized_direction_y))
+        self.angle = math.degrees(
+            math.atan2(normalized_direction_x, normalized_direction_y)
+        )
         self.velocity = (
             normalized_direction_x * bullet_speed,
             normalized_direction_y * bullet_speed,
@@ -49,7 +56,12 @@ class Bullet(arcade.Sprite):
         self.lifetime = bullet_lifetime
         self.damage = bullet_damage
 
-    def update(self, delta_time: float, sprite_lists: list[arcade.SpriteList], wall_list: list[arcade.SpriteList]):
+    def update(
+        self,
+        delta_time: float,
+        sprite_lists: list[arcade.SpriteList],
+        wall_list: list[arcade.SpriteList],
+    ):
         self._check_collision(sprite_lists)
         self._check_collision_with_walls(wall_list)
         self.lifetime -= delta_time
@@ -57,10 +69,11 @@ class Bullet(arcade.Sprite):
             self.remove_from_sprite_lists()
 
         super().update(delta_time)
-    
+
     def _check_collision(self, sprite_lists: list[arcade.SpriteList]):
         for sprite_list in sprite_lists:
-            for sprite in self.collides_with_list(sprite_list):
+            collisions = self.collides_with_list(sprite_list)
+            for sprite in collisions:
                 entity = cast(Entity, sprite)
                 if entity.current_health > 0:
                     entity.take_damage(self.damage)
@@ -77,4 +90,4 @@ class Bullet(arcade.Sprite):
 
     def draw(self):
         # No longer drawing a line, as it's a sprite now
-        pass 
+        pass

@@ -1,5 +1,6 @@
 import arcade
-from src.constants import *
+
+# No specific constants needed for indicator bar
 
 
 class IndicatorBar:
@@ -143,7 +144,7 @@ class IndicatorBar:
             # Set the full_box to not be visible since it is not full anymore
             self.full_box.visible = False
         else:
-            # Set the full_box to be visible incase it wasn't then update the bar
+            # Set the full_box to be visible in case it wasn't
             self.full_box.visible = True
             self.full_box.width = self._bar_width * new_fullness * self.scale[0]
             self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
@@ -162,7 +163,7 @@ class IndicatorBar:
             self.background_box.position = new_position
             self.full_box.position = new_position
 
-            # Make sure full_box is to the left of the bar instead of the middle
+            # Make sure full_box is to the left instead of the middle
             self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
 
     @property
@@ -177,4 +178,4 @@ class IndicatorBar:
         if value != self.scale:
             self._scale = value
             self.background_box.scale = value
-            self.full_box.scale = value 
+            self.full_box.scale = value

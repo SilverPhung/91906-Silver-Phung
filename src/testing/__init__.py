@@ -9,7 +9,7 @@ from .tracking_components import (
     MovementTracker,
     CombatTracker,
     CarInteractionTracker,
-    HealthTracker
+    HealthTracker,
 )
 
 from .centralized_tests import CentralizedTests
@@ -17,11 +17,11 @@ from .test_runner import TestRunner
 from .integration import TestingIntegration
 
 __all__ = [
-    'MovementTracker',
-    'CombatTracker', 
-    'CarInteractionTracker',
-    'HealthTracker',
-    'CentralizedTests',
-    'TestRunner',
-    'TestingIntegration'
-] 
+    "MovementTracker",
+    "CombatTracker",
+    "CarInteractionTracker",
+    "HealthTracker",
+    "CentralizedTests",
+    "TestRunner",
+    "TestingIntegration",
+]

@@ -17,7 +17,12 @@ class FadingView(arcade.View):
 
         if self.fade_out is not None:
             self.fade_out += FADE_RATE
-            if self.fade_out is not None and self.fade_out > 255 and next_view is not None and self.next_view:
+            if (
+                self.fade_out is not None
+                and self.fade_out > 255
+                and next_view is not None
+                and self.next_view
+            ):
                 self.next_view.setup()
                 self.window.show_view(self.next_view)
 
@@ -47,4 +52,4 @@ class FadingView(arcade.View):
                     self.window.height,
                 ),
                 color=(0, 0, 0, clamp(self.fade_in, 0, 255)),
-            ) 
+            )

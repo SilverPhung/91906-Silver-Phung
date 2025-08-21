@@ -1,13 +1,22 @@
 import random
 import arcade
 from pyglet.math import Vec2
-from src.entities.entity import *
+
+from src.entities.entity import Entity, EntityState
 from src.entities.player import Player
-from src.extended import to_vector
 from src.sprites.indicator_bar import IndicatorBar
 from src.debug import Debug
-import math
-from src.constants import *
+from src.constants import (
+    ENABLE_DEBUG,
+    ENABLE_TESTING,
+    HEALTHBAR_HEIGHT,
+    HEALTHBAR_WIDTH,
+    MAP_HEIGHT_PIXEL,
+    MAP_WIDTH_PIXEL,
+    PLAYER_FRICTION,
+    ZOMBIE_CONFIG_FILE,
+    ZOMBIE_MOVEMENT_SPEED,
+)
 
 
 class Enemy(Entity):
@@ -118,11 +127,11 @@ class Enemy(Entity):
             # print(self.path)
 
         if self.path and len(self.path) > 1:
-            
             goto_point = self.path[0]
             diff = goto_point - enemy_pos_vec
             distance = diff.length()
-            if distance < self.game_view.pathfind_barrier.grid_size:
+            grid_size = self.game_view.pathfind_barrier.grid_size
+            if distance < grid_size:
                 self.path.pop(0)
                 return
             self.move(diff.normalize())
@@ -133,17 +142,17 @@ class Enemy(Entity):
 
     def transform_path(self, path: list[Vec2]):
         camera = self.game_view.camera_manager.get_camera()
-        return list(
-            map(
-                lambda point: (
-                    (point[0] - camera.position[0]) * camera.zoom
-                    + self.game_view.window_width / 2,
-                    (point[1] - camera.position[1]) * camera.zoom
-                    + self.game_view.window_height / 2,
-                ),
-                path,
-            )
-        )
+
+        def transform_point(point):
+            x = (
+                point[0] - camera.position[0]
+            ) * camera.zoom + self.game_view.window_width / 2
+            y = (
+                point[1] - camera.position[1]
+            ) * camera.zoom + self.game_view.window_height / 2
+            return (x, y)
+
+        return list(map(transform_point, path))
 
     def draw(self):
         if self.path and ENABLE_DEBUG:
@@ -152,7 +161,6 @@ class Enemy(Entity):
                 arcade.color.BLUE,
                 2,
             )
-        pass
 
     def attack(self):
         """Trigger attack animation"""
@@ -174,10 +182,7 @@ class Enemy(Entity):
         self.death_delay_timer = 0
 
     def update(self, delta_time: float):
-        update_physics = True
-        if self.state == EntityState.IDLE:
-            update_physics = False
-
+        update_physics = self.state != EntityState.IDLE
         super().update(delta_time, update_physics=update_physics)
 
         if self.state == EntityState.DYING:

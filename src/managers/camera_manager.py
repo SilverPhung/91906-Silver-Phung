@@ -1,8 +1,6 @@
 import arcade
 from pyglet.math import Vec2
 from src.constants import (
-    WINDOW_WIDTH,
-    WINDOW_HEIGHT,
     TILE_SIZE,
     TILE_SCALING,
     FOLLOW_DECAY_CONST,
@@ -48,20 +46,14 @@ class CameraManager:
         # Log every 3 seconds
         if self._camera_log_timer >= 3.0:
             print(
-                f"[CAMERA_DEBUG] Player position: ({\
-                    player_x:.1f}, {\
-                        player_y:.1f})"
+                f"[CAMERA_DEBUG] Player position: " f"({player_x:.1f}, {player_y:.1f})"
             )
-            print(
-                f"[CAMERA_DEBUG] Camera position: ({\
-                    self.camera.position[0]:.1f}, {\
-                        self.camera.position[1]:.1f})"
-            )
+            cam_x = self.camera.position[0]
+            cam_y = self.camera.position[1]
+            print(f"[CAMERA_DEBUG] Camera position: " f"({cam_x:.1f}, {cam_y:.1f})")
             self._camera_log_timer = 0
 
-        current_camera_position = Vec2(
-            self.camera.position[0], self.camera.position[1]
-        )
+        current_camera_position = Vec2(self.camera.position[0], self.camera.position[1])
         player_position_vec = Vec2(player_x, player_y)
 
         new_camera_position_vec = arcade.math.smerp_2d(
@@ -86,9 +78,7 @@ class CameraManager:
         """Update camera zoom with smooth interpolation."""
         current_zoom = self.camera.zoom
         if abs(current_zoom - self.target_zoom) > 0.001:
-            new_zoom = arcade.math.lerp(
-                current_zoom, self.target_zoom, 5 * delta_time
-            )
+            new_zoom = arcade.math.lerp(current_zoom, self.target_zoom, 5 * delta_time)
             self.camera.zoom = new_zoom
 
     def set_target_zoom(self, zoom_level):

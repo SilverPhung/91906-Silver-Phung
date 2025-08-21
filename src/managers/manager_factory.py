@@ -9,25 +9,25 @@ from src.managers.map_manager import MapManager
 
 class ManagerFactory:
     """Factory class for creating and managing game managers"""
-    
+
     @staticmethod
     def create_managers(game_view):
         """Create all managers for the game view"""
         try:
             return {
-                'input_manager': InputManager(game_view),
-                'ui_manager': UIManager(game_view),
-                'car_manager': CarManager(game_view),
-                'camera_manager': CameraManager(game_view),
-                'chest_manager': ChestManager(game_view),
-                'spawn_manager': SpawnManager(game_view),
-                'map_manager': MapManager(game_view)
+                "input_manager": InputManager(game_view),
+                "ui_manager": UIManager(game_view),
+                "car_manager": CarManager(game_view),
+                "camera_manager": CameraManager(game_view),
+                "chest_manager": ChestManager(game_view),
+                "spawn_manager": SpawnManager(game_view),
+                "map_manager": MapManager(game_view),
             }
         except Exception as e:
             print(f"Error creating managers: {e}")
             # Return empty dict as fallback
             return {}
-    
+
     @staticmethod
     def setup_managers(managers, game_view):
         """Setup all managers with the game view"""
@@ -41,4 +41,4 @@ class ManagerFactory:
                 try:
                     setattr(game_view, manager_name, manager)
                 except Exception as setup_error:
-                    print(f"Error setting up {manager_name}: {setup_error}") 
+                    print(f"Error setting up {manager_name}: {setup_error}")

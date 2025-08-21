@@ -1,11 +1,11 @@
 import arcade
 import threading
-from src.constants import TILE_SCALING, TILE_SIZE, MAP_WIDTH_PIXEL, MAP_HEIGHT_PIXEL
+from src.constants import TILE_SCALING, MAP_WIDTH_PIXEL, MAP_HEIGHT_PIXEL
 
 
 class SceneManager:
     """Manages all scene-related functionality including map loading, tile layers, and sprite lists."""
-    
+
     def __init__(self, game_view):
         self.game_view = game_view
         self.scene = arcade.Scene()
@@ -17,30 +17,36 @@ class SceneManager:
         """Load a Tiled map and set up the scene."""
         map_name = f"resources/maps/map{map_index}.tmx"
         print(f"[SCENE] Loading map: {map_name}")
-        
+
         self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
-        print(f"[SCENE] Tilemap loaded with {len(self.tile_map.sprite_lists)} sprite lists")
-        
+        print(
+            f"[SCENE] Tilemap loaded with {len(self.tile_map.sprite_lists)} sprite lists"
+        )
+
         self._setup_scene()
         self._setup_camera_bounds()
         self._setup_pathfinding_barrier()
 
     def _setup_scene(self):
         """Set up the scene with tile layers and sprite lists."""
-        print(f"[SCENE] Available sprite lists: {list(self.tile_map.sprite_lists.keys())}")
-        
+        print(
+            f"[SCENE] Available sprite lists: {list(self.tile_map.sprite_lists.keys())}"
+        )
+
         # Add tile layers to scene
         for layer_name in ("Dirt", "Grass", "Road"):
-            self.scene.add_sprite_list(layer_name, sprite_list=self.tile_map.sprite_lists[layer_name])
-        
+            self.scene.add_sprite_list(
+                layer_name, sprite_list=self.tile_map.sprite_lists[layer_name]
+            )
+
         # Add walls layer
         self.wall_list = self.tile_map.sprite_lists["Walls"]
         self.scene.add_sprite_list("Walls", sprite_list=self.wall_list)
-        
+
         # Add sprite lists for entities
         self.scene.add_sprite_list("Player")
         self.scene.add_sprite_list("CarsLayer")
-        
+
         print(f"[SCENE] Added tile layers to scene")
 
     def _setup_camera_bounds(self):
@@ -49,6 +55,7 @@ class SceneManager:
 
     def _setup_pathfinding_barrier(self):
         """Set up pathfinding barrier for AI navigation."""
+
         def create_pathfind_barrier():
             with self.game_view.pathfind_barrier_thread_lock:
                 if self.game_view.pathfind_barrier is None:
@@ -61,7 +68,7 @@ class SceneManager:
                         bottom=0,
                         top=MAP_HEIGHT_PIXEL,
                     )
-        
+
         self._start_thread(create_pathfind_barrier)
 
     def _start_thread(self, target_func):
@@ -98,4 +105,4 @@ class SceneManager:
             self.scene.add_sprite_list("Enemies", self.game_view.enemies)
         else:
             self.scene.get_sprite_list("Enemies").clear()
-            self.scene.get_sprite_list("Enemies").extend(self.game_view.enemies) 
+            self.scene.get_sprite_list("Enemies").extend(self.game_view.enemies)

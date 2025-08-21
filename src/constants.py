@@ -11,10 +11,10 @@ TESTING_OBJECTIVES = {
     "movement": "Test player movement controls (WASD/Arrow keys)",
     "combat": "Test shooting mechanics and enemy interaction",
     "car_interaction": "Test car part collection and car usage",
-    "chest_interaction": "Test chest opening, part collection, and state management",
-    "spawn_system": "Test zombie spawn points, validation, and distribution",
+    "chest_interaction": ("Test chest opening, part collection, and state management"),
+    "spawn_system": ("Test zombie spawn points, validation, and distribution"),
     "map_progression": "Test map transitions and level completion",
-    "health_system": "Test health bar and damage mechanics"
+    "health_system": "Test health bar and damage mechanics",
 }
 
 # Testing validation thresholds
@@ -93,8 +93,8 @@ ZOMBIE_CONFIG_FILE = "resources/animation_config/zombies_config.json"
 # Map constants
 MAP_WIDTH = 39
 MAP_HEIGHT = 57
-MAP_WIDTH_PIXEL=   MAP_WIDTH * TILE_SIZE * TILE_SCALING
-MAP_HEIGHT_PIXEL = MAP_HEIGHT* TILE_SIZE * TILE_SCALING
+MAP_WIDTH_PIXEL = MAP_WIDTH * TILE_SIZE * TILE_SCALING
+MAP_HEIGHT_PIXEL = MAP_HEIGHT * TILE_SIZE * TILE_SCALING
 
 # Car constants
 CAR_SCALING = 3

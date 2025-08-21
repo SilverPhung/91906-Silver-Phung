@@ -1,8 +1,20 @@
 import random
-import time
-from src.entities.enemy import *
+
+import arcade
+from pyglet.math import Vec2
+
+from src.entities.enemy import Enemy
+from src.entities.entity import EntityState
 from src.entities.player import Player
-from src.constants import *
+from src.constants import (
+    CHARACTER_SCALING,
+    ENABLE_DEBUG,
+    PLAYER_FRICTION,
+    PLAYER_MOVEMENT_SPEED,
+    ZOMBIE_CONFIG_FILE,
+    ZOMBIE_RANDOM_MOVE_INTERVAL,
+)
+from src.debug import Debug
 
 
 class Zombie(Enemy):
@@ -47,22 +59,18 @@ class Zombie(Enemy):
 
     def hunt_player(self, delta_time: float):
         if self.player and self.animation_allow_overwrite:
-            player_pos_vec = Vec2(
-                self.player.position[0], self.player.position[1]
-            )
+            player_pos_vec = Vec2(self.player.position[0], self.player.position[1])
             enemy_pos_vec = Vec2(self.position[0], self.position[1])
             diff = player_pos_vec - enemy_pos_vec
             distance = diff.length()
             walk_random = False
 
-            def engage_player(offset: True):
-                self.goto_point(
-                    player_pos_vec
-                    + offset
-                    * Vec2(
-                        random.randint(-200, 200), random.randint(-200, 200)
-                    )
+            def engage_player(offset: bool):
+                offset_vec = Vec2(random.randint(-200, 200), random.randint(-200, 200))
+                target_point = (
+                    player_pos_vec + offset * offset_vec if offset else player_pos_vec
                 )
+                self.goto_point(target_point)
                 look_at_point = self.path[0] if self.path else player_pos_vec
                 self.look_at(look_at_point)
 
@@ -97,13 +105,12 @@ class Zombie(Enemy):
                     self.pathfind_delay_timer = 0
                     self.random_move_timer = 0
                     diff = player_pos_vec - enemy_pos_vec
+                    random_offset = Vec2(
+                        random.randint(-100, 100),
+                        random.randint(-100, 100),
+                    )
                     self.random_move_point = (
-                        enemy_pos_vec
-                        + diff.normalize() * 150
-                        + Vec2(
-                            random.randint(-100, 100),
-                            random.randint(-100, 100),
-                        )
+                        enemy_pos_vec + diff.normalize() * 150 + random_offset
                     )
             else:
                 self.move(Vec2(0, 0))
@@ -112,8 +119,9 @@ class Zombie(Enemy):
     def draw(self):
         super().draw()
         if self.random_move_point and ENABLE_DEBUG:
+            path_points = [self.position, self.random_move_point]
             arcade.draw_line_strip(
-                self.transform_path([self.position, self.random_move_point]),
+                self.transform_path(path_points),
                 arcade.color.RED,
                 2,
             )
@@ -128,5 +136,6 @@ class Zombie(Enemy):
         Debug.update("Zombie Animation state", self.state)
         Debug.update("Zombie Animation frame", self.current_animation_frame)
         Debug.update(
-            "Zombie Animation allow overwrite", self.animation_allow_overwrite
+            "Zombie Animation allow overwrite",
+            self.animation_allow_overwrite,
         )

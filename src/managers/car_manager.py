@@ -1,6 +1,4 @@
-import arcade
 from src.sprites.car import Car
-from src.constants import TILE_SCALING, INTERACTION_DISTANCE
 
 
 class CarManager:
@@ -58,7 +56,8 @@ class CarManager:
                 )
                 car_objects = tile_map.object_lists.get(layer_name, [])
                 print(
-    f"[CAR_MANAGER] Looking for {layer_name}, found {len(car_objects)} objects"
+                    f"[CAR_MANAGER] Looking for {layer_name}, found "
+                    f"{len(car_objects)} objects"
                 )
                 if not car_objects:
                     continue
@@ -69,8 +68,8 @@ class CarManager:
                 self.game_view.scene.add_sprite("CarsLayer", car)
                 car_type = "Old" if is_starting_car else "New"
                 print(
-                    f"[CAR_MANAGER] Added {car_type} car to scene at ({\
-                        car.center_x:.1f}, {car.center_y:.1f})"
+                    f"[CAR_MANAGER] Added {car_type} car to scene at "
+                    f"({car.center_x:.1f}, {car.center_y:.1f})"
                 )
 
                 # Debug: Verify car is actually in the scene
@@ -78,11 +77,9 @@ class CarManager:
                 if car_list and car in car_list:
                     print(f"[CAR_MANAGER] ✓ {car_type} car confirmed in scene")
                 else:
-                    print(
-                        f"[CAR_MANAGER] ✗ {car_type} car NOT found in scene!"
-                    )
+                    print(f"[CAR_MANAGER] ✗ {car_type} car NOT found in scene!")
 
-        except Exception as e:
+        except Exception:
 
             import traceback
 
@@ -104,7 +101,7 @@ class CarManager:
                     self.near_car = car
                     # Only log when proximity state changes
                     if previous_near_car != self.near_car:
-                        car_type = "Old" if car.is_starting_car else "New"
+                        "Old" if car.is_starting_car else "New"
                     break
 
         # Only log when proximity state changes
@@ -135,7 +132,11 @@ class CarManager:
         if should_transition:
             # Use the car to progress to next level
             self.game_view.key_down = {}
-            self.game_view.player.move(arcade.math.Vec2(0, 0))
+
+            # Reset player velocity completely before transition to prevent momentum carry-over
+            self.game_view.player.reset_velocity()
+            print("[CAR_MANAGER] Player velocity reset before car transition")
+
             self.game_view.transition_to_next_map()
 
     def position_player_at_old_car(self):
@@ -145,9 +146,7 @@ class CarManager:
             new_position = self.old_car.position
             self.game_view.player.position = new_position
             self.game_view.player.update_spawn_position(new_position)
-            print(
-                f"[CAR_MANAGER] Player positioned at old car: {new_position}"
-            )
+            print(f"[CAR_MANAGER] Player positioned at old car: {new_position}")
         else:
             print(f"[CAR_MANAGER] No old car found for player positioning")
 
@@ -163,9 +162,12 @@ class CarManager:
             part_added = self.new_car.add_part()
             if part_added:
                 self.car_parts_collected += 1
-                print(f"[CAR_MANAGER] Test part added. Total parts: {self.car_parts_collected}")
+                print(
+                    f"[CAR_MANAGER] Test part added. Total parts: "
+                    f"{self.car_parts_collected}"
+                )
         else:
-            print(f"[CAR_MANAGER] No new car found - cannot add test part")
+            print("[CAR_MANAGER] No new car found - cannot add test part")
 
     def reset_cars(self):
         """Reset car state for new map."""

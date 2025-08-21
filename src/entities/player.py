@@ -1,11 +1,18 @@
 import arcade
 from pyglet.math import Vec2
-from src.entities.entity import *
-from src.extended import to_vector
-from src.sprites.indicator_bar import IndicatorBar
-from src.debug import Debug
 from enum import Enum
-from src.constants import *
+
+from src.entities.entity import Entity, EntityState
+from src.debug import Debug
+from src.constants import (
+    BULLET_DAMAGE,
+    CHARACTER_SCALING,
+    PLAYER_CONFIG_FILE,
+    PLAYER_FRICTION,
+    PLAYER_MOVEMENT_SPEED,
+    SHOOT_COOLDOWN,
+    SPAWN_POSITION,
+)
 from src.sprites.bullet import Bullet
 
 
@@ -66,10 +73,7 @@ class Player(Entity):
 
         # Get wall_list from MapManager if available, otherwise use empty list
         wall_list = []
-        if (
-            hasattr(self.game_view, "map_manager")
-            and self.game_view.map_manager
-        ):
+        if hasattr(self.game_view, "map_manager") and self.game_view.map_manager:
             wall_list = [self.game_view.map_manager.get_wall_list()]
         elif hasattr(self.game_view, "wall_list") and self.game_view.wall_list:
             wall_list = [self.game_view.wall_list]
@@ -103,7 +107,8 @@ class Player(Entity):
             return
 
         # Try alternative cases for weapon name
-        for anim_name in Entity.loaded_animations[self.character_preset]:
+        animations = Entity.loaded_animations[self.character_preset]
+        for anim_name in animations:
             if (
                 anim_name.startswith(prefix)
                 and weapon_name.lower() in anim_name.lower()
@@ -112,13 +117,15 @@ class Player(Entity):
                     return
 
         # Fallback to any animation with the prefix
-        for anim_name in Entity.loaded_animations[self.character_preset]:
+        animations = Entity.loaded_animations[self.character_preset]
+        for anim_name in animations:
             if anim_name.startswith(fallback_prefix):
                 if self._try_set_animation(anim_name):
                     return
 
         # Last resort - use any available animation
-        for anim_name in Entity.loaded_animations[self.character_preset]:
+        animations = Entity.loaded_animations[self.character_preset]
+        for anim_name in animations:
             if self._try_set_animation(anim_name):
                 print("Cannot find animation, using fallback", anim_name)
                 return
@@ -132,17 +139,13 @@ class Player(Entity):
         """Set the appropriate animation based on current state and weapon"""
         weapon_name = self.current_weapon.value
 
-        Debug.update(
-            "Animation allow overwrite", self.animation_allow_overwrite
-        )
+        Debug.update("Animation allow overwrite", self.animation_allow_overwrite)
 
         match self.state:
             case EntityState.WALKING | EntityState.IDLE:
                 if self.animation_allow_overwrite:
 
-                    self._find_and_set_prefixed_animation(
-                        "Walk_", weapon_name, "Walk_"
-                    )
+                    self._find_and_set_prefixed_animation("Walk_", weapon_name, "Walk_")
 
             case EntityState.ATTACKING:
                 if self.current_weapon == WeaponType.GUN:
@@ -154,10 +157,10 @@ class Player(Entity):
                         pass
                     else:
                         print("Cannot find attack animation, using fallback")
-                        # Fallback to any attack animation (if not weapon_name specific)
-                        for anim_name in Entity.loaded_animations[
-                            self.character_preset
-                        ]:
+                        # Fallback to any attack animation
+                        # (if not weapon_name specific)
+                        animations = Entity.loaded_animations[self.character_preset]
+                        for anim_name in animations:
                             if anim_name in [
                                 "Bat",
                                 "FlameThrower",
@@ -209,9 +212,8 @@ class Player(Entity):
     def attack_with_weapon(self):
         """Trigger an attack animation based on current weapon"""
         if self.state != EntityState.DYING:
-            hit_list = arcade.check_for_collision_with_list(
-                self, self.game_view.scene.get_sprite_list("Enemies")
-            )
+            enemies = self.game_view.scene.get_sprite_list("Enemies")
+            hit_list = arcade.check_for_collision_with_list(self, enemies)
             self.change_state(EntityState.ATTACKING)
             for enemy in hit_list:
                 enemy.take_damage(BULLET_DAMAGE)
@@ -240,8 +242,8 @@ class Player(Entity):
         )
         Debug.update(
             "Player Velocity",
-            f"{self.velocity[0]/delta_time:.2f}, {\
-                self.velocity[1]/delta_time:.2f}",
+            f"{self.velocity[0] / delta_time:.2f}, "
+            f"{self.velocity[1] / delta_time:.2f}",
         )
 
         Debug.update("Player Health", self.current_health)
@@ -255,10 +257,28 @@ class Player(Entity):
     def reset_position(self):
         """Reset player position without recreation."""
         self.position = self.spawn_position
+        self.reset_velocity()
+        # Debug logging removed to prevent infinite loops
+
+    def reset_velocity(self):
+        """
+        Reset player velocity and movement completely.
+
+        This method ensures all velocity-related attributes are cleared
+        to prevent momentum carrying over during map transitions or
+        when delta time accumulates unexpectedly.
+        """
         self.velocity = Vec2(0.0, 0.0)
         self.change_x = 0.0
         self.change_y = 0.0
-        # Debug logging removed to prevent infinite loops
+
+        # Also reset the physics engine velocity if it exists
+        if hasattr(self, "physics_engine") and self.physics_engine:
+            if hasattr(self.physics_engine, "player_sprite"):
+                self.physics_engine.player_sprite.change_x = 0.0
+                self.physics_engine.player_sprite.change_y = 0.0
+
+        print(f"[PLAYER] Velocity completely reset to zero")
 
     def update_spawn_position(self, new_position):
         """Update the spawn position for the current map."""
@@ -279,11 +299,8 @@ class Player(Entity):
         self.reset_position()
 
     def update_physics_engine(self):
-        """Update the physics engine with the current wall list from MapManager."""
-        if (
-            hasattr(self.game_view, "map_manager")
-            and self.game_view.map_manager
-        ):
+        """Update physics engine with current wall list from MapManager."""
+        if hasattr(self.game_view, "map_manager") and self.game_view.map_manager:
             wall_list = self.game_view.map_manager.get_wall_list()
             if wall_list and wall_list != self._wall_list:
                 self._wall_list = wall_list

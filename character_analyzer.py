@@ -2,8 +2,8 @@
 """
 Character Asset Analyzer
 
-This tool analyzes character folders and generates JSON configuration files
-with image paths and anchor point settings for proper sprite rotation.
+This tool analyzes character folders and generates JSON configuration
+files with image paths and anchor point settings for proper sprite rotation.
 
 Usage:
     python character_analyzer.py
@@ -20,7 +20,7 @@ import os
 import json
 from PIL import Image
 import glob
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 # Default asset directories
 DEFAULT_PLAYER_ASSETS_DIR = "resources/Players"
@@ -48,9 +48,7 @@ def analyze_player_directory(base_dir: str) -> Dict[str, Any]:
 
     # Get all character folders (Girl, Man, etc.)
     character_folders = [
-        f
-        for f in os.listdir(base_dir)
-        if os.path.isdir(os.path.join(base_dir, f))
+        f for f in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, f))
     ]
 
     for character in character_folders:
@@ -75,9 +73,7 @@ def analyze_player_directory(base_dir: str) -> Dict[str, Any]:
             if animation.startswith("Walk_"):
                 animation_type = "Movement"
             else:
-                animation_type = (
-                    "Action"  # For players, if not Walk_, it's an action
-                )
+                animation_type = "Action"  # For players, not Walk_
 
             if png_files:
                 # Get dimensions from first frame (all frames should have same dimensions)
@@ -89,15 +85,11 @@ def analyze_player_directory(base_dir: str) -> Dict[str, Any]:
                     "anchor_y": height // 2,  # Default to center
                     "width": width,
                     "height": height,
-                    "frames": [
-                        png_file.replace("\\", "/") for png_file in png_files
-                    ],
+                    "frames": [png_file.replace("\\", "/") for png_file in png_files],
                     "animation_type": animation_type,
                 }
 
-            print(
-                f"Processed {character}/{animation}: {len(png_files)} frames"
-            )
+            print(f"Processed {character}/{animation}: {len(png_files)} frames")
 
     return config
 
@@ -112,9 +104,7 @@ def analyze_zombie_directory(base_dir: str) -> Dict[str, Any]:
 
     # Get all zombie type folders (Army_zombie, Cop_Zombie, etc.)
     zombie_folders = [
-        f
-        for f in os.listdir(base_dir)
-        if os.path.isdir(os.path.join(base_dir, f))
+        f for f in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, f))
     ]
 
     for zombie_type in zombie_folders:
@@ -151,15 +141,11 @@ def analyze_zombie_directory(base_dir: str) -> Dict[str, Any]:
                     "anchor_y": height // 2,  # Default to center
                     "width": width,
                     "height": height,
-                    "frames": [
-                        png_file.replace("\\", "/") for png_file in png_files
-                    ],
+                    "frames": [png_file.replace("\\", "/") for png_file in png_files],
                     "animation_type": animation_type,
                 }
 
-            print(
-                f"Processed {zombie_type}/{animation}: {len(png_files)} frames"
-            )
+            print(f"Processed {zombie_type}/{animation}: {len(png_files)} frames")
 
     return config
 
@@ -209,13 +195,15 @@ def get_user_input():
 
     # Get player assets directory
     player_input = input(
-        f"Enter player assets directory path (default: {DEFAULT_PLAYER_ASSETS_DIR}): "
+        f"Enter player assets directory path "
+        f"(default: {DEFAULT_PLAYER_ASSETS_DIR}): "
     ).strip()
     player_dir = player_input if player_input else DEFAULT_PLAYER_ASSETS_DIR
 
     # Get zombie assets directory
     zombie_input = input(
-        f"Enter zombie assets directory path (default: {DEFAULT_ZOMBIE_ASSETS_DIR}): "
+        f"Enter zombie assets directory path "
+        f"(default: {DEFAULT_ZOMBIE_ASSETS_DIR}): "
     ).strip()
     zombie_dir = zombie_input if zombie_input else DEFAULT_ZOMBIE_ASSETS_DIR
 
@@ -242,7 +230,7 @@ def main():
         with open(player_config_path, "w") as f:
             json.dump(player_config, f, indent=2)
         print(
-            f"Generated {player_config_path} with {len(player_config)} characters"
+            f"Generated {player_config_path} with " f"{len(player_config)} characters"
         )
 
     # Analyze zombie assets
@@ -254,24 +242,23 @@ def main():
         with open(zombie_config_path, "w") as f:
             json.dump(zombie_config, f, indent=2)
         print(
-            f"Generated {zombie_config_path} with {len(zombie_config)} zombie types"
+            f"Generated {zombie_config_path} with " f"{len(zombie_config)} zombie types"
         )
 
     print("\n" + "=" * 50)
     print("Configuration files generated in:", OUTPUT_DIR)
     print("\nNext steps:")
+    players_config = os.path.join(OUTPUT_DIR, "players_config.json")
+    zombies_config = os.path.join(OUTPUT_DIR, "zombies_config.json")
+    print(f"1. Open {players_config} and {zombies_config}")
     print(
-        f"1. Open {os.path.join(OUTPUT_DIR, 'players_config.json')} and {os.path.join(OUTPUT_DIR, 'zombies_config.json')}"
-    )
-    print(
-        "2. For each animation folder, adjust anchor_x and anchor_y to match the character's center of mass"
+        "2. For each animation folder, adjust anchor_x and anchor_y to "
+        "match the character's center of mass"
     )
     print("3. anchor_x: pixels from left edge to center of mass")
     print("4. anchor_y: pixels from bottom edge to center of mass")
     print("5. Use an image editor to measure these values visually")
-    print(
-        "6. All frames in the same animation will share the same anchor point"
-    )
+    print("6. All frames in the same animation will share the same " "anchor point")
     print("7. Update your game code to load from these configuration files")
 
 
