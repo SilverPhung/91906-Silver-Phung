@@ -45,7 +45,8 @@ class Chest(Interactable):
             self.use_sprites = True
             # print(f"[CHEST] Chest sprite loaded successfully")
         except Exception:
-            # print(f"[CHEST] Failed to load chest sprite: {e}, using fallback")
+            # print(f"[CHEST] Failed to load chest sprite: {e}, using
+            # fallback")
             # Create a fallback colored rectangle
             self.use_sprites = False
             super().__init__(position, None, CHEST_SCALING)

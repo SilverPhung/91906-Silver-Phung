@@ -63,7 +63,8 @@ class UIManager:
         # Update and draw map info
         self._draw_map_info()
 
-        # Draw fullscreen button (temporarily disabled due to arcade method issues)
+        # Draw fullscreen button (temporarily disabled due to arcade method
+        # issues)
         # self._draw_fullscreen_button()
 
     def _draw_interaction_text(self):

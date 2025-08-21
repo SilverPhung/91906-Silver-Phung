@@ -5,13 +5,13 @@ from src.debug import Debug
 
 class ChestManager:
     """
-    Manages all chest-related functionality including loading, interaction, \ and
-        \
+    Manages all chest-related functionality including loading, interaction, and
     state.
 
-    Uses the Interactable-based Chest class for consistent interaction \
+    Uses the Interactable-based Chest class for consistent interaction 
     behavior.
-    Handles chest loading from map object layers and part collection integration.
+    Handles chest loading from map object layers and part collection 
+    integration.
     """
 
     def __init__(self, game_view):

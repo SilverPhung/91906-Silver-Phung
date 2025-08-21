@@ -43,14 +43,14 @@ class InputManager:
         # Key action mapping
         self.key_actions = {
             FULLSCREEN_KEY: self._toggle_fullscreen,  # F11
-            arcade.key.F12: self._toggle_fullscreen,  # Alternative fullscreen key
+            arcade.key.F12: self._toggle_fullscreen,  # fullscreen key
             arcade.key.SPACE: self._attack,
             arcade.key.K: self._die,
             #  arcade.key.R: self._reset,  # Temporarily disabled for testing
             arcade.key.E: self._handle_interaction,
             arcade.key.P: self._add_test_car_part,
             arcade.key.LCTRL: self._zoom_in,
-            arcade.key.L: self._load_next_map,  # Debug hotkey for loading next map
+            arcade.key.L: self._load_next_map,  # hotkey for loading next map
         }
 
         #  Testing key actions (only when testing is enabled)
@@ -62,7 +62,8 @@ class InputManager:
                 arcade.key.F4: self._run_health_tests,
                 arcade.key.F5: self._run_all_tests,
                 arcade.key.F6: self._show_test_results,
-                arcade.key.R: self._run_all_tests,  # R key for running all tests
+                arcade.key.R: self._run_all_tests,  # R key for running all
+                # tests
             }
         else:
             self.testing_key_actions = {}
@@ -219,7 +220,8 @@ class InputManager:
         """Debug hotkey to load the next map."""
         print("[INPUT_MANAGER] Debug: Loading next map")
 
-        # Reset player velocity before transition to prevent momentum carry-over
+        # Reset player velocity before transition to prevent momentum
+        # carry-over
         if hasattr(self.game_view, "player") and self.game_view.player:
             self.game_view.player.reset_velocity()
             print(

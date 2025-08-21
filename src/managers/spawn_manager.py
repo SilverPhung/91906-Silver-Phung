@@ -204,7 +204,8 @@ class SpawnManager:
         if len(available_spawn_points) < zombie_count:
             available_spawn_points = valid_spawn_points
 
-        # Select spawn points with weighted distribution (prefer less used points)
+        # Select spawn points with weighted distribution (prefer less used
+        # points)
         selected_positions = []
 
         for _ in range(min(zombie_count, len(available_spawn_points))):

@@ -125,11 +125,12 @@ class GameView(FadingView):
         # Add player to scene first
         self.scene.add_sprite("Player", self.player)
         print(
-            f"[GAME_VIEW] Player added to scene at ({self.player.center_x:.1f}, "
-            f"{self.player.center_y:.1f})"
+            f"[GAME_VIEW] Player added to scene at "
+            f"({self.player.center_x:.1f}, {self.player.center_y:.1f})"
         )
 
-        #  Don't run reset coordinator here - entities are already loaded by MapManager
+        # Don't run reset coordinator here - entities are already loaded by
+        # MapManager
         # The reset coordinator was clearing entities that were just loaded
         print(
             "[GAME_VIEW] Skipping reset coordinator to preserve loaded entities"

@@ -104,7 +104,8 @@ class MapManager:
         self.scene = arcade.Scene()
         print("[MAP_MANAGER] New scene created from scratch")
 
-        # Add the ground layers to the scene (in drawing order from bottom to top)
+        # Add the ground layers to the scene (in drawing order from bottom to
+        # top)
         print("[MAP_MANAGER] Adding ground layers to scene...")
         for layer_name in ("Dirt", "Grass", "Road"):
             sprite_list = self.tile_map.sprite_lists[layer_name]

@@ -90,7 +90,7 @@ class ResetCoordinator:
                 component.reset_for_map()
                 print(
                     f"[RESET_COORDINATOR] Reset \
-                    {component.__class__.__name__}"
+                        {component.__class__.__name__}"
                 )
             except Exception as e:
                 print(
@@ -116,7 +116,7 @@ class ResetCoordinator:
                 component.reset_for_game()
                 print(
                     f"[RESET_COORDINATOR] Reset \
-                    {component.__class__.__name__}"
+                        {component.__class__.__name__}"
                 )
             except Exception as e:
                 print(
@@ -160,5 +160,5 @@ class ResetCoordinator:
 
             print(
                 f"[RESET_COORDINATOR] Spawned \
-                {len(self.game_view.enemies)} enemies"
+                    {len(self.game_view.enemies)} enemies"
             )

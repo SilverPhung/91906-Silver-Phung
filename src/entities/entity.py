@@ -102,7 +102,7 @@ class Entity(arcade.Sprite):
     # --- Helper Methods for Texture and Animation ---
     def _apply_texture_and_offset(self, texture: TextureData):
         """Helper to set texture and apply offset to center_x, \
-        center_y"""
+            center_y"""
         self.texture = texture[0]
         self.sync_hit_box_to_texture()
 
@@ -122,7 +122,7 @@ class Entity(arcade.Sprite):
 
     def _try_set_animation(self, anim_name: str) -> bool:
         """Attempt setting an animation if it exists and has \
-        frames.
+            frames.
 
         Returns True if set, False otherwise.
         """
@@ -244,7 +244,7 @@ class Entity(arcade.Sprite):
             else:
                 print(
                     f"Warning: Animation '{self.current_animation}' not \
-                    found."
+                        found."
                 )
                 return
 
@@ -490,7 +490,7 @@ def process_loaded_texture_data(
         except Exception as e:
             print(
                 f"ERROR: Failed to load arcade.Texture for {frame_path}: \
-                {e}"
+                    {e}"
             )
             return return_fallback_texture()
 

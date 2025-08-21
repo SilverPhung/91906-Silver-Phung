@@ -185,7 +185,7 @@ class Player(Entity):
 
         # Debug.update(
         #     "Selected Animation",
-        #     str(self.current_animation) if self.current_animation else "None",
+        # str(self.current_animation) if self.current_animation else "None",
         # )
 
     def look_at(self, mouse_pos: Vec2):

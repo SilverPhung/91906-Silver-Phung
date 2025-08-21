@@ -40,7 +40,8 @@ class TransitionView(BaseView):
         """Handle key presses"""
         if key == arcade.key.SPACE:
             if self.previous_game_view:
-                # Reset player velocity before transitioning to prevent momentum carry-over
+                # Reset player velocity before transitioning to prevent
+                # momentum carry-over
                 if (
                     hasattr(self.previous_game_view, "player")
                     and self.previous_game_view.player
