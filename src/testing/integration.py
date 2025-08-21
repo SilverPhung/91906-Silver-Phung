@@ -2,7 +2,8 @@
 Testing integration system for runtime tracking injection.
 
 This module provides easy integration points for testing by injecting tracking
-logic into existing game components at runtime without modifying core game logic.
+logic into existing game components at runtime without modifying core game \
+    logic.
 """
 
 import time
@@ -51,7 +52,9 @@ class TestingIntegration:
                     if ENABLE_TESTING:
                         # Extract speed from direction vector
                         speed = (
-                            direction.length() if hasattr(direction, "length") else 0
+                            direction.length()
+                            if hasattr(direction, "length")
+                            else 0
                         )
                         TestingIntegration.track_player_movement(
                             player, direction, speed
@@ -173,7 +176,9 @@ class TestingIntegration:
 
                 # Add tracking if testing is enabled
                 if ENABLE_TESTING:
-                    TestingIntegration.track_chest_proximity_check(chest_manager)
+                    TestingIntegration.track_chest_proximity_check(
+                        chest_manager
+                    )
 
                 return result
 
@@ -265,7 +270,11 @@ class TestingIntegration:
 
             Debug.track_event(
                 "player_damage",
-                {"old_health": old_health, "new_health": new_health, "damage": damage},
+                {
+                    "old_health": old_health,
+                    "new_health": new_health,
+                    "damage": damage,
+                },
             )
 
     @staticmethod
@@ -279,8 +288,11 @@ class TestingIntegration:
             Debug.track_event(
                 "car_interaction",
                 {
-                    "near_car": getattr(car_manager, "near_car", None) is not None,
-                    "parts_collected": getattr(car_manager, "car_parts_collected", 0),
+                    "near_car": getattr(car_manager, "near_car", None)
+                    is not None,
+                    "parts_collected": getattr(
+                        car_manager, "car_parts_collected", 0
+                    ),
                 },
             )
 
@@ -320,8 +332,11 @@ class TestingIntegration:
         Debug.track_event(
             "chest_proximity_check",
             {
-                "near_chest": getattr(chest_manager, "near_chest", None) is not None,
-                "total_chests": len(getattr(chest_manager, "chests_with_parts", []))
+                "near_chest": getattr(chest_manager, "near_chest", None)
+                is not None,
+                "total_chests": len(
+                    getattr(chest_manager, "chests_with_parts", [])
+                )
                 + len(getattr(chest_manager, "chests_without_parts", [])),
             },
         )
@@ -361,7 +376,9 @@ class TestingIntegration:
 
         # Inject into car manager
         if hasattr(game_view, "car_manager"):
-            TestingIntegration.inject_tracking_into_car_manager(game_view.car_manager)
+            TestingIntegration.inject_tracking_into_car_manager(
+                game_view.car_manager
+            )
 
         # Inject into chest manager
         if hasattr(game_view, "chest_manager"):

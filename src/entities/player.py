@@ -73,7 +73,10 @@ class Player(Entity):
 
         # Get wall_list from MapManager if available, otherwise use empty list
         wall_list = []
-        if hasattr(self.game_view, "map_manager") and self.game_view.map_manager:
+        if (
+            hasattr(self.game_view, "map_manager")
+            and self.game_view.map_manager
+        ):
             wall_list = [self.game_view.map_manager.get_wall_list()]
         elif hasattr(self.game_view, "wall_list") and self.game_view.wall_list:
             wall_list = [self.game_view.wall_list]
@@ -139,13 +142,17 @@ class Player(Entity):
         """Set the appropriate animation based on current state and weapon"""
         weapon_name = self.current_weapon.value
 
-        Debug.update("Animation allow overwrite", self.animation_allow_overwrite)
+        Debug.update(
+            "Animation allow overwrite", self.animation_allow_overwrite
+        )
 
         match self.state:
             case EntityState.WALKING | EntityState.IDLE:
                 if self.animation_allow_overwrite:
 
-                    self._find_and_set_prefixed_animation("Walk_", weapon_name, "Walk_")
+                    self._find_and_set_prefixed_animation(
+                        "Walk_", weapon_name, "Walk_"
+                    )
 
             case EntityState.ATTACKING:
                 if self.current_weapon == WeaponType.GUN:
@@ -159,7 +166,9 @@ class Player(Entity):
                         print("Cannot find attack animation, using fallback")
                         # Fallback to any attack animation
                         # (if not weapon_name specific)
-                        animations = Entity.loaded_animations[self.character_preset]
+                        animations = Entity.loaded_animations[
+                            self.character_preset
+                        ]
                         for anim_name in animations:
                             if anim_name in [
                                 "Bat",
@@ -278,7 +287,7 @@ class Player(Entity):
                 self.physics_engine.player_sprite.change_x = 0.0
                 self.physics_engine.player_sprite.change_y = 0.0
 
-        print(f"[PLAYER] Velocity completely reset to zero")
+        print("[PLAYER] Velocity completely reset to zero")
 
     def update_spawn_position(self, new_position):
         """Update the spawn position for the current map."""
@@ -300,7 +309,10 @@ class Player(Entity):
 
     def update_physics_engine(self):
         """Update physics engine with current wall list from MapManager."""
-        if hasattr(self.game_view, "map_manager") and self.game_view.map_manager:
+        if (
+            hasattr(self.game_view, "map_manager")
+            and self.game_view.map_manager
+        ):
             wall_list = self.game_view.map_manager.get_wall_list()
             if wall_list and wall_list != self._wall_list:
                 self._wall_list = wall_list

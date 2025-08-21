@@ -11,12 +11,20 @@ class UIManager:
 
         # UI Text objects for better performance using TextFactory
         try:
-            self.interaction_text = TextFactory.create_ui_text("", y=WINDOW_HEIGHT - 50)
+            self.interaction_text = TextFactory.create_ui_text(
+                "", y=WINDOW_HEIGHT - 50
+            )
             self.parts_text = TextFactory.create_ui_text(
-                "", y=WINDOW_HEIGHT - 80, color=arcade.color.YELLOW, font_size=14
+                "",
+                y=WINDOW_HEIGHT - 80,
+                color=arcade.color.YELLOW,
+                font_size=14,
             )
             self.map_text = TextFactory.create_ui_text(
-                "", y=WINDOW_HEIGHT - 110, color=arcade.color.CYAN, font_size=14
+                "",
+                y=WINDOW_HEIGHT - 110,
+                color=arcade.color.CYAN,
+                font_size=14,
             )
         except Exception as e:
             print(f"Error initializing UI manager: {e}")
@@ -64,7 +72,9 @@ class UIManager:
             # Prioritize chest interactions over car interactions
             if self.game_view.chest_manager.near_chest:
                 chest_manager = self.game_view.chest_manager
-                interaction_text = chest_manager.get_near_chest_interaction_text()
+                interaction_text = (
+                    chest_manager.get_near_chest_interaction_text()
+                )
                 if interaction_text:
                     self.interaction_text.text = interaction_text
                 else:
@@ -98,12 +108,18 @@ class UIManager:
         try:
             # Get parts count from car manager, using car's count for accuracy
             car_manager = getattr(self.game_view, "car_manager", None)
-            if car_manager and hasattr(car_manager, "new_car") and car_manager.new_car:
+            if (
+                car_manager
+                and hasattr(car_manager, "new_car")
+                and car_manager.new_car
+            ):
                 parts_collected = car_manager.new_car.collected_parts
                 required_parts = car_manager.new_car.required_parts
             else:
                 parts_collected = (
-                    getattr(car_manager, "car_parts_collected", 0) if car_manager else 0
+                    getattr(car_manager, "car_parts_collected", 0)
+                    if car_manager
+                    else 0
                 )
                 from src.constants import REQUIRED_CAR_PARTS
 
@@ -154,14 +170,18 @@ class UIManager:
                 self.game_view.camera_gui.viewport_width - button["width"] - 10
             )
             button["y"] = (
-                self.game_view.camera_gui.viewport_height - button["height"] - 10
+                self.game_view.camera_gui.viewport_height
+                - button["height"]
+                - 10
             )
 
             # For now, just draw the button without hover detection
             is_hovering = False
 
             # Draw button background using simple rectangle
-            bg_color = button["hover_color"] if is_hovering else button["bg_color"]
+            bg_color = (
+                button["hover_color"] if is_hovering else button["bg_color"]
+            )
             arcade.draw_rectangle_filled(
                 button["x"] + button["width"] // 2,
                 button["y"] + button["height"] // 2,

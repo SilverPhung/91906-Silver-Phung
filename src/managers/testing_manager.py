@@ -1,8 +1,9 @@
 """
 Testing Manager for centralized test management.
 
-This module contains the TestingManager class that handles centralized test execution,
-reusable tracking components, and test report generation.
+This module contains the TestingManager class that handles centralized test \
+    execution,
+        reusable tracking components, and test report generation.
 """
 
 from typing import Dict, Any, Optional, List
@@ -27,7 +28,10 @@ class TestingManager:
 
     def get_current_objective(self) -> Optional[str]:
         """Get the current testing objective description."""
-        if self.current_objective and self.current_objective in TESTING_OBJECTIVES:
+        if (
+            self.current_objective
+            and self.current_objective in TESTING_OBJECTIVES
+        ):
             return TESTING_OBJECTIVES[self.current_objective]
         return None
 
@@ -59,7 +63,9 @@ class TestingManager:
             return {}
 
         # Create combat tracker
-        combat_tracker = self.create_combat_tracker(game_view.player, game_view.enemies)
+        combat_tracker = self.create_combat_tracker(
+            game_view.player, game_view.enemies
+        )
         self.tracking_components["combat"] = combat_tracker
 
         # Run tests
@@ -157,20 +163,25 @@ class TestingManager:
         initial_position = player.position
 
         print(
-            f"[TEST] Movement Test - Initial position: ({initial_position[0]:.1f}, {initial_position[1]:.1f})"
+            f"[TEST] Movement Test - Initial position: \
+                ({initial_position[0]:.1f}, {initial_position[1]:.1f})"
         )
 
         # Simulate movement (this would be replaced with actual test logic)
         Debug.track_event(
             "movement_test",
-            {"initial_position": initial_position, "current_position": player.position},
+            {
+                "initial_position": initial_position,
+                "current_position": player.position,
+            },
         )
 
         # Validate movement occurred
         movement_occurred = player.position != initial_position
         current_position = player.position
         print(
-            f"[TEST] Movement Test - Current position: ({current_position[0]:.1f}, {current_position[1]:.1f})"
+            f"[TEST] Movement Test - Current position: \
+                ({current_position[0]:.1f}, {current_position[1]:.1f})"
         )
         print(f"[TEST] Movement Test - Movement occurred: {movement_occurred}")
 
@@ -182,7 +193,9 @@ class TestingManager:
         from src.constants import PLAYER_MOVEMENT_SPEED
 
         # Check if player has reasonable movement speed
-        speed_valid = hasattr(player, "velocity") and player.velocity is not None
+        speed_valid = (
+            hasattr(player, "velocity") and player.velocity is not None
+        )
 
         Debug.track_event(
             "speed_test",
@@ -216,10 +229,12 @@ class TestingManager:
         player = game_view.player
 
         print(
-            f"[TEST] Shooting Test - Player has shoot method: {hasattr(player, 'shoot')}"
+            f"[TEST] Shooting Test - Player has shoot method: \
+                {hasattr(player, 'shoot')}"
         )
         print(
-            f"[TEST] Shooting Test - Game has bullet list: {hasattr(game_view, 'bullet_list')}"
+            f"[TEST] Shooting Test - Game has bullet list: \
+                {hasattr(game_view, 'bullet_list')}"
         )
 
         # Check if shooting mechanics are available
@@ -236,7 +251,8 @@ class TestingManager:
         )
 
         print(
-            f"[TEST] Shooting Test - Shooting mechanics available: {shooting_available}"
+            f"[TEST] Shooting Test - Shooting mechanics available: \
+                {shooting_available}"
         )
 
         return Debug.validate_test("Shooting Mechanics", shooting_available)
@@ -244,9 +260,9 @@ class TestingManager:
     def _test_bullet_collision(self, game_view) -> bool:
         """Test bullet collision detection."""
         # Check if bullet collision is implemented
-        bullet_collision_available = hasattr(game_view, "bullet_list") and hasattr(
-            game_view, "enemies"
-        )
+        bullet_collision_available = hasattr(
+            game_view, "bullet_list"
+        ) and hasattr(game_view, "enemies")
 
         Debug.track_event(
             "bullet_collision_test",
@@ -256,7 +272,9 @@ class TestingManager:
             },
         )
 
-        return Debug.validate_test("Bullet Collision", bullet_collision_available)
+        return Debug.validate_test(
+            "Bullet Collision", bullet_collision_available
+        )
 
     def _test_enemy_damage(self, game_view) -> bool:
         """Test enemy damage system."""
@@ -270,7 +288,9 @@ class TestingManager:
             {
                 "enemies_available": hasattr(game_view, "enemies"),
                 "enemy_count": (
-                    len(game_view.enemies) if hasattr(game_view, "enemies") else 0
+                    len(game_view.enemies)
+                    if hasattr(game_view, "enemies")
+                    else 0
                 ),
             },
         )
@@ -282,10 +302,13 @@ class TestingManager:
         car_manager = game_view.car_manager
 
         print(
-            f"[TEST] Car Part Test - Car manager available: {hasattr(game_view, 'car_manager')}"
+            f"[TEST] Car Part Test - Car manager available: \
+                {hasattr(game_view, 'car_manager')}"
         )
         print(
-            f"[TEST] Car Part Test - Parts collected attribute: {hasattr(car_manager, 'car_parts_collected') if car_manager else False}"
+            f"[TEST] Car Part Test - Parts collected attribute: "
+            f"{hasattr(car_manager, \
+                'car_parts_collected') if car_manager else False}"
         )
 
         # Check if car part collection is available
@@ -304,10 +327,13 @@ class TestingManager:
         )
 
         print(
-            f"[TEST] Car Part Test - Part collection available: {part_collection_available}"
+            f"[TEST] Car Part Test - Part collection available: \
+                {part_collection_available}"
         )
 
-        return Debug.validate_test("Car Part Collection", part_collection_available)
+        return Debug.validate_test(
+            "Car Part Collection", part_collection_available
+        )
 
     def _test_car_usage(self, game_view) -> bool:
         """Test car usage functionality."""
@@ -354,9 +380,9 @@ class TestingManager:
         player = game_view.player
 
         # Check if damage system is available
-        damage_system_available = hasattr(player, "current_health") and hasattr(
-            player, "max_health"
-        )
+        damage_system_available = hasattr(
+            player, "current_health"
+        ) and hasattr(player, "max_health")
 
         Debug.track_event(
             "damage_application_test",
@@ -366,7 +392,9 @@ class TestingManager:
             },
         )
 
-        return Debug.validate_test("Damage Application", damage_system_available)
+        return Debug.validate_test(
+            "Damage Application", damage_system_available
+        )
 
     def generate_test_report(self, results: Dict[str, Any]) -> Dict[str, Any]:
         """Generate comprehensive test report."""
@@ -379,7 +407,9 @@ class TestingManager:
                 if test_result:
                     passed_tests += 1
 
-        success_rate = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        success_rate = (
+            (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        )
 
         report = {
             "total_tests": total_tests,
@@ -389,20 +419,20 @@ class TestingManager:
             "detailed_results": results,
         }
 
-        print(f"\n[TEST] === FINAL TEST RESULTS ===")
+        print("\n[TEST] === FINAL TEST RESULTS ===")
         print(f"[TEST] Total Tests: {total_tests}")
         print(f"[TEST] Passed: {passed_tests}")
         print(f"[TEST] Failed: {total_tests - passed_tests}")
         print(f"[TEST] Success Rate: {success_rate:.1f}%")
 
         if total_tests - passed_tests > 0:
-            print(f"[TEST] Failed Tests:")
+            print("[TEST] Failed Tests:")
             for category, category_results in results.items():
                 for test_name, test_result in category_results.items():
                     if not test_result:
                         print(f"[TEST]   - {category}.{test_name}")
 
-        print(f"[TEST] === END TEST RESULTS ===\n")
+        print("[TEST] === END TEST RESULTS ===\n")
 
         return report
 

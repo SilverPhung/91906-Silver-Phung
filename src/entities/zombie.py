@@ -59,16 +59,22 @@ class Zombie(Enemy):
 
     def hunt_player(self, delta_time: float):
         if self.player and self.animation_allow_overwrite:
-            player_pos_vec = Vec2(self.player.position[0], self.player.position[1])
+            player_pos_vec = Vec2(
+                self.player.position[0], self.player.position[1]
+            )
             enemy_pos_vec = Vec2(self.position[0], self.position[1])
             diff = player_pos_vec - enemy_pos_vec
             distance = diff.length()
             walk_random = False
 
             def engage_player(offset: bool):
-                offset_vec = Vec2(random.randint(-200, 200), random.randint(-200, 200))
+                offset_vec = Vec2(
+                    random.randint(-200, 200), random.randint(-200, 200)
+                )
                 target_point = (
-                    player_pos_vec + offset * offset_vec if offset else player_pos_vec
+                    player_pos_vec + offset * offset_vec
+                    if offset
+                    else player_pos_vec
                 )
                 self.goto_point(target_point)
                 look_at_point = self.path[0] if self.path else player_pos_vec

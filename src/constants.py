@@ -11,7 +11,9 @@ TESTING_OBJECTIVES = {
     "movement": "Test player movement controls (WASD/Arrow keys)",
     "combat": "Test shooting mechanics and enemy interaction",
     "car_interaction": "Test car part collection and car usage",
-    "chest_interaction": ("Test chest opening, part collection, and state management"),
+    "chest_interaction": (
+        "Test chest opening, part collection, and state management"
+    ),
     "spawn_system": ("Test zombie spawn points, validation, and distribution"),
     "map_progression": "Test map transitions and level completion",
     "health_system": "Test health bar and damage mechanics",

@@ -24,11 +24,11 @@ class Chest(Interactable):
     Inherits from Interactable to provide consistent interaction behavior
     while implementing chest-specific state management and part collection.
 
-    States:
-    - CLOSED: Initial state, shows closed.png
-    - OPEN_EMPTY: After first E press if no part, shows open-empty.png
-    - OPEN_WITH_PART: After first E press if has part, shows open-glow1.png
-    - COLLECTED: After second E press, part collected, shows open-empty.png
+    States: -
+    CLOSED: Initial state, shows closed.png -
+    OPEN_EMPTY: After first E press if no part, shows open-empty.png -
+    OPEN_WITH_PART: After first E press if has part, shows open-glow1.png -
+    COLLECTED: After second E press, part collected, shows open-empty.png
     """
 
     def __init__(self, position, has_part=True):
@@ -38,7 +38,7 @@ class Chest(Interactable):
             position (tuple): The (x, y) position of the chest
             has_part (bool): Whether this chest contains a car part
         """
-        # Try to load chest sprite, fallback to colored rectangle
+        #  Try to load chest sprite, fallback to colored rectangle
         try:
             # print(f"[CHEST] Loading chest sprite: {CHEST_CLOSED_SPRITE}")
             super().__init__(position, CHEST_CLOSED_SPRITE, CHEST_SCALING)
@@ -69,9 +69,9 @@ class Chest(Interactable):
     def handle_interaction(self):
         """Handle chest interaction when E key is pressed.
 
-        Implements the two-interaction system:
-        - First E press: Opens chest, reveals if part exists
-        - Second E press: Collects part (only if chest has part)
+        Implements the two-interaction system: -
+        First E press: Opens chest, reveals if part exists -
+        Second E press: Collects part (only if chest has part)
 
         Returns:
             bool: True if a part was collected, False otherwise
@@ -181,16 +181,24 @@ class Chest(Interactable):
             try:
                 self.texture = arcade.load_texture(CHEST_CLOSED_SPRITE)
             except Exception:
-                self.color = arcade.color.BROWN if self.has_part else arcade.color.GRAY
+                self.color = (
+                    arcade.color.BROWN if self.has_part else arcade.color.GRAY
+                )
         else:
-            self.color = arcade.color.BROWN if self.has_part else arcade.color.GRAY
+            self.color = (
+                arcade.color.BROWN if self.has_part else arcade.color.GRAY
+            )
 
     def draw(self):
         """Override draw method to handle fallback colored rectangles."""
         if not self.use_sprites and hasattr(self, "color"):
-            # Draw a colored rectangle as fallback
+            #  Draw a colored rectangle as fallback
             arcade.draw_rectangle_filled(
-                self.center_x, self.center_y, self.width, self.height, self.color
+                self.center_x,
+                self.center_y,
+                self.width,
+                self.height,
+                self.color,
             )
             # Draw a border
             arcade.draw_rectangle_outline(

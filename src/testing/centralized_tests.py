@@ -69,14 +69,21 @@ class CentralizedTests:
         )
 
         # Check if player can move (has velocity or position can change)
-        movement_available = hasattr(player, "velocity") or hasattr(player, "position")
+        movement_available = hasattr(player, "velocity") or hasattr(
+            player, "position"
+        )
 
         # Validate movement occurred
-        movement_occurred = player.position != initial_position or movement_available
+        movement_occurred = (
+            player.position != initial_position or movement_available
+        )
 
         Debug.track_event(
             "movement_test_end",
-            {"final_position": player.position, "movement_occurred": movement_occurred},
+            {
+                "final_position": player.position,
+                "movement_occurred": movement_occurred,
+            },
         )
 
         return Debug.validate_test("Player Movement", movement_occurred)
@@ -87,7 +94,9 @@ class CentralizedTests:
         from src.constants import PLAYER_MOVEMENT_SPEED
 
         # Check if player has velocity and reasonable speed
-        has_velocity = hasattr(player, "velocity") and player.velocity is not None
+        has_velocity = (
+            hasattr(player, "velocity") and player.velocity is not None
+        )
         speed_sum = abs(player.velocity[0]) + abs(player.velocity[1])
         speed_valid = has_velocity and speed_sum > MOVEMENT_SPEED_THRESHOLD
 
@@ -138,7 +147,9 @@ class CentralizedTests:
         weapon_system_available = hasattr(player, "current_weapon")
 
         shooting_available = (
-            shoot_method_available or bullet_list_available or weapon_system_available
+            shoot_method_available
+            or bullet_list_available
+            or weapon_system_available
         )
 
         Debug.track_event(
@@ -176,7 +187,9 @@ class CentralizedTests:
             },
         )
 
-        return Debug.validate_test("Bullet Collision", bullet_collision_available)
+        return Debug.validate_test(
+            "Bullet Collision", bullet_collision_available
+        )
 
     def test_enemy_damage(self) -> bool:
         """Test enemy damage system."""
@@ -205,12 +218,18 @@ class CentralizedTests:
         # Check if car part collection is available
         car_manager_available = hasattr(self.game_view, "car_manager")
         parts_collected_available = (
-            hasattr(car_manager, "car_parts_collected") if car_manager else False
+            hasattr(car_manager, "car_parts_collected")
+            if car_manager
+            else False
         )
-        new_car_available = hasattr(car_manager, "new_car") if car_manager else False
+        new_car_available = (
+            hasattr(car_manager, "new_car") if car_manager else False
+        )
 
         part_collection_available = (
-            car_manager_available and parts_collected_available and new_car_available
+            car_manager_available
+            and parts_collected_available
+            and new_car_available
         )
 
         Debug.track_event(
@@ -223,7 +242,9 @@ class CentralizedTests:
             },
         )
 
-        return Debug.validate_test("Car Part Collection", part_collection_available)
+        return Debug.validate_test(
+            "Car Part Collection", part_collection_available
+        )
 
     def test_car_usage(self) -> bool:
         """Test car usage functionality."""
@@ -232,10 +253,16 @@ class CentralizedTests:
         # Check if car usage is available
         car_manager_available = hasattr(self.game_view, "car_manager")
         interaction_method_available = (
-            hasattr(car_manager, "handle_car_interaction") if car_manager else False
+            hasattr(car_manager, "handle_car_interaction")
+            if car_manager
+            else False
         )
-        old_car_available = hasattr(car_manager, "old_car") if car_manager else False
-        new_car_available = hasattr(car_manager, "new_car") if car_manager else False
+        old_car_available = (
+            hasattr(car_manager, "old_car") if car_manager else False
+        )
+        new_car_available = (
+            hasattr(car_manager, "new_car") if car_manager else False
+        )
 
         car_usage_available = (
             car_manager_available
@@ -289,9 +316,9 @@ class CentralizedTests:
         # Check if damage system is available
         current_health_available = hasattr(player, "current_health")
         max_health_available = hasattr(player, "max_health")
-        health_change_method_available = hasattr(player, "take_damage") or hasattr(
-            player, "heal"
-        )
+        health_change_method_available = hasattr(
+            player, "take_damage"
+        ) or hasattr(player, "heal")
 
         damage_system_available = (
             current_health_available
@@ -309,7 +336,9 @@ class CentralizedTests:
             },
         )
 
-        return Debug.validate_test("Damage Application", damage_system_available)
+        return Debug.validate_test(
+            "Damage Application", damage_system_available
+        )
 
     # === Test Validation Methods ===
 
@@ -425,7 +454,9 @@ class CentralizedTests:
         healing_events = results["healing_events"] >= 0
         health_changes = results["total_health_changes"] >= 0
 
-        return damage_events >= 0 and healing_events >= 0 and health_changes >= 0
+        return (
+            damage_events >= 0 and healing_events >= 0 and health_changes >= 0
+        )
 
     @staticmethod
     def test_shooting_sound(game_view):

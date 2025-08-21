@@ -46,7 +46,6 @@ class TransitionView(BaseView):
                     and self.previous_game_view.player
                 ):
                     self.previous_game_view.player.reset_velocity()
-                    print("[TRANSITION] Player velocity reset before map transition")
 
                 # Use existing GameView and call load_map
                 self.previous_game_view.reset_scene()

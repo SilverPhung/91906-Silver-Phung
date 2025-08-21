@@ -2,7 +2,8 @@
 Map Manager for handling map loading, scene creation, and map transitions.
 
 This module provides a centralized system for managing map-related operations
-including tile map loading, scene setup, camera bounds calculation, and map transitions.
+including tile map loading, scene setup, camera bounds calculation, and
+    map transitions.
 """
 
 import arcade
@@ -38,7 +39,8 @@ class MapManager:
             bool: True if map loaded successfully, False otherwise
         """
         print(
-            f"[MAP_MANAGER] ===== LOAD_MAP CALLED with " f"map_index: {map_index} ====="
+            f"[MAP_MANAGER] ===== LOAD_MAP CALLED with "
+            f"map_index: {map_index} ====="
         )
         map_name = f"resources/maps/map{map_index}.tmx"
         print(f"[MAP_MANAGER] Map file: {map_name}")
@@ -59,7 +61,7 @@ class MapManager:
         try:
             # Load new tile map
             self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
-            print(f"[MAP_MANAGER] Tilemap loaded successfully")
+            print("[MAP_MANAGER] Tilemap loaded successfully")
             self.current_map_index = map_index
             return True
         except Exception as e:
@@ -69,8 +71,10 @@ class MapManager:
             map_name = f"resources/maps/map{map_index}.tmx"
             print(f"[MAP_MANAGER] Falling back to {map_name}")
             try:
-                self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
-                print(f"[MAP_MANAGER] Fallback tilemap loaded successfully")
+                self.tile_map = arcade.load_tilemap(
+                    map_name, scaling=TILE_SCALING
+                )
+                print("[MAP_MANAGER] Fallback tilemap loaded successfully")
                 self.current_map_index = map_index
                 return True
             except Exception as fallback_error:
@@ -93,24 +97,27 @@ class MapManager:
         )
 
         # COMPLETELY DELETE AND RECREATE SCENE
-        print(f"[MAP_MANAGER] Completely deleting existing scene...")
+        print("[MAP_MANAGER] Completely deleting existing scene...")
         self.scene = None  # Force garbage collection of old scene
 
         # Create new scene
         self.scene = arcade.Scene()
-        print(f"[MAP_MANAGER] New scene created from scratch")
+        print("[MAP_MANAGER] New scene created from scratch")
 
         # Add the ground layers to the scene (in drawing order from bottom to top)
-        print(f"[MAP_MANAGER] Adding ground layers to scene...")
+        print("[MAP_MANAGER] Adding ground layers to scene...")
         for layer_name in ("Dirt", "Grass", "Road"):
             sprite_list = self.tile_map.sprite_lists[layer_name]
             self.scene.add_sprite_list(layer_name, sprite_list=sprite_list)
-        print(f"[MAP_MANAGER] Ground layers added")
+        print("[MAP_MANAGER] Ground layers added")
 
         # Add the walls layer
         self.wall_list = self.tile_map.sprite_lists["Walls"]
         self.scene.add_sprite_list("Walls", sprite_list=self.wall_list)
-        print(f"[MAP_MANAGER] Walls layer added with " f"{len(self.wall_list)} sprites")
+        print(
+            f"[MAP_MANAGER] Walls layer added with "
+            f"{len(self.wall_list)} sprites"
+        )
 
         # Add sprite lists for entities (drawn on top)
         print("[MAP_MANAGER] Adding entity sprite layers to scene")
@@ -121,7 +128,7 @@ class MapManager:
         print("[MAP_MANAGER] Entity sprite layers added successfully")
 
         # Debug: Verify layer order is correct (entities should be on top)
-        print(f"[MAP_MANAGER] Layer order verification:")
+        print("[MAP_MANAGER] Layer order verification:")
         layer_names = list(self.scene._name_mapping.keys())
         for i, layer_name in enumerate(layer_names):
             print(f"[MAP_MANAGER]   Layer {i}: {layer_name}")
@@ -137,18 +144,20 @@ class MapManager:
                 )
 
         # Debug: Log the final drawing order
-        print(f"[MAP_MANAGER] Final scene drawing order:")
+        print("[MAP_MANAGER] Final scene drawing order:")
         for i, layer_name in enumerate(self.scene._name_mapping.keys()):
             print(f"[MAP_MANAGER]   {i + 1}. {layer_name}")
 
         # Log scene sprite counts
-        print(f"[MAP_MANAGER] Scene sprite counts:")
+        print("[MAP_MANAGER] Scene sprite counts:")
         for layer_name in self.scene._name_mapping.keys():
             sprite_list = self.scene._name_mapping[layer_name]
-            print(f"[MAP_MANAGER]   {layer_name}: {len(sprite_list)} sprites")
+            print(
+                f"[MAP_MANAGER]   {layer_name}: " f"{len(sprite_list)} sprites"
+            )
 
         # Debug: Log entity addition tracking
-        print(f"[MAP_MANAGER] Entity layers ready for sprites")
+        print("[MAP_MANAGER] Entity layers ready for sprites")
 
         return self.scene
 
@@ -156,7 +165,7 @@ class MapManager:
         """Set up camera bounds based on the current tile map."""
         if self.tile_map:
             self.game_view.camera_manager.setup_camera_bounds(self.tile_map)
-            print(f"[MAP_MANAGER] Camera bounds set up")
+            print("[MAP_MANAGER] Camera bounds set up")
 
     def create_pathfinding_barrier(self) -> None:
         """Create or regenerate the pathfinding barrier for AI navigation."""
@@ -179,20 +188,25 @@ class MapManager:
                 )
 
         self.game_view._start_thread(create_pathfind_barrier)
-        print(f"[MAP_MANAGER] Pathfinding barrier thread started")
+        print("[MAP_MANAGER] Pathfinding barrier thread started")
 
     def transition_to_next_map(self) -> Optional[str]:
         """
         Transition to the next map.
 
         Returns:
-            Optional[str]: The name of the view to transition to, or None if continuing with current view
+            Optional[str]: The name of the view to transition to, or
+                None if continuing with current view
         """
         self.current_map_index += 1
-        print(f"[MAP_MANAGER] Transitioning to map " f"{self.current_map_index}")
+        print(
+            f"[MAP_MANAGER] Transitioning to map " f"{self.current_map_index}"
+        )
 
         if self.current_map_index > 3:
-            print("[MAP_MANAGER] All maps completed, transitioning to end view")
+            print(
+                "[MAP_MANAGER] All maps completed, transitioning to end view"
+            )
             return "EndView"
 
         # Show transition screen
@@ -200,6 +214,11 @@ class MapManager:
             f"[MAP_MANAGER] Showing transition screen to map "
             f"{self.current_map_index}"
         )
+
+        self.game_view.player.change_x = 0
+        self.game_view.player.change_y = 0
+        # Lift all pressed keys to prevent movement during map transition
+        self.game_view.input_manager.reset_keys()
         return "TransitionView"
 
     def get_map_info(self) -> Tuple[int, str]:
@@ -248,7 +267,9 @@ class MapManager:
     def setup_managers_for_map(self) -> None:
         """Set up all managers for the new map."""
         # Set up spawn manager for new map
-        self.game_view.spawn_manager.setup_for_map(self.tile_map, self.wall_list)
+        self.game_view.spawn_manager.setup_for_map(
+            self.tile_map, self.wall_list
+        )
 
         # Use new car manager methods for better asset optimization
         self.game_view.car_manager.clear_cars()
@@ -282,7 +303,7 @@ class MapManager:
         self.game_view.input_manager.reset_keys()
 
         # Reset UI elements for new map
-        print(f"[MAP_MANAGER] Resetting UI elements...")
+        print("[MAP_MANAGER] Resetting UI elements...")
         self.game_view.ui_manager.reset_ui()
 
     def load_complete_map(self, map_index: int) -> bool:
@@ -295,7 +316,9 @@ class MapManager:
         Returns:
             bool: True if map loaded successfully, False otherwise
         """
-        print(f"[MAP_MANAGER] ===== LOADING COMPLETE MAP {map_index} =====")
+        print(
+            f"[MAP_MANAGER] ===== LOADING COMPLETE MAP " f"{map_index} ====="
+        )
 
         # Load the map
         if not self.load_map(map_index):
@@ -325,6 +348,8 @@ class MapManager:
             self.scene.add_sprite("Player", self.game_view.player)
             player_x = self.game_view.player.center_x
             player_y = self.game_view.player.center_y
+            self.game_view.player.change_x = 0
+            self.game_view.player.change_y = 0
             print(
                 f"[MAP_MANAGER] Player added to scene at "
                 f"({player_x:.1f}, {player_y:.1f})"
@@ -332,15 +357,19 @@ class MapManager:
 
         # Don't call GameView reset here - entities are already loaded properly
         # The reset was clearing entities that were just loaded
-        print("[MAP_MANAGER] Skipping GameView reset to preserve loaded entities")
+        print(
+            "[MAP_MANAGER] Skipping GameView reset to preserve loaded entities"
+        )
 
-        print(f"[MAP_MANAGER] Map {map_index} loaded successfully")
+        print(f"[MAP_MANAGER] Map {map_index} loaded " f"successfully")
 
         # Final scene sprite counts
-        print(f"[MAP_MANAGER] Final scene sprite counts:")
+        print("[MAP_MANAGER] Final scene sprite counts:")
         for layer_name in self.scene._name_mapping.keys():
             sprite_list = self.scene._name_mapping[layer_name]
-            print(f"[MAP_MANAGER]   {layer_name}: {len(sprite_list)} sprites")
+            print(
+                f"[MAP_MANAGER]   {layer_name}: " f"{len(sprite_list)} sprites"
+            )
 
         # Debug: Check specific entity counts
         player_list = self.scene.get_sprite_list("Player")
@@ -366,12 +395,15 @@ class MapManager:
             print(f"[MAP_MANAGER] Cars in scene: {car_positions}")
         if enemy_list:
             enemy_positions = [
-                f"({enemy.center_x:.1f}, {enemy.center_y:.1f})" for enemy in enemy_list
+                f"({enemy.center_x:.1f}, {enemy.center_y:.1f})"
+                for enemy in enemy_list
             ]
             print(f"[MAP_MANAGER] Enemies in scene: {enemy_positions}")
 
         # Debug: Check if entities are in the game view lists
-        print(f"[MAP_MANAGER] Game view enemies: {len(self.game_view.enemies)}")
+        print(
+            f"[MAP_MANAGER] Game view enemies: {len(self.game_view.enemies)}"
+        )
         if hasattr(self.game_view.car_manager, "get_all_cars"):
             car_manager_count = len(self.game_view.car_manager.get_all_cars())
         else:

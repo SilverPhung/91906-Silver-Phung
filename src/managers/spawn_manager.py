@@ -2,7 +2,8 @@
 Spawn Manager for handling zombie spawn points and spawning logic.
 
 This module provides a centralized system for managing zombie spawn points,
-validating spawn locations, and distributing zombies across available spawn points.
+    validating spawn locations, and
+        distributing zombies across available spawn points.
 """
 
 import arcade
@@ -34,11 +35,11 @@ class SpawnManager:
     """
     Manages zombie spawn points and spawning logic.
 
-    Responsibilities:
-    - Load spawn points from map object layers
-    - Validate spawn points against walls and obstacles
-    - Distribute zombies across available spawn points
-    - Track spawn point usage and cooldowns
+    Responsibilities: -
+    Load spawn points from map object layers -
+    Validate spawn points against walls and obstacles -
+    Distribute zombies across available spawn points -
+    Track spawn point usage and cooldowns
     """
 
     def __init__(self, game_view):
@@ -96,7 +97,7 @@ class SpawnManager:
                             },
                         )
             else:
-                print(f"[SPAWN_MANAGER] No Zombie-spawns layer found in map")
+                print("[SPAWN_MANAGER] No Zombie-spawns layer found in map")
                 print(
                     f"[SPAWN_MANAGER] Available object layers: "
                     f"{list(tile_map.object_lists.keys())}"
@@ -207,8 +208,10 @@ class SpawnManager:
         selected_positions = []
 
         for _ in range(min(zombie_count, len(available_spawn_points))):
-            # Weight by inverse usage count (less used = higher weight)
-            weights = [1.0 / (sp.usage_count + 1) for sp in available_spawn_points]
+            #  Weight by inverse usage count (less used = higher weight)
+            weights = [
+                1.0 / (sp.usage_count + 1) for sp in available_spawn_points
+            ]
             total_weight = sum(weights)
 
             if total_weight > 0:
@@ -227,7 +230,10 @@ class SpawnManager:
             offset_x = random.uniform(-10, 10)
             offset_y = random.uniform(-10, 10)
 
-            position = (selected_spawn.x + offset_x, selected_spawn.y + offset_y)
+            position = (
+                selected_spawn.x + offset_x,
+                selected_spawn.y + offset_y,
+            )
             selected_positions.append(position)
 
             # Update spawn point usage
@@ -373,7 +379,9 @@ class SpawnManager:
         valid_spawn_points = [sp for sp in self.spawn_points if sp.is_valid]
         total_usage = sum(sp.usage_count for sp in self.spawn_points)
 
-        avg_usage = total_usage / len(self.spawn_points) if self.spawn_points else 0
+        avg_usage = (
+            total_usage / len(self.spawn_points) if self.spawn_points else 0
+        )
         return {
             "total_spawn_points": len(self.spawn_points),
             "valid_spawn_points": len(valid_spawn_points),

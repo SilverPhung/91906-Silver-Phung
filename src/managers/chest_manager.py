@@ -5,20 +5,27 @@ from src.debug import Debug
 
 class ChestManager:
     """
-    Manages all chest-related functionality including loading, interaction, and state.
+    Manages all chest-related functionality including loading, interaction, \ and
+        \
+    state.
 
-    Uses the Interactable-based Chest class for consistent interaction behavior.
+    Uses the Interactable-based Chest class for consistent interaction \
+    behavior.
     Handles chest loading from map object layers and part collection integration.
     """
 
     def __init__(self, game_view):
         self.game_view = game_view
 
-        # Chest-related properties
+        #  Chest-related properties
         self.chests_with_parts = []  # List of chests that contain parts
-        self.chests_without_parts = []  # List of chests that don't contain parts
+        self.chests_without_parts = (
+            []
+        )  # List of chests that don't contain parts
         self.near_chest = None  # Track which chest player is near
-        self.parts_collected_from_chests = 0  # Track parts collected from chests
+        self.parts_collected_from_chests = (
+            0  # Track parts collected from chests
+        )
 
     def clear_chests(self):
         """Clear chests completely for new map."""
@@ -27,7 +34,9 @@ class ChestManager:
         for chest in all_chests:
             try:
                 # Remove from scene
-                chest_list = self.game_view.scene.get_sprite_list("ChestsLayer")
+                chest_list = self.game_view.scene.get_sprite_list(
+                    "ChestsLayer"
+                )
                 if chest in chest_list:
                     chest_list.remove(chest)
             except Exception:
@@ -43,7 +52,7 @@ class ChestManager:
         """Load chests from the Tiled object layers."""
         # Check if chests are already loaded
         if self.chests_with_parts or self.chests_without_parts:
-            print(f"[CHEST_MANAGER] Chests already loaded, skipping")
+            print("[CHEST_MANAGER] Chests already loaded, skipping")
             return  # Already loaded
 
         # Get tile_map from MapManager
@@ -95,7 +104,9 @@ class ChestManager:
                         traceback.print_exc()
 
             # Add test chests if no chests were loaded from map
-            total_chests = len(self.chests_with_parts) + len(self.chests_without_parts)
+            total_chests = len(self.chests_with_parts) + len(
+                self.chests_without_parts
+            )
             if total_chests == 0:
                 self._add_test_chests()
                 total_chests = len(self.chests_with_parts) + len(
@@ -119,7 +130,9 @@ class ChestManager:
             )
             test_chest_with_part = Chest(old_car_pos, has_part=True)
             self.chests_with_parts.append(test_chest_with_part)
-            self.game_view.scene.add_sprite("ChestsLayer", test_chest_with_part)
+            self.game_view.scene.add_sprite(
+                "ChestsLayer", test_chest_with_part
+            )
             print(
                 f"[CHEST_MANAGER] Added chest with part to scene at "
                 f"({test_chest_with_part.center_x:.1f}, "
@@ -134,7 +147,9 @@ class ChestManager:
             )
             test_chest_without_part = Chest(new_car_pos, has_part=False)
             self.chests_without_parts.append(test_chest_without_part)
-            self.game_view.scene.add_sprite("ChestsLayer", test_chest_without_part)
+            self.game_view.scene.add_sprite(
+                "ChestsLayer", test_chest_without_part
+            )
             print(
                 f"[CHEST_MANAGER] Added chest without part to scene at "
                 f"({test_chest_without_part.center_x:.1f}, "
@@ -148,7 +163,8 @@ class ChestManager:
         self.game_view.scene.add_sprite("ChestsLayer", test_chest_middle)
         print(
             f"[CHEST_MANAGER] Added middle chest to scene at "
-            f"({test_chest_middle.center_x:.1f}, {test_chest_middle.center_y:.1f})"
+            f"({test_chest_middle.center_x:.1f}, "
+            f"{test_chest_middle.center_y:.1f})"
         )
 
     def check_chest_interactions(self):
@@ -167,7 +183,9 @@ class ChestManager:
         # if ENABLE_TESTING:
         #     Debug.track_event("chest_proximity_check", {
         #         'total_chests': len(all_chests),
-        #         'player_position': (self.game_view.player.center_x, self.game_view.player.center_y) if hasattr(self.game_view, 'player') else None
+        # 'player_position': (self.game_view.player.center_x, #
+        # self.game_view.player.center_y) if hasattr(self.game_view, 'player')
+        # else None
         #     })
 
         for i, chest in enumerate(all_chests):
@@ -234,7 +252,9 @@ class ChestManager:
                 if part_added:
                     # Also update the car manager's counter for UI display
                     self.game_view.car_manager.car_parts_collected += 1
-                    parts_count = self.game_view.car_manager.car_parts_collected
+                    parts_count = (
+                        self.game_view.car_manager.car_parts_collected
+                    )
                     print(
                         f"[CHEST_MANAGER] Part collected from chest. "
                         f"Total parts: {parts_count}"
@@ -281,7 +301,9 @@ class ChestManager:
         Returns:
             dict: Statistics about chests and parts
         """
-        total_chests = len(self.chests_with_parts) + len(self.chests_without_parts)
+        total_chests = len(self.chests_with_parts) + len(
+            self.chests_without_parts
+        )
         chests_with_parts = len(self.chests_with_parts)
         chests_without_parts = len(self.chests_without_parts)
 
@@ -290,5 +312,7 @@ class ChestManager:
             "chests_with_parts": chests_with_parts,
             "chests_without_parts": chests_without_parts,
             "parts_collected": self.parts_collected_from_chests,
-            "parts_remaining": chests_with_parts - self.parts_collected_from_chests,
+            "parts_remaining": (
+                chests_with_parts - self.parts_collected_from_chests
+            ),
         }

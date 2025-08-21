@@ -64,7 +64,9 @@ class ViewFactory:
     ):
         """Create a transition view"""
         try:
-            return TransitionView(next_map_index, total_maps, previous_game_view)
+            return TransitionView(
+                next_map_index, total_maps, previous_game_view
+            )
         except Exception as e:
             print(f"Error creating transition view: {e}")
             # Return a basic view as fallback

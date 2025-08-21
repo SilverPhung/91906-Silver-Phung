@@ -47,7 +47,13 @@ class TextFactory:
         """Create a text object at specific coordinates"""
         try:
             text_obj = arcade.Text(
-                text, x, y, color, font_size, anchor_x=anchor_x, anchor_y=anchor_y
+                text,
+                x,
+                y,
+                color,
+                font_size,
+                anchor_x=anchor_x,
+                anchor_y=anchor_y,
             )
             return text_obj
         except Exception:

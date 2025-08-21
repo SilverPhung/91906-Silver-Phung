@@ -26,9 +26,12 @@ class Bullet(arcade.Sprite):
         bullet_texture = arcade.make_soft_square_texture(
             20, arcade.color.YELLOW, name="bullet"
         )
-        super().__init__(path_or_texture=bullet_texture, scale=(0.2, 5), **kwargs)
+        super().__init__(
+            path_or_texture=bullet_texture, scale=(0.2, 5), **kwargs
+        )
         diff = Vec2(
-            end_position[0] - start_position[0], end_position[1] - start_position[1]
+            end_position[0] - start_position[0],
+            end_position[1] - start_position[1],
         )
         self.position = start_position + diff.normalize() * 5
         self.target_position = end_position

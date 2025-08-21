@@ -22,7 +22,7 @@ class InputManager:
     def __init__(self, game_view):
         self.game_view = game_view
 
-        # Track the current state of what key is pressed
+        #  Track the current state of what key is pressed
         movement_keys = [
             LEFT_KEY,
             RIGHT_KEY,
@@ -46,14 +46,14 @@ class InputManager:
             arcade.key.F12: self._toggle_fullscreen,  # Alternative fullscreen key
             arcade.key.SPACE: self._attack,
             arcade.key.K: self._die,
-            # arcade.key.R: self._reset,  # Temporarily disabled for testing
+            #  arcade.key.R: self._reset,  # Temporarily disabled for testing
             arcade.key.E: self._handle_interaction,
             arcade.key.P: self._add_test_car_part,
             arcade.key.LCTRL: self._zoom_in,
             arcade.key.L: self._load_next_map,  # Debug hotkey for loading next map
         }
 
-        # Testing key actions (only when testing is enabled)
+        #  Testing key actions (only when testing is enabled)
         if ENABLE_TESTING:
             self.testing_key_actions = {
                 arcade.key.F1: self._run_movement_tests,
@@ -80,14 +80,30 @@ class InputManager:
         """Calculate movement based on pressed keys."""
         movement_x = sum(
             [
-                -1 if self.key_down.get(LEFT_KEY) or self.key_down.get(A_KEY) else 0,
-                1 if self.key_down.get(RIGHT_KEY) or self.key_down.get(D_KEY) else 0,
+                (
+                    -1
+                    if self.key_down.get(LEFT_KEY) or self.key_down.get(A_KEY)
+                    else 0
+                ),
+                (
+                    1
+                    if self.key_down.get(RIGHT_KEY) or self.key_down.get(D_KEY)
+                    else 0
+                ),
             ]
         )
         movement_y = sum(
             [
-                1 if self.key_down.get(UP_KEY) or self.key_down.get(W_KEY) else 0,
-                -1 if self.key_down.get(DOWN_KEY) or self.key_down.get(S_KEY) else 0,
+                (
+                    1
+                    if self.key_down.get(UP_KEY) or self.key_down.get(W_KEY)
+                    else 0
+                ),
+                (
+                    -1
+                    if self.key_down.get(DOWN_KEY) or self.key_down.get(S_KEY)
+                    else 0
+                ),
             ]
         )
 
@@ -158,7 +174,9 @@ class InputManager:
         self.game_view.on_resize(
             self.game_view.window.width, self.game_view.window.height
         )
-        print(f"[INPUT_MANAGER] Fullscreen toggled: {current_state} -> {new_state}")
+        print(
+            f"[INPUT_MANAGER] Fullscreen toggled: {current_state} -> {new_state}"
+        )
 
     def _attack(self):
         """Trigger player attack."""
@@ -199,12 +217,14 @@ class InputManager:
 
     def _load_next_map(self):
         """Debug hotkey to load the next map."""
-        print(f"[INPUT_MANAGER] Debug: Loading next map")
+        print("[INPUT_MANAGER] Debug: Loading next map")
 
         # Reset player velocity before transition to prevent momentum carry-over
         if hasattr(self.game_view, "player") and self.game_view.player:
             self.game_view.player.reset_velocity()
-            print(f"[INPUT_MANAGER] Player velocity reset before debug map transition")
+            print(
+                "[INPUT_MANAGER] Player velocity reset before debug map transition"
+            )
 
         self.game_view.transition_to_next_map()
 

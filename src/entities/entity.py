@@ -24,7 +24,8 @@ RawTextureData = tuple[
 ]  # Define the type alias
 
 # texture, offset
-TextureData = tuple[arcade.Texture, tuple[float, float]]  # Define the type alias
+# Define the type alias
+TextureData = tuple[arcade.Texture, tuple[float, float]]
 
 
 class EntityState(Enum):
@@ -100,11 +101,14 @@ class Entity(arcade.Sprite):
 
     # --- Helper Methods for Texture and Animation ---
     def _apply_texture_and_offset(self, texture: TextureData):
-        """Helper to set texture and apply offset to center_x, center_y"""
+        """Helper to set texture and apply offset to center_x, \
+        center_y"""
         self.texture = texture[0]
         self.sync_hit_box_to_texture()
 
-    def has_animation(self, anim_name: str, character_preset: str = None) -> bool:
+    def has_animation(
+        self, anim_name: str, character_preset: str = None
+    ) -> bool:
         """Check if an animation exists and has a sequence or idle texture."""
         if character_preset is None:
             character_preset = self.character_preset
@@ -117,7 +121,8 @@ class Entity(arcade.Sprite):
         )
 
     def _try_set_animation(self, anim_name: str) -> bool:
-        """Attempt setting an animation if it exists and has frames.
+        """Attempt setting an animation if it exists and has \
+        frames.
 
         Returns True if set, False otherwise.
         """
@@ -192,14 +197,16 @@ class Entity(arcade.Sprite):
         if velocity_length > self.speed:
             normalized_x = self.velocity.x / velocity_length
             normalized_y = self.velocity.y / velocity_length
-            self.velocity = Vec2(normalized_x * self.speed, normalized_y * self.speed)
+            self.velocity = Vec2(
+                normalized_x * self.speed, normalized_y * self.speed
+            )
 
     def look_at(self, target_pos: Vec2):
         """Update facing direction to look at target"""
         # Calculate angle between enemy and target
         dx = target_pos[0] - self.center_x
         dy = target_pos[1] - self.center_y
-        angle = math.atan2(dx, dy) * 180 / math.pi
+        angle = math.atan2(dx, dy) * 180 / math.pi  # noqa: E501
         self.angle = angle
 
         # Set facing based on angle
@@ -230,12 +237,15 @@ class Entity(arcade.Sprite):
 
             # Get the current animation frames
             if self.has_animation(self.current_animation):
-                animation_data = Entity.loaded_animations[self.character_preset][
-                    self.current_animation
-                ]
+                animation_data = Entity.loaded_animations[
+                    self.character_preset
+                ][self.current_animation]
                 animation_frames = animation_data["frames"]
             else:
-                print(f"Warning: Animation '{self.current_animation}' not found.")
+                print(
+                    f"Warning: Animation '{self.current_animation}' not \
+                    found."
+                )
                 return
 
             self.current_animation_type = AnimationType(animation_data["type"])
@@ -278,9 +288,9 @@ class Entity(arcade.Sprite):
         """Set the current animation"""
         try:
             if self.has_animation(anim_name):
-                animation_data = Entity.loaded_animations[self.character_preset][
-                    anim_name
-                ]
+                animation_data = Entity.loaded_animations[
+                    self.character_preset
+                ][anim_name]
                 if (
                     animation_data
                     and "frames" in animation_data
@@ -291,7 +301,9 @@ class Entity(arcade.Sprite):
                         # Since this function is continously running, we don't
                         # want to restart the animation every time
                         self.restart_animation()
-                        self._apply_texture_and_offset(animation_data["frames"][0])
+                        self._apply_texture_and_offset(
+                            animation_data["frames"][0]
+                        )
                     self.current_animation = anim_name
                     self.animation_frames = animation_data["frames"]
                     self.animation_frame_duration = animation_data.get(
@@ -342,7 +354,9 @@ class Entity(arcade.Sprite):
             print(f"Sound {sound_name} not found")
 
     @staticmethod
-    def load_animation_sequence(character_preset: str, name: str, animation_data: dict):
+    def load_animation_sequence(
+        character_preset: str, name: str, animation_data: dict
+    ):
 
         if character_preset not in Entity.loaded_animations:
             Entity.loaded_animations[character_preset] = {}
@@ -373,7 +387,9 @@ class Entity(arcade.Sprite):
             )
             processed_sequence.append(processed_frame)
 
-        Entity.loaded_animations[character_preset][name]["frames"] = processed_sequence
+        Entity.loaded_animations[character_preset][name][
+            "frames"
+        ] = processed_sequence
 
     animation_thread_lock = threading.Lock()
 
@@ -392,7 +408,10 @@ class Entity(arcade.Sprite):
 
                 character_config = add_character_config(character_config_path)
 
-                if not character_config or character_preset not in character_config:
+                if (
+                    not character_config
+                    or character_preset not in character_config
+                ):
                     print(
                         f"No configuration found in {character_config_path} "
                         f"for character preset: {character_preset}"
@@ -439,7 +458,8 @@ def add_character_config(config_file: str) -> dict:
     except FileNotFoundError:
         print(f"Configuration file not found: {config_file}")
         print(
-            "Please run character_analyzer.py first to generate " "configuration files"
+            "Please run character_analyzer.py first to generate "
+            "configuration files"
         )
         return {}
     except json.JSONDecodeError as e:
@@ -451,7 +471,9 @@ def process_loaded_texture_data(
     raw_texture_data: RawTextureData,  # Use the type alias
 ) -> TextureData:
     """Loads arcade.Texture from raw image data on the main thread."""
-    frame_path, (image_width, image_height), (anchor_x, anchor_y) = raw_texture_data
+    frame_path, (image_width, image_height), (anchor_x, anchor_y) = (
+        raw_texture_data
+    )
 
     def return_fallback_texture():
         fallback_texture = arcade.make_soft_square_texture(
@@ -466,7 +488,10 @@ def process_loaded_texture_data(
             texture = arcade.load_texture(frame_path)
             texture = texture.flip_vertically()
         except Exception as e:
-            print(f"ERROR: Failed to load arcade.Texture for {frame_path}: {e}")
+            print(
+                f"ERROR: Failed to load arcade.Texture for {frame_path}: \
+                {e}"
+            )
             return return_fallback_texture()
 
     # Calculate offset from image center to desired center of mass

@@ -62,7 +62,9 @@ class MovementTracker:
 
     def get_results(self) -> Dict[str, Any]:
         """Get movement tracking results."""
-        directions_tested = set(event["direction"] for event in self.movement_events)
+        directions_tested = set(
+            event["direction"] for event in self.movement_events
+        )
         avg_speed = (
             sum(self.speed_measurements) / len(self.speed_measurements)
             if self.speed_measurements
@@ -90,7 +92,8 @@ class MovementTracker:
             prev_pos = self.movement_events[i - 1]["position"]
             curr_pos = self.movement_events[i]["position"]
             distance = (
-                (curr_pos[0] - prev_pos[0]) ** 2 + (curr_pos[1] - prev_pos[1]) ** 2
+                (curr_pos[0] - prev_pos[0]) ** 2
+                + (curr_pos[1] - prev_pos[1]) ** 2
             ) ** 0.5
             total_distance += distance
 
@@ -109,7 +112,9 @@ class CombatTracker:
         self.weapon_switches = []
         self.accuracy_measurements = []
 
-    def record_shot(self, target_position: tuple, weapon_type: str = "default"):
+    def record_shot(
+        self, target_position: tuple, weapon_type: str = "default"
+    ):
         """Record a shot fired."""
         shot = {
             "target_position": target_position,
@@ -151,7 +156,9 @@ class CombatTracker:
 
     def get_results(self) -> Dict[str, Any]:
         """Get combat tracking results."""
-        accuracy = self.hits_landed / self.shots_fired if self.shots_fired > 0 else 0
+        accuracy = (
+            self.hits_landed / self.shots_fired if self.shots_fired > 0 else 0
+        )
         avg_accuracy = (
             sum(self.accuracy_measurements) / len(self.accuracy_measurements)
             if self.accuracy_measurements
@@ -205,7 +212,11 @@ class CarInteractionTracker:
 
     def record_car_usage(self, car_type: str, success: bool):
         """Record car usage."""
-        usage = {"car_type": car_type, "success": success, "timestamp": time.time()}
+        usage = {
+            "car_type": car_type,
+            "success": success,
+            "timestamp": time.time(),
+        }
         self.car_usage_events.append(usage)
 
         Debug.track_event("car_usage", usage)
@@ -233,7 +244,10 @@ class CarInteractionTracker:
             "car_usage_events": len(self.car_usage_events),
             "average_interaction_distance": avg_distance,
             "car_types_interacted": list(
-                set(attempt["car_type"] for attempt in self.interaction_attempts)
+                set(
+                    attempt["car_type"]
+                    for attempt in self.interaction_attempts
+                )
             ),
         }
 
@@ -249,7 +263,9 @@ class HealthTracker:
         self.healing_events = []
         self.health_bar_updates = []
 
-    def record_health_change(self, old_health: int, new_health: int, reason: str):
+    def record_health_change(
+        self, old_health: int, new_health: int, reason: str
+    ):
         """Record a health change."""
         change = new_health - old_health
         health_event = {
@@ -263,7 +279,11 @@ class HealthTracker:
 
         if change < 0:
             self.damage_events.append(
-                {"damage": abs(change), "reason": reason, "timestamp": time.time()}
+                {
+                    "damage": abs(change),
+                    "reason": reason,
+                    "timestamp": time.time(),
+                }
             )
         elif change > 0:
             self.healing_events.append(
@@ -272,7 +292,9 @@ class HealthTracker:
 
         Debug.track_event("health_change", health_event)
 
-    def record_health_bar_update(self, old_fullness: float, new_fullness: float):
+    def record_health_bar_update(
+        self, old_fullness: float, new_fullness: float
+    ):
         """Record a health bar update."""
         update = {
             "old_fullness": old_fullness,
@@ -298,5 +320,6 @@ class HealthTracker:
             "total_damage_taken": total_damage,
             "total_healing_received": total_healing,
             "health_bar_updates": len(self.health_bar_updates),
-            "net_health_change": self.player.current_health - self.initial_health,
+            "net_health_change": self.player.current_health
+            - self.initial_health,
         }

@@ -20,7 +20,8 @@ class GameState(Enum):
 
 
 class GameStateManager:
-    """Manages game state tracking, progression logic, win/lose conditions, and game reset."""
+    """Manages game state tracking, progression logic, win/lose conditions, \
+        and game reset."""
 
     def __init__(self, game_view):
         self.game_view = game_view
@@ -156,7 +157,9 @@ class GameStateManager:
         from src.views.transition_view import TransitionView
 
         transition_view = TransitionView(
-            self._current_map_index, self._max_maps, previous_game_view=self.game_view
+            self._current_map_index,
+            self._max_maps,
+            previous_game_view=self.game_view,
         )
         self.game_view.window.show_view(transition_view)
 

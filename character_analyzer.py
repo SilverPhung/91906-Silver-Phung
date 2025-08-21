@@ -48,7 +48,9 @@ def analyze_player_directory(base_dir: str) -> Dict[str, Any]:
 
     # Get all character folders (Girl, Man, etc.)
     character_folders = [
-        f for f in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, f))
+        f
+        for f in os.listdir(base_dir)
+        if os.path.isdir(os.path.join(base_dir, f))
     ]
 
     for character in character_folders:
@@ -76,20 +78,26 @@ def analyze_player_directory(base_dir: str) -> Dict[str, Any]:
                 animation_type = "Action"  # For players, not Walk_
 
             if png_files:
-                # Get dimensions from first frame (all frames should have same dimensions)
+                # Get dimensions from first frame (all frames should have
+                # same dimensions)
                 width, height = get_image_dimensions(png_files[0])
 
-                # Create animation configuration with anchor points at animation level
+                # Create animation configuration with anchor points at
+                # animation level
                 config[character][animation] = {
                     "anchor_x": width // 2,  # Default to center
                     "anchor_y": height // 2,  # Default to center
                     "width": width,
                     "height": height,
-                    "frames": [png_file.replace("\\", "/") for png_file in png_files],
+                    "frames": [
+                        png_file.replace("\\", "/") for png_file in png_files
+                    ],
                     "animation_type": animation_type,
                 }
 
-            print(f"Processed {character}/{animation}: {len(png_files)} frames")
+            print(
+                f"Processed {character}/{animation}: {len(png_files)} frames"
+            )
 
     return config
 
@@ -104,7 +112,9 @@ def analyze_zombie_directory(base_dir: str) -> Dict[str, Any]:
 
     # Get all zombie type folders (Army_zombie, Cop_Zombie, etc.)
     zombie_folders = [
-        f for f in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, f))
+        f
+        for f in os.listdir(base_dir)
+        if os.path.isdir(os.path.join(base_dir, f))
     ]
 
     for zombie_type in zombie_folders:
@@ -132,20 +142,26 @@ def analyze_zombie_directory(base_dir: str) -> Dict[str, Any]:
                 animation_type = "Action"
 
             if png_files:
-                # Get dimensions from first frame (all frames should have same dimensions)
+                # Get dimensions from first frame (all frames should have
+                # same dimensions)
                 width, height = get_image_dimensions(png_files[0])
 
-                # Create animation configuration with anchor points at animation level
+                # Create animation configuration with anchor points at
+                # animation level
                 config[zombie_type][animation] = {
                     "anchor_x": width // 2,  # Default to center
                     "anchor_y": height // 2,  # Default to center
                     "width": width,
                     "height": height,
-                    "frames": [png_file.replace("\\", "/") for png_file in png_files],
+                    "frames": [
+                        png_file.replace("\\", "/") for png_file in png_files
+                    ],
                     "animation_type": animation_type,
                 }
 
-            print(f"Processed {zombie_type}/{animation}: {len(png_files)} frames")
+            print(
+                f"Processed {zombie_type}/{animation}: {len(png_files)} frames"
+            )
 
     return config
 
@@ -230,7 +246,8 @@ def main():
         with open(player_config_path, "w") as f:
             json.dump(player_config, f, indent=2)
         print(
-            f"Generated {player_config_path} with " f"{len(player_config)} characters"
+            f"Generated {player_config_path} with "
+            f"{len(player_config)} characters"
         )
 
     # Analyze zombie assets
@@ -242,7 +259,8 @@ def main():
         with open(zombie_config_path, "w") as f:
             json.dump(zombie_config, f, indent=2)
         print(
-            f"Generated {zombie_config_path} with " f"{len(zombie_config)} zombie types"
+            f"Generated {zombie_config_path} with "
+            f"{len(zombie_config)} zombie types"
         )
 
     print("\n" + "=" * 50)
@@ -258,7 +276,9 @@ def main():
     print("3. anchor_x: pixels from left edge to center of mass")
     print("4. anchor_y: pixels from bottom edge to center of mass")
     print("5. Use an image editor to measure these values visually")
-    print("6. All frames in the same animation will share the same " "anchor point")
+    print(
+        "6. All frames in the same animation will share the same anchor point"
+    )
     print("7. Update your game code to load from these configuration files")
 
 

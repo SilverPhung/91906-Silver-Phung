@@ -11,7 +11,10 @@ class EndView(BaseView):
 
         # Create text objects using the factory
         self.title_text = self.add_centered_text(
-            "CONGRATULATIONS!", y_offset=100, color=arcade.color.GOLD, font_size=48
+            "CONGRATULATIONS!",
+            y_offset=100,
+            color=arcade.color.GOLD,
+            font_size=48,
         )
         self.subtitle_text = self.add_centered_text(
             "You have successfully completed all 3 levels!",
@@ -20,7 +23,8 @@ class EndView(BaseView):
             font_size=24,
         )
         self.stats_text = self.add_centered_text(
-            "All cars have been repaired and you've escaped the zombie apocalypse!",
+            "All cars have been repaired and \
+                you've escaped the zombie apocalypse!",
             y_offset=0,
             color=arcade.color.LIGHT_BLUE,
             font_size=20,
@@ -32,7 +36,10 @@ class EndView(BaseView):
             font_size=24,
         )
         self.credits_text = self.add_centered_text(
-            "Thanks for playing!", y_offset=-100, color=arcade.color.GREEN, font_size=18
+            "Thanks for playing!",
+            y_offset=-100,
+            color=arcade.color.GREEN,
+            font_size=18,
         )
 
     def on_key_press(self, key, modifiers):

@@ -3,9 +3,11 @@ from src.sprites.car import Car
 
 class CarManager:
     """
-    Manages all car-related functionality including loading, interaction, and state.
+    Manages all car-related functionality including loading, interaction, and \
+    state.
 
-    Uses the new Interactable-based Car class for consistent interaction behavior.
+    Uses the new Interactable-based Car class for consistent interaction \
+    behavior.
     """
 
     def __init__(self, game_view):
@@ -38,7 +40,7 @@ class CarManager:
         """Load cars (old/new) from the Tiled object layers."""
         # Check if cars are already loaded
         if self.old_car or self.new_car:
-            print(f"[CAR_MANAGER] Cars already loaded, skipping")
+            print("[CAR_MANAGER] Cars already loaded, skipping")
             return  # Already loaded
 
         try:
@@ -77,7 +79,10 @@ class CarManager:
                 if car_list and car in car_list:
                     print(f"[CAR_MANAGER] ✓ {car_type} car confirmed in scene")
                 else:
-                    print(f"[CAR_MANAGER] ✗ {car_type} car NOT found in scene!")
+                    print(
+                        f"[CAR_MANAGER] ✗ {car_type} car NOT found in \
+                        scene!"
+                    )
 
         except Exception:
 
@@ -87,7 +92,8 @@ class CarManager:
 
     def check_car_interactions(self):
         """
-        Check if player is near any car and update interaction state.
+        Check if player is near any car and update interaction \
+        state.
 
         Uses the new Interactable proximity checking system.
         """
@@ -133,7 +139,8 @@ class CarManager:
             # Use the car to progress to next level
             self.game_view.key_down = {}
 
-            # Reset player velocity completely before transition to prevent momentum carry-over
+            # Reset player velocity completely before transition to prevent \
+            # momentum carry-over
             self.game_view.player.reset_velocity()
             print("[CAR_MANAGER] Player velocity reset before car transition")
 
@@ -146,9 +153,12 @@ class CarManager:
             new_position = self.old_car.position
             self.game_view.player.position = new_position
             self.game_view.player.update_spawn_position(new_position)
-            print(f"[CAR_MANAGER] Player positioned at old car: {new_position}")
+            print(
+                f"[CAR_MANAGER] Player positioned at old car: \
+                {new_position}"
+            )
         else:
-            print(f"[CAR_MANAGER] No old car found for player positioning")
+            print("[CAR_MANAGER] No old car found for player positioning")
 
     def reset_car_parts(self):
         """Reset car parts for new level."""

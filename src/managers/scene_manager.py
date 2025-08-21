@@ -4,7 +4,8 @@ from src.constants import TILE_SCALING, MAP_WIDTH_PIXEL, MAP_HEIGHT_PIXEL
 
 
 class SceneManager:
-    """Manages all scene-related functionality including map loading, tile layers, and sprite lists."""
+    """Manages all scene-related functionality including map loading, tile \
+        layers, and sprite lists."""
 
     def __init__(self, game_view):
         self.game_view = game_view
@@ -20,7 +21,8 @@ class SceneManager:
 
         self.tile_map = arcade.load_tilemap(map_name, scaling=TILE_SCALING)
         print(
-            f"[SCENE] Tilemap loaded with {len(self.tile_map.sprite_lists)} sprite lists"
+            f"[SCENE] Tilemap loaded with {len(self.tile_map.sprite_lists)} \
+                sprite lists"
         )
 
         self._setup_scene()
@@ -30,7 +32,8 @@ class SceneManager:
     def _setup_scene(self):
         """Set up the scene with tile layers and sprite lists."""
         print(
-            f"[SCENE] Available sprite lists: {list(self.tile_map.sprite_lists.keys())}"
+            f"[SCENE] Available sprite lists: \
+                {list(self.tile_map.sprite_lists.keys())}"
         )
 
         # Add tile layers to scene
@@ -47,7 +50,7 @@ class SceneManager:
         self.scene.add_sprite_list("Player")
         self.scene.add_sprite_list("CarsLayer")
 
-        print(f"[SCENE] Added tile layers to scene")
+        print("[SCENE] Added tile layers to scene")
 
     def _setup_camera_bounds(self):
         """Set up camera bounds based on the tile map."""
@@ -92,7 +95,7 @@ class SceneManager:
     def clear_scene(self):
         """Clear the current scene and create a new one."""
         self.scene = arcade.Scene()
-        print(f"[SCENE] New scene created")
+        print("[SCENE] New scene created")
 
     def join_threads(self):
         """Join all threads to ensure they complete."""
@@ -105,4 +108,6 @@ class SceneManager:
             self.scene.add_sprite_list("Enemies", self.game_view.enemies)
         else:
             self.scene.get_sprite_list("Enemies").clear()
-            self.scene.get_sprite_list("Enemies").extend(self.game_view.enemies)
+            self.scene.get_sprite_list("Enemies").extend(
+                self.game_view.enemies
+            )

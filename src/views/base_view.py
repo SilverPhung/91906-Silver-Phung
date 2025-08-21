@@ -36,11 +36,18 @@ class BaseView(FadingView):
             return fallback
 
     def add_positioned_text(
-        self, text: str, x: int, y: int, color=arcade.color.WHITE, font_size: int = 24
+        self,
+        text: str,
+        x: int,
+        y: int,
+        color=arcade.color.WHITE,
+        font_size: int = 24,
     ) -> arcade.Text:
         """Add a positioned text object to this view"""
         try:
-            text_obj = TextFactory.create_positioned_text(text, x, y, color, font_size)
+            text_obj = TextFactory.create_positioned_text(
+                text, x, y, color, font_size
+            )
             self.text_objects.append(text_obj)
             return text_obj
         except Exception:

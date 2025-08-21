@@ -43,7 +43,11 @@ class Debug:
             return
 
         if not Debug.initialized:
-            print("Debug.render called before Debug._initialize. " "Skipping render.")
+            print(
+                "Debug.render called before Debug._initialize. "
+                "Skipping \
+                render."
+            )
             return
 
         text_object_index = 0
@@ -58,8 +62,8 @@ class Debug:
                 text_object_index += 1
             else:
                 print(
-                    f"Warning: Ran out of pre-allocated debug text objects "
-                    f"for key: {key}"
+                    f"Warning: Ran out of pre-allocated debug text "
+                    f"objects for key: {key}"
                 )
 
         while text_object_index < len(Debug.text_objects):
@@ -69,7 +73,8 @@ class Debug:
     # === Testing Methods ===
     @staticmethod
     def set_testing_objective(objective: str):
-        """Set the current testing objective."""
+        """Set the current testing objective for tracking and \
+        validation."""
         if ENABLE_TESTING:
             Debug.testing_objective = objective
             Debug.test_start_time = time.time()
@@ -78,7 +83,11 @@ class Debug:
     def track_event(event_type: str, data: Dict[str, Any]):
         """Track a testing event."""
         if ENABLE_TESTING:
-            event = {"type": event_type, "data": data, "timestamp": time.time()}
+            event = {
+                "type": event_type,
+                "data": data,
+                "timestamp": time.time(),
+            }
             Debug.tracking_events.append(event)
 
     @staticmethod
@@ -96,9 +105,13 @@ class Debug:
             return
 
         total_tests = len(Debug.test_results)
-        passed_tests = sum(1 for result in Debug.test_results.values() if result)
+        passed_tests = sum(
+            1 for result in Debug.test_results.values() if result
+        )
         failed_tests = total_tests - passed_tests
-        success_rate = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        success_rate = (
+            (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        )
 
         return {
             "total_tests": total_tests,

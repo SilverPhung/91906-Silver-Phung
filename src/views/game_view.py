@@ -1,7 +1,7 @@
 import arcade
 from typing import Dict, Any
 
-# Import refactored classes
+#  Import refactored classes
 from src.debug import Debug
 from src.entities.entity import Entity
 from src.entities.player import Player
@@ -94,13 +94,19 @@ class GameView(FadingView):
         if hasattr(self, "car_manager"):
             self.reset_coordinator.register_component(self.car_manager, "map")
         if hasattr(self, "chest_manager"):
-            self.reset_coordinator.register_component(self.chest_manager, "map")
+            self.reset_coordinator.register_component(
+                self.chest_manager, "map"
+            )
         if hasattr(self, "input_manager"):
-            self.reset_coordinator.register_component(self.input_manager, "map")
+            self.reset_coordinator.register_component(
+                self.input_manager, "map"
+            )
         if hasattr(self, "ui_manager"):
             self.reset_coordinator.register_component(self.ui_manager, "map")
         if hasattr(self, "game_state_manager"):
-            self.reset_coordinator.register_component(self.game_state_manager, "game")
+            self.reset_coordinator.register_component(
+                self.game_state_manager, "game"
+            )
 
     def reset(self):
         """Reset the game state for the current map."""
@@ -114,24 +120,29 @@ class GameView(FadingView):
 
         # Reset input keys to prevent lingering movement
         self.input_manager.reset_keys()
-        print(f"[GAME_VIEW] Input keys reset")
+        print("[GAME_VIEW] Input keys reset")
 
         # Add player to scene first
         self.scene.add_sprite("Player", self.player)
         print(
-            f"[GAME_VIEW] Player added to scene at ({self.player.center_x:.1f}, {self.player.center_y:.1f})"
+            f"[GAME_VIEW] Player added to scene at ({self.player.center_x:.1f}, "
+            f"{self.player.center_y:.1f})"
         )
 
-        # Don't run reset coordinator here - entities are already loaded by MapManager
+        #  Don't run reset coordinator here - entities are already loaded by MapManager
         # The reset coordinator was clearing entities that were just loaded
-        print(f"[GAME_VIEW] Skipping reset coordinator to preserve loaded entities")
+        print(
+            "[GAME_VIEW] Skipping reset coordinator to preserve loaded entities"
+        )
 
         # Debug: Final scene verification
-        print(f"[GAME_VIEW] Final scene verification after reset:")
+        print("[GAME_VIEW] Final scene verification after reset:")
         for layer_name in ["Player", "CarsLayer", "ChestsLayer", "Enemies"]:
             sprite_list = self.scene.get_sprite_list(layer_name)
             if sprite_list:
-                print(f"[GAME_VIEW]   {layer_name}: {len(sprite_list)} sprites")
+                print(
+                    f"[GAME_VIEW]   {layer_name}: {len(sprite_list)} sprites"
+                )
             else:
                 print(f"[GAME_VIEW]   {layer_name}: No sprite list found!")
 
@@ -162,7 +173,9 @@ class GameView(FadingView):
 
         # Create player
         sound_set = {
-            "gun_shot": "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
+            "gun_shot": (
+                "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
+            )
         }
 
         self.player = Player(
@@ -187,16 +200,17 @@ class GameView(FadingView):
         # Add player to scene
         self.scene.add_sprite("Player", self.player)
         print(
-            f"[GAME_VIEW] Player added to scene at ({self.player.center_x:.1f}, {self.player.center_y:.1f})"
+            f"[GAME_VIEW] Player added to scene at "
+            f"({self.player.center_x:.1f}, {self.player.center_y:.1f})"
         )
 
         # Spawn zombies for initial scene
         self.map_manager.spawn_enemies_for_map()
-        print(f"[GAME_VIEW] Zombies spawned for initial scene")
+        print("[GAME_VIEW] Zombies spawned for initial scene")
 
         # Don't run reset here - entities are already loaded properly
         # The reset was causing infinite loops and clearing entities
-        print(f"[GAME_VIEW] Skipping initial reset to preserve loaded entities")
+        print("[GAME_VIEW] Skipping initial reset to preserve loaded entities")
 
     def _start_thread(self, target_func):
         """Start a thread and add it to the threads list."""
@@ -210,7 +224,7 @@ class GameView(FadingView):
 
     def handle_car_interaction(self):
         """Handle car interaction when E key is pressed"""
-        print(f"[INTERACTION] Car interaction attempted")
+        print("[INTERACTION] Car interaction attempted")
         self.car_manager.handle_car_interaction()
 
     def check_chest_interactions(self):
@@ -219,7 +233,7 @@ class GameView(FadingView):
 
     def handle_chest_interaction(self):
         """Handle chest interaction when E key is pressed"""
-        print(f"[INTERACTION] Chest interaction attempted")
+        print("[INTERACTION] Chest interaction attempted")
         self.chest_manager.handle_chest_interaction()
 
     def transition_to_next_map(self):
@@ -326,12 +340,17 @@ class GameView(FadingView):
         Debug.update("Delta Time", f"{delta_time:.2f}")
 
         # Track player progression for testing
-        if hasattr(self, "testing_manager") and self.testing_manager.current_objective:
+        if (
+            hasattr(self, "testing_manager")
+            and self.testing_manager.current_objective
+        ):
             print(
-                f"[PROGRESS] Player position: ({self.player.center_x:.1f}, {self.player.center_y:.1f})"
+                f"[PROGRESS] Player position: "
+                f"({self.player.center_x:.1f}, {self.player.center_y:.1f})"
             )
             print(
-                f"[PROGRESS] Player health: {self.player.current_health}/{self.player.max_health}"
+                f"[PROGRESS] Player health: "
+                f"{self.player.current_health}/{self.player.max_health}"
             )
             print(f"[PROGRESS] Enemies remaining: {len(self.enemies)}")
 
@@ -342,7 +361,9 @@ class GameView(FadingView):
         self.check_chest_interactions()
 
         self.camera_manager.update_zoom(delta_time)
-        Debug.update("Camera Zoom", f"{self.camera_manager.get_camera().zoom:.2f}")
+        Debug.update(
+            "Camera Zoom", f"{self.camera_manager.get_camera().zoom:.2f}"
+        )
 
         # Get wall_list from MapManager
         wall_list = (

@@ -2,7 +2,7 @@
 Test runner for executing tests and managing tracking components.
 
 This module contains the TestRunner class that orchestrates test execution,
-manages active trackers, and generates comprehensive reports.
+    manages active trackers, and generates comprehensive reports.
 """
 
 from typing import Dict, Any, Optional
@@ -114,7 +114,9 @@ class TestRunner:
                 if test_result:
                     passed_tests += 1
 
-        success_rate = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        success_rate = (
+            (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        )
 
         report = {
             "total_tests": total_tests,
@@ -126,7 +128,9 @@ class TestRunner:
 
         return report
 
-    def get_tracker_results(self, tracker_name: str) -> Optional[Dict[str, Any]]:
+    def get_tracker_results(
+        self, tracker_name: str
+    ) -> Optional[Dict[str, Any]]:
         """Get results from a specific tracker."""
         if tracker_name in self.active_trackers:
             tracker = self.active_trackers[tracker_name]
@@ -151,7 +155,9 @@ class TestRunner:
             if hasattr(tracker, "start_tracking"):
                 tracker.start_tracking()
 
-    def record_event(self, tracker_name: str, event_type: str, data: Dict[str, Any]):
+    def record_event(
+        self, tracker_name: str, event_type: str, data: Dict[str, Any]
+    ):
         """Record an event for a specific tracker."""
         if tracker_name in self.active_trackers:
             tracker = self.active_trackers[tracker_name]

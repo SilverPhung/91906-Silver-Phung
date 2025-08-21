@@ -31,7 +31,10 @@ class MenuView(BaseView):
         self.description_lines = []
         for desc_text, y_pos in descriptions:
             line = self.add_centered_text(
-                desc_text, y_offset=y_pos, color=arcade.color.LIGHT_GRAY, font_size=16
+                desc_text,
+                y_offset=y_pos,
+                color=arcade.color.LIGHT_GRAY,
+                font_size=16,
             )
             self.description_lines.append(line)
 
@@ -47,7 +50,10 @@ class MenuView(BaseView):
         self.control_lines = []
         for control_text, y_pos in controls:
             line = self.add_centered_text(
-                control_text, y_offset=y_pos, color=arcade.color.YELLOW, font_size=14
+                control_text,
+                y_offset=y_pos,
+                color=arcade.color.YELLOW,
+                font_size=14,
             )
             self.control_lines.append(line)
 

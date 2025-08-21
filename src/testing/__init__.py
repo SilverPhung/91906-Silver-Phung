@@ -1,7 +1,8 @@
 """
 Testing module for centralized testing system.
 
-This module contains all testing-related components including tracking components,
+This module contains all testing-related components including tracking \
+components,
 centralized tests, test runner, and integration utilities.
 """
 

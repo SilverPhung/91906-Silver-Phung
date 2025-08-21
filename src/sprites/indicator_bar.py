@@ -53,10 +53,12 @@ class IndicatorBar:
         self._scale: tuple[float, float] = (1.0, 1.0)
 
         # Create the boxes needed to represent the indicator bar
-        self._background_box: arcade.SpriteSolidColor = arcade.SpriteSolidColor(
-            self._bar_width + border_size,
-            self._bar_height + border_size,
-            color=background_color,
+        self._background_box: arcade.SpriteSolidColor = (
+            arcade.SpriteSolidColor(
+                self._bar_width + border_size,
+                self._bar_height + border_size,
+                color=background_color,
+            )
         )
         self._full_box: arcade.SpriteSolidColor = arcade.SpriteSolidColor(
             self._bar_width,
@@ -135,7 +137,8 @@ class IndicatorBar:
         # Check if new_fullness if valid
         if not (0.0 <= new_fullness <= 1.0):
             raise ValueError(
-                f"Got {new_fullness}, but fullness must be between 0.0 and 1.0."
+                f"Got {new_fullness}, but fullness must be between 0.0 and \
+                    1.0."
             )
 
         # Set the size of the bar
@@ -146,8 +149,12 @@ class IndicatorBar:
         else:
             # Set the full_box to be visible in case it wasn't
             self.full_box.visible = True
-            self.full_box.width = self._bar_width * new_fullness * self.scale[0]
-            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
+            self.full_box.width = (
+                self._bar_width * new_fullness * self.scale[0]
+            )
+            self.full_box.left = (
+                self._center_x - (self._bar_width / 2) * self.scale[0]
+            )
 
     @property
     def position(self) -> tuple[float, float]:
@@ -164,7 +171,9 @@ class IndicatorBar:
             self.full_box.position = new_position
 
             # Make sure full_box is to the left instead of the middle
-            self.full_box.left = self._center_x - (self._bar_width / 2) * self.scale[0]
+            self.full_box.left = (
+                self._center_x - (self._bar_width / 2) * self.scale[0]
+            )
 
     @property
     def scale(self) -> tuple[float, float]:

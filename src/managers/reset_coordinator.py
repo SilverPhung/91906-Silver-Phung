@@ -1,7 +1,8 @@
 """
 Reset Coordinator - Centralized reset management system.
 
-This module provides a clean, centralized approach to managing game state resets
+This module provides a clean, centralized approach to managing game state \
+    resets
 following SOLID principles and clean architecture patterns.
 """
 
@@ -44,7 +45,9 @@ class ResetCoordinator:
 
         print("[RESET_COORDINATOR] Initialized")
 
-    def register_component(self, component: Resetable, reset_type: str = "map") -> None:
+    def register_component(
+        self, component: Resetable, reset_type: str = "map"
+    ) -> None:
         """Register a component for reset operations.
 
         Args:
@@ -56,19 +59,22 @@ class ResetCoordinator:
                 self.game_resetable_components.append(component)
             else:
                 print(
-                    f"[RESET_COORDINATOR] Warning: {component.__class__.__name__} doesn't implement reset_for_game"
+                    f"[RESET_COORDINATOR] Warning: \
+                        {component.__class__.__name__} doesn't implement reset_for_game"
                 )
         else:
             if hasattr(component, "reset_for_map"):
                 self.map_resetable_components.append(component)
             else:
                 print(
-                    f"[RESET_COORDINATOR] Warning: {component.__class__.__name__} doesn't implement reset_for_map"
+                    f"[RESET_COORDINATOR] Warning: \
+                        {component.__class__.__name__} doesn't implement reset_for_map"
                 )
 
         self.resetable_components.append(component)
         print(
-            f"[RESET_COORDINATOR] Registered {component.__class__.__name__} for {reset_type} reset"
+            f"[RESET_COORDINATOR] Registered {component.__class__.__name__} \
+                for {reset_type} reset"
         )
 
     def reset_for_map(self) -> None:
@@ -82,10 +88,14 @@ class ResetCoordinator:
         for component in self.map_resetable_components:
             try:
                 component.reset_for_map()
-                print(f"[RESET_COORDINATOR] Reset {component.__class__.__name__}")
+                print(
+                    f"[RESET_COORDINATOR] Reset \
+                    {component.__class__.__name__}"
+                )
             except Exception as e:
                 print(
-                    f"[RESET_COORDINATOR] Error resetting {component.__class__.__name__}: {e}"
+                    f"[RESET_COORDINATOR] Error resetting \
+                        {component.__class__.__name__}: {e}"
                 )
 
         # 3. Regenerate pathfinding
@@ -104,10 +114,14 @@ class ResetCoordinator:
         for component in self.game_resetable_components:
             try:
                 component.reset_for_game()
-                print(f"[RESET_COORDINATOR] Reset {component.__class__.__name__}")
+                print(
+                    f"[RESET_COORDINATOR] Reset \
+                    {component.__class__.__name__}"
+                )
             except Exception as e:
                 print(
-                    f"[RESET_COORDINATOR] Error resetting {component.__class__.__name__}: {e}"
+                    f"[RESET_COORDINATOR] Error resetting \
+                        {component.__class__.__name__}: {e}"
                 )
 
         print("[RESET_COORDINATOR] Game reset complete")
@@ -144,4 +158,7 @@ class ResetCoordinator:
             for x, y in spawn_positions:
                 self.game_view.spawn_manager.create_zombie(x, y)
 
-            print(f"[RESET_COORDINATOR] Spawned {len(self.game_view.enemies)} enemies")
+            print(
+                f"[RESET_COORDINATOR] Spawned \
+                {len(self.game_view.enemies)} enemies"
+            )
