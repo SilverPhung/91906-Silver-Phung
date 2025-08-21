@@ -57,13 +57,7 @@ class MenuView(BaseView):
             )
             self.control_lines.append(line)
 
-        # Add testing objective for shooting sound
-        self.testing_objective = self.add_centered_text(
-            "TESTING: Press SPACE to test shooting sound functionality",
-            y_offset=-160,
-            color=arcade.color.ORANGE,
-            font_size=12,
-        )
+
 
         # Create start game text
         self.start_text = self.add_centered_text(

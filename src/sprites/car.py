@@ -96,8 +96,7 @@ class Car(Interactable):
             if self.can_use():
                 return "Press E to use car"
             else:
-                return f"Need {self.required_parts - self.collected_parts} \
-                    more parts"
+                return "This is the old car, you can't use it"
         else:
             if self.can_use():
                 return "Press E to use car"
