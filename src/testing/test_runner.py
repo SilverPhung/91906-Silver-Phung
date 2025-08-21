@@ -66,7 +66,9 @@ class TestRunner:
 
         # Run tests
         results = {
-            "part_collection": self.centralized_tests.test_car_part_collection(),
+            "part_collection": (
+                self.centralized_tests.test_car_part_collection()
+            ),
             "car_usage": self.centralized_tests.test_car_usage(),
         }
 

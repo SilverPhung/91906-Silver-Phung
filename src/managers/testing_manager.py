@@ -305,10 +305,13 @@ class TestingManager:
             f"[TEST] Car Part Test - Car manager available: \
                 {hasattr(game_view, 'car_manager')}"
         )
+        parts_attr_available = (
+            hasattr(car_manager, 'car_parts_collected')
+            if car_manager else False
+        )
         print(
             f"[TEST] Car Part Test - Parts collected attribute: "
-            f"{hasattr(car_manager, \
-                'car_parts_collected') if car_manager else False}"
+            f"{parts_attr_available}"
         )
 
         # Check if car part collection is available

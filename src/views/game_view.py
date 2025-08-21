@@ -133,7 +133,8 @@ class GameView(FadingView):
         # MapManager
         # The reset coordinator was clearing entities that were just loaded
         print(
-            "[GAME_VIEW] Skipping reset coordinator to preserve loaded entities"
+            "[GAME_VIEW] Skipping reset coordinator to preserve loaded "
+            "entities"
         )
 
         # Debug: Final scene verification
@@ -175,7 +176,8 @@ class GameView(FadingView):
         # Create player
         sound_set = {
             "gun_shot": (
-                "resources/sound/weapon/gun/Isolated/5.56/WAV/556 Single Isolated WAV.wav"
+                "resources/sound/weapon/gun/Isolated/5.56/WAV/"
+                "556 Single Isolated WAV.wav"
             )
         }
 

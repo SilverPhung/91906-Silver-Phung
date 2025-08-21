@@ -331,7 +331,9 @@ class CentralizedTests:
             {
                 "current_health_available": current_health_available,
                 "max_health_available": max_health_available,
-                "health_change_method_available": health_change_method_available,
+                "health_change_method_available": (
+                    health_change_method_available
+                ),
                 "damage_system_available": damage_system_available,
             },
         )
@@ -379,7 +381,8 @@ class CentralizedTests:
         results["collision_events"] > 0
         movement_occurred = results["total_movement_events"] > 0
 
-        return movement_occurred  # Collision events are optional for basic validation
+        # Collision events are optional for basic validation
+        return movement_occurred
 
     def validate_shooting_results(self, tracker) -> bool:
         """Validate shooting test results."""

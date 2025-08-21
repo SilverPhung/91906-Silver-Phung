@@ -102,8 +102,8 @@ class Car(Interactable):
             if self.can_use():
                 return "Press E to use car"
             else:
-                return f"Car needs {self.required_parts - \
-                    self.collected_parts} parts"
+                parts_needed = self.required_parts - self.collected_parts
+                return f"Car needs {parts_needed} parts"
 
     def reset_parts(self):
         """

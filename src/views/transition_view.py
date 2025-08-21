@@ -29,8 +29,12 @@ class TransitionView(BaseView):
             color=arcade.color.YELLOW,
             font_size=24,
         )
+        progress_text = (
+            f"Progress: {next_map_index - 1}/{total_maps} → "
+            f"{next_map_index}/{total_maps}"
+        )
         self.progress_text = self.add_centered_text(
-            f"Progress: {next_map_index - 1}/{total_maps} → {next_map_index}/{total_maps}",
+            progress_text,
             y_offset=-100,
             color=arcade.color.LIGHT_CYAN,
             font_size=18,

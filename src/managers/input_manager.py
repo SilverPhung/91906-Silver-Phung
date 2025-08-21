@@ -176,7 +176,8 @@ class InputManager:
             self.game_view.window.width, self.game_view.window.height
         )
         print(
-            f"[INPUT_MANAGER] Fullscreen toggled: {current_state} -> {new_state}"
+            f"[INPUT_MANAGER] Fullscreen toggled: {current_state} -> "
+            f"{new_state}"
         )
 
     def _attack(self):
@@ -225,7 +226,8 @@ class InputManager:
         if hasattr(self.game_view, "player") and self.game_view.player:
             self.game_view.player.reset_velocity()
             print(
-                "[INPUT_MANAGER] Player velocity reset before debug map transition"
+                "[INPUT_MANAGER] Player velocity reset before debug map "
+                "transition"
             )
 
         self.game_view.transition_to_next_map()

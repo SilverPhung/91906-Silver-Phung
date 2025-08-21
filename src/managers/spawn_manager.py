@@ -261,7 +261,8 @@ class SpawnManager:
         self, zombie_count: int
     ) -> List[Tuple[float, float]]:
         """
-        Generate random positions as fallback when no spawn points are available.
+        Generate random positions as fallback when no spawn points are
+        available.
 
         Args:
             zombie_count: Number of random positions to generate

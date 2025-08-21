@@ -59,16 +59,18 @@ class ResetCoordinator:
                 self.game_resetable_components.append(component)
             else:
                 print(
-                    f"[RESET_COORDINATOR] Warning: \
-                        {component.__class__.__name__} doesn't implement reset_for_game"
+                    f"[RESET_COORDINATOR] Warning: "
+                    f"{component.__class__.__name__} doesn't implement "
+                    f"reset_for_game"
                 )
         else:
             if hasattr(component, "reset_for_map"):
                 self.map_resetable_components.append(component)
             else:
                 print(
-                    f"[RESET_COORDINATOR] Warning: \
-                        {component.__class__.__name__} doesn't implement reset_for_map"
+                    f"[RESET_COORDINATOR] Warning: "
+                    f"{component.__class__.__name__} doesn't implement "
+                    f"reset_for_map"
                 )
 
         self.resetable_components.append(component)
